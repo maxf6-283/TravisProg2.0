@@ -43,10 +43,15 @@ public class Sheet {
             }
             try {
                 FileInputStream reader = new FileInputStream(cutFile);
-                //ignore first two bits (this decision may be regretted)
-                reader.readNBytes(2)
+                //get something or other
+                int something = reader.read();
+                //get number of parts
+                int partCount = reader.read();
                 // x, y, rot are in sets of 64 bits
                 byte[] nextNumber = new byte[8];
+                for(int part = 0; part < partCount; part++) {
+                    reader.readNBytes(nextNumber, 0, 8);
+                }
                 
 
             } catch (Exception e) {
