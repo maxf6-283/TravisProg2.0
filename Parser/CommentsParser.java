@@ -1,3 +1,5 @@
+package Parser;
+
 public class CommentsParser {
     public static String parse(String gcodeLine, NGCDocument doc){
         while(gcodeLine.contains("(")){
