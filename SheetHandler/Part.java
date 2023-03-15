@@ -6,9 +6,10 @@ import java.awt.Graphics2D;
 public class Part {
     private double sheetX, sheetY, rotation; //x and y in inches, rotation in radians
     private Sheet parentSheet;
+    private NGCDocument ngcDoc;
 
-    public Part(String filePath) {
-        //TODO: get part from file
+    public Part(File file) {
+        ngcDoc = Parser.parse(file);
     }
 
     protected void setParentSheet(Sheet sheet) {
@@ -16,8 +17,7 @@ public class Part {
     }    
 
     public Sheet parentSheet() {
-        return 
-        parentSheet;
+        return parentSheet;
     }
 
     public void draw(Graphics g) {
