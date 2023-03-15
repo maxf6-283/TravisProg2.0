@@ -12,8 +12,8 @@ public class Sheet {
     private double width, height; //in inches
     private File sheetFile, holeFile, activeCutFile;
 
-    public Sheet(String filePath) {
-        sheetFile = new File(filePath);
+    public Sheet(File sheetFile) {
+        this.sheetFile = sheetFile;
         try {
             Scanner reader = new Scanner(sheetFile);
             HashMap<String, String> decodedFile = new HashMap<>();
@@ -30,7 +30,13 @@ public class Sheet {
         }
 
         //time to get the parts
-        
+        File parentFile = sheetFile.getParentFile();
+        for(File cutFile : parentFile.listFiles()) {
+            if(!cutFile.getName().endsWith(".cut")) {
+                continue;
+            }
+            
+        }
     }
 
     public void addPart(Part part) {
