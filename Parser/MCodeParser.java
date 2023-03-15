@@ -1,3 +1,5 @@
+package Parser;
+
 public class MCodeParser {
     public static void parse(String gcodeLine, int lineNum, NGCDocument doc) {
         int code;

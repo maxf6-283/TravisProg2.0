@@ -1,3 +1,5 @@
+package Parser;
+
 public class GCodeParser {
     public static void parse(String gcodeLine) {
         int code;
