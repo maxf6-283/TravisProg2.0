@@ -13,7 +13,7 @@ public class Parser {
         NGCDocument doc = new NGCDocument();
         long time = -System.nanoTime();
         try {
-            doc = parse(new File("butterfly!!!!_1565.ngc"));
+            doc = parse(new File("TestFiles/butterfly!!!!_1565.ngc"));
             out.flush();
         } catch (Exception e) {
             e.printStackTrace();
