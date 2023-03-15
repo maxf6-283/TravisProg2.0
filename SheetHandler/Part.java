@@ -18,7 +18,9 @@ public class Part {
         sheetX = xLoc;
         sheetY = yLoc;
         rotation = rot;
+        try {
         ngcDoc = Parser.parse(partFile);
+        } catch (Exception e) {}
     }
 
     protected void setParentSheet(Sheet sheet) {
