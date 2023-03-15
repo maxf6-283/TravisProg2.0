@@ -2,6 +2,7 @@ package Parser.GCode;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Scanner;
@@ -28,7 +29,7 @@ public class Parser {
      * @return
      * @throws IOException NGC file not found, try another or use a dxf
      */
-    public static NGCDocument parse(File fileInput) throws IOException {
+    public static NGCDocument parse(File fileInput) throws IOException, FileNotFoundException {
         int lineNum = 1;
         Scanner input;
         input = new Scanner(fileInput);
