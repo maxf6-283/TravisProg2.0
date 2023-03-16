@@ -14,6 +14,10 @@ public class Sheet {
     private double width, height; // in inches
     private File sheetFile, holeFile, activeCutFile;
 
+    /**
+     * Declares a new sheet from a file
+     * @param sheetFile - the .sheet file to get the information from
+     */
     public Sheet(File sheetFile) {
         this.sheetFile = sheetFile;
         
@@ -39,15 +43,23 @@ public class Sheet {
         }
     }
 
+    /**
+     * Adds a part to the active cut;
+     */
     public void addPart(Part part) {
         activeCut.parts.add(part);
-        part.setParentSheet(this);
     }
 
+    /**
+     * Adds a hole to the active cut
+     */
     public void addHole(Hole hole) {
         activeCut.holes.add(hole);
     }
 
+    /**
+     * Draw the sheet to the screen
+     */
     public void draw(Graphics g) {
         // TODO: add rectangle for sheet
         for(Cut cut : cuts) {
@@ -60,6 +72,9 @@ public class Sheet {
         }
     }
 
+    /**
+     * save the sheet and its cuts
+     */
     public void saveToFile() {
         HashMap<String, String> sheetInfo = new HashMap<>();
         sheetInfo.put("w", ""+(width));

@@ -17,6 +17,9 @@ public class Cut {
         return cutFile;
     }
 
+    /**
+     * Draw the parts and holes in the cut
+     */
     public void draw(Graphics g) {
         for(Part part : parts) {
             part.draw(g);

@@ -1,7 +1,6 @@
 package SheetHandler;
 
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -11,7 +10,6 @@ import Parser.GCode.Parser;
 
 public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
-    private Sheet parentSheet;
     private NGCDocument ngcDoc;
     private File partFile;
 
@@ -30,15 +28,6 @@ public class Part {
             e.printStackTrace();
         }
     }
-
-    protected void setParentSheet(Sheet sheet) {
-        parentSheet = sheet;
-    }
-
-    public Sheet parentSheet() {
-        return parentSheet;
-    }
-
     public double getX() {
         return sheetX;
     }
@@ -56,11 +45,11 @@ public class Part {
     }
     
     public double getRot() {
-        return sheetY;
+        return rotation;
     }
 
-    public void setRot(double y) {
-        sheetY = y;
+    public void setRot(double rot) {
+        rotation = rot;
     }
 
     public File partFile() {
@@ -68,6 +57,6 @@ public class Part {
     }
 
     public void draw(Graphics g) {
-        // TODO: add sheet drawing
+        // TODO: add part drawing
     }
 }

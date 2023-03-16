@@ -1,6 +1,5 @@
 package Parser.Sheet;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -52,7 +51,7 @@ public class SheetParser {
         try {
             FileInputStream reader = new FileInputStream(cutFile);
             // get something or other to do with holes
-            int something = reader.read();
+            reader.read();
             // get number of parts
             int partCount = reader.read();
             // x, y, rot are in sets of 64 bits
