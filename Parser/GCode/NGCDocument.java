@@ -1,37 +1,20 @@
 package Parser.GCode;
 
 import java.util.ArrayList;
-import java.awt.Shape;
 import java.io.File;
+import java.awt.geom.GeneralPath;
 
 public class NGCDocument {
     private File file;
-    private ArrayList<Shape> geometry;
+    private ArrayList<GeneralPath> geometry;
     private int SpindleSpeed;
     private double ToolOffset = 0.1575;
-    private double[] currentWCSOffset = new double[4];
-
-    public void addToCurrentWCSOffset(double[] addOffset){
-        checkWCSOffset(addOffset);
-        for(int i = 0; i < currentWCSOffset.length;i++){
-            currentWCSOffset[i] += addOffset[i];
-        }
-    }
-
-    public void setCurrentWCSOffset(double[] newOffset){
-        checkWCSOffset(newOffset);
-        currentWCSOffset = newOffset;
-    }
-
-    private void checkWCSOffset(double[] newOffset){
-        if(newOffset.length != 6){
-            throw new IllegalArgumentException("Offset needs to be 4 digits for each major axis(X,Y,I,J) instead of: "+newOffset);
-        }
-    }
-
-    public double[] getCurrentWCSOffset(){
-        return currentWCSOffset;
-    }
+    private static final int INITIAL = 0;
+    private static final int CUTTING = 1;
+    private static final int RAPID = 2;
+    private static final int DONE = 3;
+    private int implicitGCodeHolder;
+    private int state = INITIAL;
 
     public NGCDocument(){
         file = null;
@@ -49,7 +32,7 @@ public class NGCDocument {
         return file;
     }
 
-    public void add(Shape shape){
+    public void add(GeneralPath shape){
         geometry.add(shape);
     }
 

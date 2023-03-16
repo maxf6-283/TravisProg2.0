@@ -25,7 +25,7 @@ public class MCodeParser {
             case 0, 1, 2, 30, 7, 9, 6 -> {
             } // program pause)0 or 1), program end(2 or 30), mist or turned off(7 or 9), tool change
             case 8 -> throw new IllegalGCodeError("Flood Coolant is not supported @ line: " + lineNum);
-            default -> throw new UnknownGCodeError("MCode : M" + code + " not parsable @ line: " + lineNum);
+            default -> throw new UnknownGCodeError("MCode : " + tempCode + " not parsable @ line: " + lineNum);
         }
 
     }
