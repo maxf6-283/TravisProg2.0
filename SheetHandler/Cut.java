@@ -11,6 +11,9 @@ public class Cut {
 
     public Cut(File cutFile) {
         this.cutFile = cutFile;
+
+        parts = new ArrayList<>();
+        holes = new ArrayList<>();
     }
 
     public File cutFile() {
