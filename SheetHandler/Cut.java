@@ -7,11 +7,14 @@ import java.io.File;
 public class Cut {
     public ArrayList<Part> parts;
     public ArrayList<Hole> holes;
-    public File cutFile;
+    private File cutFile;
 
     public Cut(File cutFile) {
         this.cutFile = cutFile;
-        
+    }
+
+    public File cutFile() {
+        return cutFile;
     }
 
     public void draw(Graphics g) {

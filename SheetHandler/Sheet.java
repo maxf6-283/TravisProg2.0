@@ -4,6 +4,7 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import java.io.File;
 import java.util.HashMap;
+import java.awt.Color;
 
 import Parser.Sheet.SheetParser;
 
@@ -26,28 +27,52 @@ public class Sheet {
 
         // time to get the parts
         File parentFile = sheetFile.getParentFile();
-        SheetParser.parseCutFiles(parentFile, cuts);
+        for(File cutFile : parentFile.listFiles()) {
+            if(cutFile.getName().endsWith(".cut")) {
+                continue;
+            }
+            Cut newCut = new Cut(cutFile);
+            cuts.add(newCut);
+            if(cutFile.equals(activeCutFile)) {
+                activeCut = newCut;
+            }
+        }
     }
 
     public void addPart(Part part) {
-        c.add(part);
+        activeCut.parts.add(part);
         part.setParentSheet(this);
+    }
+
+    public void addHole(Hole hole) {
+        activeCut.holes.add(hole);
     }
 
     public void draw(Graphics g) {
         // TODO: add rectangle for sheet
-        for (Part part : parts) {
-            part.draw(g);
+        for(Cut cut : cuts) {
+            if(cut == activeCut) {
+                g.setColor(Color.GREEN);
+            } else {
+                g.setColor(Color.BLUE);
+            }
+            cut.draw(g);
         }
     }
 
     public void saveToFile() {
-        HashMap<String, String> savedInfo = new HashMap<>();
-        savedInfo.put("w", ""+(width));
-        savedInfo.put("h", ""+(height));
-        savedInfo.put("hole_file", holeFile.getPath());
-        savedInfo.put("active", activeCutFile.getPath());
+        HashMap<String, String> sheetInfo = new HashMap<>();
+        sheetInfo.put("w", ""+(width));
+        sheetInfo.put("h", ""+(height));
+        sheetInfo.put("hole_file", holeFile.getPath());
+        sheetInfo.put("active", activeCutFile.getPath());
+
+        //save sheet info
+        SheetParser.saveSheetInfo(sheetFile, sheetInfo);
 
         //save cuts
+        for(Cut cut : cuts) {
+            SheetParser.saveCutInfo(cut);
+        }
     }
 }

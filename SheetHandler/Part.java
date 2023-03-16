@@ -13,8 +13,10 @@ public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
     private Sheet parentSheet;
     private NGCDocument ngcDoc;
+    private File partFile;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
+        this.partFile = partFile;
         sheetX = xLoc;
         sheetY = yLoc;
         rotation = rot;
@@ -35,6 +37,34 @@ public class Part {
 
     public Sheet parentSheet() {
         return parentSheet;
+    }
+
+    public double getX() {
+        return sheetX;
+    }
+
+    public void setX(double x) {
+        sheetX = x;
+    }
+
+    public double getY() {
+        return sheetY;
+    }
+
+    public void setY(double y) {
+        sheetY = y;
+    }
+    
+    public double getRot() {
+        return sheetY;
+    }
+
+    public void setRot(double y) {
+        sheetY = y;
+    }
+
+    public File partFile() {
+        return partFile;
     }
 
     public void draw(Graphics g) {
