@@ -21,15 +21,20 @@ public class SheetParser {
             Scanner reader = new Scanner(sheetFile);
             HashMap<String, String> decodedFile = new HashMap<>();
             for (String attribute : reader.nextLine().split(",")) {
-                decodedFile.put(
-                        attribute.substring(attribute.indexOf('"') + 1,
-                                attribute.substring(attribute.indexOf('"') + 1).indexOf('"')),
-                        attribute.substring(attribute.substring(0, attribute.lastIndexOf('"') - 1).lastIndexOf('"') + 1,
-                                attribute.lastIndexOf('"') - 1));
+
+                String key = attribute.substring(0,attribute.indexOf(':'));
+                key = key.replace("\"", "");
+                key = key.replace("{", "");
+
+                String value = attribute.substring(attribute.indexOf(':')+1);
+                value = value.replace("\"", "");
+                value = value.replace("}", "");
+                
+                decodedFile.put(key, value);
             }
             reader.close();
             return decodedFile;
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Problem finding sheet!");
             e.printStackTrace();
             return new HashMap<String, String>();
