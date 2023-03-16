@@ -3,6 +3,7 @@ package SheetHandler;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.awt.Color;
 
@@ -20,6 +21,7 @@ public class Sheet {
      */
     public Sheet(File sheetFile) {
         this.sheetFile = sheetFile;
+        cuts = new ArrayList<>();
         
         HashMap<String, String> decodedFile = SheetParser.parseSheetFile(sheetFile);
 
@@ -44,6 +46,23 @@ public class Sheet {
     }
 
     /**
+     * Declare a new sheet from a path to the list of sheets and the name of the sheet
+     */
+    public Sheet (File sheetFolder, String sheetName, double width, double height) {
+        try {
+            File parentFile = new File(sheetFolder, sheetName);
+            parentFile.createNewFile();
+            sheetFile = new File(parentFile, sheetName + ".sheet");
+        }
+        catch(IOException e) {
+            System.err.println("Could not create sheet file\n\n");
+        }
+
+        this.width = width;
+        this.height = height;
+    }
+
+    /**
      * Adds a part to the active cut;
      */
     public void addPart(Part part) {
@@ -55,6 +74,14 @@ public class Sheet {
      */
     public void addHole(Hole hole) {
         activeCut.holes.add(hole);
+    }
+
+    /**
+     * Adds a cut to the list and sets it as active
+     */
+    public void addCut(Cut cut) {
+        activeCut = cut;
+        cuts.add(cut);
     }
 
     /**

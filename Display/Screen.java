@@ -5,6 +5,7 @@ import javax.swing.event.MouseInputListener;
 
 import SheetHandler.Sheet;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JList;
 
@@ -14,23 +15,41 @@ import java.awt.event.MouseEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import java.io.File;
+
 public class Screen extends JPanel implements MouseInputListener, ActionListener{
-    private JList sheetList;
+    private JList<File> sheetList;
+    private DefaultListModel<File> sheetFileList;
     private JButton addSheet;
     private Sheet selectedSheet;
     
     public Screen() {
         setLayout(null);
+
+        sheetFileList = new DefaultListModel<>();
+        File sheetParent = new File("./TestSheets");
+        for(File sheetFile : sheetParent.listFiles()) {
+            sheetFileList.addElement(sheetFile);
+        }
+        
+        sheetList = new JList<File>(sheetFileList);
+        sheetList.setBounds(100, 100, 200, 600);
+        add(sheetList);
+
+        addSheet = new JButton("Add new sheet");
+        addSheet.setBounds(250, 100, 100, 50);
+        add(addSheet);
+        addSheet.addActionListener(this);
     }
 
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension(800, 1200);
+        return new Dimension(1200, 800);
     }
 
     @Override
     public void paintComponent(Graphics g) {
-        
+
     }
 
     @Override
