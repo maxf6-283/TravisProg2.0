@@ -8,8 +8,8 @@ import java.util.HashMap;
 import Parser.Sheet.SheetParser;
 
 public class Sheet {
-    private ArrayList<Part> parts;
-    private ArrayList<Hole> holes;
+    private ArrayList<Cut> cuts;
+    private Cut activeCut;
     private double width, height; // in inches
     private File sheetFile, holeFile, activeCutFile;
 
@@ -26,11 +26,11 @@ public class Sheet {
 
         // time to get the parts
         File parentFile = sheetFile.getParentFile();
-        SheetParser.parseCutFiles(parentFile, parts, holes);
+        SheetParser.parseCutFiles(parentFile, cuts);
     }
 
     public void addPart(Part part) {
-        parts.add(part);
+        c.add(part);
         part.setParentSheet(this);
     }
 
@@ -42,6 +42,12 @@ public class Sheet {
     }
 
     public void saveToFile() {
-        // TODO: add sheet saving to file
+        HashMap<String, String> savedInfo = new HashMap<>();
+        savedInfo.put("w", ""+(width));
+        savedInfo.put("h", ""+(height));
+        savedInfo.put("hole_file", holeFile.getPath());
+        savedInfo.put("active", activeCutFile.getPath());
+
+        //save cuts
     }
 }

@@ -6,6 +6,7 @@ import java.util.Scanner;
 
 import SheetHandler.Hole;
 import SheetHandler.Part;
+import SheetHandler.Cut;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,7 +26,7 @@ public class SheetParser {
             }
             reader.close();
             return decodedFile;
-        } catch (Exception e){
+        } catch (Exception e) {
             System.err.println("Problem finding sheet!");
             e.printStackTrace();
             return new HashMap<String, String>();
@@ -37,16 +38,12 @@ public class SheetParser {
         ByteBuffer.wrap(bytes).putDouble(value);
         return bytes;
     }
-    
+
     private static double toDouble(byte[] bytes) {
         return ByteBuffer.wrap(bytes).getDouble();
     }
 
-    public static void parseCutFiles(File parentFile, ArrayList<Part> parts, ArrayList<Hole> holes) {
-        for (File cutFile : parentFile.listFiles()) {
-            if (!cutFile.getName().endsWith(".cut")) {
-                continue;
-            }
+    public static void parseCutFile(File cutFile, Cut cut) {
             try {
                 FileInputStream reader = new FileInputStream(cutFile);
                 //get something or other to do with holes
@@ -68,16 +65,24 @@ public class SheetParser {
                         partFileName += reader.read();
                     }
                     File partFile = new File(partFileName);
-                    parts.add(new Part(partFile, partX, partY, partRot));
+                    cut.parts.add(new Part(partFile, partX, partY, partRot));
                 }
                 
                 //hole time
+                //holes follow the pattern "double x, double y, empty double, byte with a 1 in it"
+                //I don't know why and I hate it
+                while(reader.available() != 0) {
+                    reader.readNBytes(nextNumber, 0, 8);
+                    double holeX = toDouble(nextNumber);
+                    reader.readNBytes(nextNumber, 0, 8);
+                    double holeY = toDouble(nextNumber);
+                    cut.holes.add(new Hole(holeX, holeY));
+                }
 
             } catch (Exception e) {
-                System.err.println("Cut file is weird!\n\n");
-                e.printStackTrace();
+                
             }
         }
-    }
     
+
 }
