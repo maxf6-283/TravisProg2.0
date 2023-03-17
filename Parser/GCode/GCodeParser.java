@@ -21,9 +21,11 @@ public class GCodeParser {
             code = Integer.parseInt(tempCode);
             switch (code) {
                 case 0 -> {
+                    //TODO Detect if Rapid extends out of part or not to detect new path
+                    doc.updateState(NGCDocument.RAPID);
                 } // rapid move (do Nothing)
                 case 1 -> {
-
+                    doc.getCurrentPath2D();
                 } // linear move
                 default -> {
                     throw new UnknownGCodeError("GCode : " + tempCode + " not parsable @ line: " + lineNum);
