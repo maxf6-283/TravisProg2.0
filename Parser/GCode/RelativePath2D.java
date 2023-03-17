@@ -22,6 +22,7 @@ public class RelativePath2D extends Path2D.Double {
      * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
      */
     public void arcTo(double x1, double y1, double x2, double y2, int direction) {
+        //TODO fix arc to Bezier conversion(only works for <90 degrees)
         if (direction < -1 || direction > 1) {
             throw new IllegalArgumentException("Direction: " + direction + " is not in the range -1, 1");
         }
@@ -33,6 +34,11 @@ public class RelativePath2D extends Path2D.Double {
         double q2 = q1 + ax * bx + ay * by;
         double k2 = (4.0 / 3) * (Math.sqrt(2 * q1 * q2) - q2) / (ax * by - ay * bx);
         curveTo(x1+ax-k2*ay, y1+ay+k2*ax, x1+bx+k2*by, y1+by-k2*bx, x2, y2);
+    }
+
+    public void arcToRelative(double x1, double y1, double x2, double y2, int direction){
+        arcTo(x1+xP, y1+xP, x2+xP, y2+yP, direction);
+        setRelative(x2, y2);
     }
 
     private void setRelative(double x, double y) {

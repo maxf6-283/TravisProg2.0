@@ -2,6 +2,7 @@ package Parser.GCode;
 
 import java.util.ArrayList;
 import java.io.File;
+import java.nio.file.Path;
 import java.awt.geom.Path2D;
 
 public class NGCDocument {
@@ -9,16 +10,28 @@ public class NGCDocument {
     private ArrayList<Path2D.Double> geometry;
     private int SpindleSpeed;
     private double ToolOffset = 0.1575;
-    protected static final int INITIAL = 0;
-    protected static final int CUTTING = 1;
-    protected static final int RAPID = 2;
-    protected static final int DONE = 3;
     private int implicitGCodeHolder;
-    private int state = INITIAL;
+    private boolean isRelativeArc;
     private boolean isRelative;
 
     public NGCDocument() {
         this(null);
+    }
+
+    public void setIsRelative(boolean isRelative){
+        this.isRelative = isRelative;
+    }
+
+    public boolean getRelativity(){
+        return isRelative;
+    }
+
+    public void setIsRelativeArc(boolean isRelativeArc){
+        this.isRelativeArc = isRelativeArc;
+    }
+
+    public boolean getRelativityArc(){
+        return isRelativeArc;
     }
 
     public NGCDocument(File file) {
@@ -31,21 +44,8 @@ public class NGCDocument {
         return geometry.get(geometry.size() - 1);
     }
 
-    /**
-     * 
-     * @param state can be either {@link NGCDocument#INITIAL},
-     *              {@link NGCDocument#CUTTING}, {@link NGCDocument#RAPID}, or
-     *              {@link NGCDocument#DONE}
-     */
-    public void updateState(int state) {
-        this.state = state;
-        switch (state) {
-            case 0, 1, 3 -> {
-            }
-            case 2 -> {
-                geometry.add(new Path2D.Double());
-            }
-        }
+    public void addPath2D(Path2D.Double path){
+        geometry.add(path);
     }
 
     public void setFile(File file) {
