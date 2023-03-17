@@ -15,6 +15,7 @@ public class NGCDocument {
     protected static final int DONE = 3;
     private int implicitGCodeHolder;
     private int state = INITIAL;
+    private boolean isRelative;
 
     public NGCDocument() {
         this(null);

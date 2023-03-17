@@ -25,7 +25,14 @@ public class RelativePath2D extends Path2D.Double {
         if (direction < -1 || direction > 1) {
             throw new IllegalArgumentException("Direction: " + direction + " is not in the range -1, 1");
         }
-        
+        double ax = getCurrentPoint().getX() - x1;
+        double ay = getCurrentPoint().getY() - y1;
+        double bx = x2 - x1;
+        double by = y2 - y1;
+        double q1 = ax * ax + ay * ay;
+        double q2 = q1 + ax * bx + ay * by;
+        double k2 = (4.0 / 3) * (Math.sqrt(2 * q1 * q2) - q2) / (ax * by - ay * bx);
+        curveTo(x1+ax-k2*ay, y1+ay+k2*ax, x1+bx+k2*by, y1+by-k2*bx, x2, y2);
     }
 
     private void setRelative(double x, double y) {
