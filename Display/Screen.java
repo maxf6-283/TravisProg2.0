@@ -157,7 +157,7 @@ public class Screen extends JPanel
             selectSheet.setVisible(false);
             addSheet.setVisible(false);
             sheetList.setVisible(false);
-            zoom = 2;
+            zoom = 20;
             xCorner = getWidth()/2.0+selectedSheet.getWidth()*10.0;
             yCorner = getHeight()/2.0-selectedSheet.getHeight()*10.0;
             xCorner /= zoom;
