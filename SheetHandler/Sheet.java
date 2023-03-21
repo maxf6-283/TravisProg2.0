@@ -63,6 +63,22 @@ public class Sheet {
     }
 
     /**
+     * returns the width of the sheet
+     * @return the width of the sheet
+     */
+    public double getWidth(){
+        return width;
+    }
+
+    /**
+     * returns the height of the sheet
+     * @return the height of the sheet
+     */
+    public double getHeight(){
+        return height;
+    }
+
+    /**
      * Adds a part to the active cut;
      */
     public void addPart(Part part) {
