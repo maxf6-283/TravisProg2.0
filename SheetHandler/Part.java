@@ -59,7 +59,6 @@ public class Part {
 
     public void draw(Graphics g) {
         // TODO: add part drawing
-        System.out.printf("x: %f y: %f%n", sheetX, sheetY);
         g.drawOval((int) (sheetX - 1), (int) sheetY - 1, 2, 2);
     }
 

@@ -104,7 +104,7 @@ public class Screen extends JPanel
 
     @Override
     public void mousePressed(MouseEvent e) {
-        if(e.getButton() == MouseEvent.BUTTON3 && state == State.SHEET_EDIT) {
+        if(e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
             startX = xCorner - e.getX() / zoom;
             startY = yCorner - e.getY() / zoom;
             panning = true;
@@ -114,7 +114,7 @@ public class Screen extends JPanel
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        if(e.getButton() == MouseEvent.BUTTON3) {
+        if(e.getButton() == MouseEvent.BUTTON1) {
             panning = false;
         }
     }
