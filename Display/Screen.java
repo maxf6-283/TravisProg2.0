@@ -11,9 +11,11 @@ import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JList;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Stroke;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -34,7 +36,7 @@ public class Screen extends JPanel
     private State state;
     private double xCorner = 0;
     private double yCorner = 0;
-    private double zoom = 1;
+    private double zoom = 20;
     private double startX; //for panning
     private double startY;
     private boolean panning = false;
@@ -88,6 +90,7 @@ public class Screen extends JPanel
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.scale(zoom, zoom);
                 g2d.translate(xCorner, yCorner);
+                g2d.setStroke(new BasicStroke((float)(1/zoom)));
                 selectedSheet.draw(g);
                 g2d.translate(-xCorner, -yCorner);
                 g2d.scale(1 / zoom, 1 / zoom);
@@ -101,7 +104,7 @@ public class Screen extends JPanel
 
     @Override
     public void mousePressed(MouseEvent e) {
-        if(e.getButton() == MouseEvent.BUTTON3) {
+        if(e.getButton() == MouseEvent.BUTTON3 && state == State.SHEET_EDIT) {
             startX = xCorner - e.getX() / zoom;
             startY = yCorner - e.getY() / zoom;
             panning = true;
@@ -168,8 +171,6 @@ public class Screen extends JPanel
                 selectSheet.setEnabled(true);
             }
         }
-
-
     }
 
     @Override
@@ -184,7 +185,7 @@ public class Screen extends JPanel
             yCorner -= yPos;
             
             //something something sigmoid
-            zoom *= 1 / Math.pow(Math.E, e.getPreciseWheelRotation() / 50);
+            zoom *= 1 / Math.pow(Math.E, e.getPreciseWheelRotation() / 25);
 
             //translate the point back
             xCorner += e.getX() / zoom;

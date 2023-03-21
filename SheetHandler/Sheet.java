@@ -34,12 +34,12 @@ public class Sheet {
         // time to get the parts
         File parentFile = sheetFile.getParentFile();
         for (File cutFile : parentFile.listFiles()) {
-            if (cutFile.getName().endsWith(".cut")) {
+            if (!cutFile.getName().endsWith(".cut")) {
                 continue;
             }
             Cut newCut = new Cut(cutFile);
             cuts.add(newCut);
-            if (cutFile.equals(activeCutFile)) {
+            if (cutFile.getName().equals(activeCutFile.getName())) {
                 activeCut = newCut;
             }
         }
@@ -89,7 +89,7 @@ public class Sheet {
      */
     public void draw(Graphics g) {
         g.setColor(Color.ORANGE);
-        g.drawRect((int) 0, 0, (int) Math.abs(width * 10), (int) (height * 10));
+        g.drawRect((int) 0, 0, (int) Math.abs(width), (int) (height));
         for (Cut cut : cuts) {
             if (cut == activeCut) {
                 g.setColor(Color.GREEN);
