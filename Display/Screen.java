@@ -37,6 +37,7 @@ public class Screen extends JPanel
     private double zoom = 1;
     private double startX; //for panning
     private double startY;
+    private boolean panning = false;
 
     public Screen() {
         setLayout(null);
@@ -100,15 +101,19 @@ public class Screen extends JPanel
 
     @Override
     public void mousePressed(MouseEvent e) {
-        if(e.getButton() == MouseEvent.BUTTON2) {
-            System.out.println("A");
-            startX = e.getX();
-            startY = e.getY();
+        if(e.getButton() == MouseEvent.BUTTON3) {
+            startX = xCorner - e.getX() / zoom;
+            startY = yCorner - e.getY() / zoom;
+            panning = true;
         }
+        repaint();
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
+        if(e.getButton() == MouseEvent.BUTTON3) {
+            panning = false;
+        }
     }
 
     @Override
@@ -121,8 +126,11 @@ public class Screen extends JPanel
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        e.getX();
-        e.getY();
+        if(panning) {
+            xCorner = startX + e.getX() / zoom;
+            yCorner = startY + e.getY() / zoom;
+        }
+        repaint();
     }
 
     @Override
@@ -166,9 +174,7 @@ public class Screen extends JPanel
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        System.out.println("asdfghj");
         if (state == State.SHEET_EDIT) {
-            
             //get the actual xy coord selected
             double xPos = e.getX() / zoom;
             double yPos = e.getY() / zoom;
@@ -185,7 +191,6 @@ public class Screen extends JPanel
             yCorner += e.getY() / zoom;
 
             repaint();
-            System.out.printf("Zoom: %f, X: %f, Y: %f%n", zoom, xCorner, yCorner);
         }
     }
 
