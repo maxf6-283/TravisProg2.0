@@ -84,12 +84,17 @@ public class GCodeParser {
                         //TODO set Z-related relativity stuff
                     } else {
                         if(z>0){
-                            
+                            doc.newPath2D();
                         }
                     }
                 } // rapid move (do Nothing)
                 case 1 -> {
-                    doc.getCurrentPath2D();
+                    if(doc.getRelativity() == true){
+                        //TODO handle relativity(store current point in NGCDocument)
+                    }else{
+                        doc.getCurrentPath2D().lineTo(x, y);
+                        doc.getCurrentPath2D().setZ(z);
+                    }
                 } // linear move
                 case 90 -> doc.setIsRelative(false);// absolute distance mode
                 case 91 -> doc.setIsRelative(true);// incremental distance mode

@@ -2,12 +2,10 @@ package Parser.GCode;
 
 import java.util.ArrayList;
 import java.io.File;
-import java.nio.file.Path;
-import java.awt.geom.Path2D;
 
 public class NGCDocument {
     private File file;
-    private ArrayList<Path2D.Double> geometry;
+    private ArrayList<RelativePath2D> geometry;
     private int SpindleSpeed;
     private double ToolOffset = 0.1575;
     private int implicitGCodeHolder;
@@ -37,15 +35,15 @@ public class NGCDocument {
     public NGCDocument(File file) {
         this.file = file;
         geometry = new ArrayList<>();
-        geometry.add(new Path2D.Double());
+        geometry.add(new RelativePath2D());
     }
 
-    public Path2D.Double getCurrentPath2D() {
+    public RelativePath2D getCurrentPath2D() {
         return geometry.get(geometry.size() - 1);
     }
 
-    public void addPath2D(Path2D.Double path){
-        geometry.add(path);
+    public void newPath2D(){
+        geometry.add(new RelativePath2D());
     }
 
     public void setFile(File file) {
