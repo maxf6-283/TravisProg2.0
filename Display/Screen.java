@@ -23,7 +23,8 @@ import java.awt.event.MouseWheelListener;
 
 import java.io.File;
 
-public class Screen extends JPanel implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener {
+public class Screen extends JPanel
+        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener {
     private JList<File> sheetList;
     private DefaultListModel<File> sheetFileList;
     private File sheetParent;
@@ -34,6 +35,8 @@ public class Screen extends JPanel implements MouseWheelListener, MouseInputList
     private double xCorner = 0;
     private double yCorner = 0;
     private double zoom = 1;
+    private double startX; //for panning
+    private double startY;
 
     public Screen() {
         setLayout(null);
@@ -77,8 +80,8 @@ public class Screen extends JPanel implements MouseWheelListener, MouseInputList
             }
             case SHEET_EDIT -> {
                 Graphics2D g2d = (Graphics2D) g;
-                g2d.translate(xCorner, yCorner);
                 g2d.scale(zoom, zoom);
+                g2d.translate(xCorner, yCorner);
                 selectedSheet.draw(g);
                 g2d.translate(-xCorner, -yCorner);
                 g2d.scale(1 / zoom, 1 / zoom);
@@ -88,44 +91,37 @@ public class Screen extends JPanel implements MouseWheelListener, MouseInputList
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mouseClicked'");
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mousePressed'");
+        if(e.getButton() == MouseEvent.BUTTON2) {
+            System.out.println("A");
+            startX = e.getX();
+            startY = e.getY();
+        }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mouseReleased'");
     }
 
     @Override
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mouseEntered'");
     }
 
     @Override
     public void mouseExited(MouseEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mouseExited'");
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mouseDragged'");
+        e.getX();
+        e.getY();
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mouseMoved'");
     }
 
     @Override
@@ -159,12 +155,33 @@ public class Screen extends JPanel implements MouseWheelListener, MouseInputList
                 selectSheet.setEnabled(true);
             }
         }
+
+
     }
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mouseWheelMoved'");
+        System.out.println("asdfghj");
+        if (state == State.SHEET_EDIT) {
+            
+            //get the actual xy coord selected
+            double xPos = e.getX() / zoom;
+            double yPos = e.getY() / zoom;
+            
+            //translate the corner to the orgin
+            xCorner -= xPos;
+            yCorner -= yPos;
+            
+            //something something sigmoid
+            zoom *= 1 / Math.pow(Math.E, e.getPreciseWheelRotation() / 50);
+
+            //translate the point back
+            xCorner += e.getX() / zoom;
+            yCorner += e.getY() / zoom;
+
+            repaint();
+            System.out.printf("Zoom: %f, X: %f, Y: %f%n", zoom, xCorner, yCorner);
+        }
     }
 
 }

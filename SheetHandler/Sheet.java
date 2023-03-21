@@ -89,7 +89,6 @@ public class Sheet {
      */
     public void draw(Graphics g) {
         g.setColor(Color.ORANGE);
-        System.out.printf("Width: %f, Height: %f%n", width, height);
         g.drawRect((int) 0, 0, (int) Math.abs(width * 10), (int) (height * 10));
         for (Cut cut : cuts) {
             if (cut == activeCut) {

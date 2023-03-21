@@ -7,6 +7,10 @@ public class Runner {
         JFrame frame = new JFrame();
         
         frame.add(screen);
+        frame.addMouseListener(screen);
+        frame.addMouseMotionListener(screen);
+        frame.addMouseWheelListener(screen);
+        
         frame.pack();
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
