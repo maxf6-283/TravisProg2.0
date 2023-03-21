@@ -18,16 +18,17 @@ public class Part {
         sheetX = xLoc;
         sheetY = yLoc;
         rotation = rot;
-        try {
+        /*try {
             ngcDoc = Parser.parse(partFile);
         } catch (FileNotFoundException e) {
-            System.out.println("File : "+partFile.getAbsolutePath()+" Not Found");
+            System.out.println("File : " + partFile.getAbsolutePath() + " Not Found");
             e.printStackTrace();
-        } catch(IOException e){
+        } catch (IOException e) {
             System.out.println("Could not write to System.out!");
             e.printStackTrace();
-        }
+        }*/
     }
+
     public double getX() {
         return sheetX;
     }
@@ -43,7 +44,7 @@ public class Part {
     public void setY(double y) {
         sheetY = y;
     }
-    
+
     public double getRot() {
         return rotation;
     }
@@ -58,5 +59,11 @@ public class Part {
 
     public void draw(Graphics g) {
         // TODO: add part drawing
+        System.out.printf("x: %f y: %f%n", sheetX, sheetY);
+        g.drawOval((int) (sheetX - 1), (int) sheetY - 1, 2, 2);
+    }
+
+    public String toString() {
+        return partFile.getName();
     }
 }

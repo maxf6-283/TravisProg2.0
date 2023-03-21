@@ -1,6 +1,9 @@
 package SheetHandler;
 
 import java.util.ArrayList;
+
+import Parser.Sheet.SheetParser;
+
 import java.awt.Graphics;
 import java.io.File;
 
@@ -14,6 +17,8 @@ public class Cut {
 
         parts = new ArrayList<>();
         holes = new ArrayList<>();
+
+        SheetParser.parseCutFile(cutFile, this);
     }
 
     public File cutFile() {
