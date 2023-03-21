@@ -41,8 +41,13 @@ public class Screen extends JPanel implements MouseWheelListener, MouseInputList
 
         sheetFileList = new DefaultListModel<>();
         sheetParent = new File("./TestSheets");
-        for (File sheetFile : sheetParent.listFiles()) {
-            sheetFileList.addElement(sheetFile);
+        for(int i = 0; i < sheetParent.listFiles().length; i++){
+            sheetFileList.addElement(new File(sheetParent.listFiles()[i].getAbsolutePath()){
+                @Override
+                public String toString(){
+                    return getName();
+                }
+            });
         }
 
         sheetList = new JList<File>(sheetFileList);
