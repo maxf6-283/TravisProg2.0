@@ -59,7 +59,7 @@ public class Part {
 
     public void draw(Graphics g) {
         // TODO: add part drawing
-        g.drawOval((int) (sheetX - 1), (int) sheetY - 1, 2, 2);
+        g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
     }
 
     public String toString() {

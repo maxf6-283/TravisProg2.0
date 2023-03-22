@@ -1,6 +1,7 @@
 package SheetHandler;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.io.File;
 import java.io.IOException;
@@ -110,6 +111,8 @@ public class Sheet {
     public void draw(Graphics g) {
         g.setColor(Color.ORANGE);
         g.drawRect((int) 0, 0, (int) Math.abs(width), (int) (height));
+        Graphics2D g2d = (Graphics2D)g;
+        g2d.translate(-width, height);
         for (Cut cut : cuts) {
             if (cut == activeCut) {
                 g.setColor(Color.GREEN);
@@ -118,6 +121,7 @@ public class Sheet {
             }
             cut.draw(g);
         }
+        g2d.translate(width, -height);
     }
 
     /**
