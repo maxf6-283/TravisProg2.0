@@ -1,6 +1,7 @@
 package Display;
 
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputListener;
@@ -27,6 +28,7 @@ import java.io.File;
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener {
     private JList<File> sheetList;
+    private JScrollPane sheetScroll;
     private DefaultListModel<File> sheetFileList;
     private File sheetsParent;
     private JButton addSheet;
@@ -57,8 +59,9 @@ public class Screen extends JPanel
         }
 
         sheetList = new JList<File>(sheetFileList);
-        sheetList.setBounds(100, 100, 200, 600);
-        add(sheetList);
+        sheetScroll = new JScrollPane(sheetList);
+        sheetScroll.setBounds(100, 100, 200, 600);
+        add(sheetScroll);
         sheetList.addListSelectionListener(this);
 
         addSheet = new JButton("Add new sheet");
@@ -220,6 +223,7 @@ public class Screen extends JPanel
                 selectSheet.setVisible(true);
                 addSheet.setVisible(true);
                 sheetList.setVisible(true);
+                sheetScroll.setVisible(true);
                 newSheetPrompt.setVisible(false);
             }
             case SHEET_EDIT -> {
@@ -227,6 +231,7 @@ public class Screen extends JPanel
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
                 sheetList.setVisible(false);
+                sheetScroll.setVisible(false);
                 zoom = 20;
                 xCorner = getWidth()/2.0+selectedSheet.getWidth()*10.0;
                 yCorner = getHeight()/2.0-selectedSheet.getHeight()*10.0;
@@ -239,6 +244,7 @@ public class Screen extends JPanel
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
                 sheetList.setVisible(false);
+                sheetScroll.setVisible(false);
                 newSheetPrompt.reset();
                 newSheetPrompt.setVisible(true);
             }
