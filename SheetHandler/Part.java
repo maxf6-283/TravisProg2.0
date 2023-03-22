@@ -1,6 +1,8 @@
 package SheetHandler;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -59,7 +61,8 @@ public class Part {
 
     public void draw(Graphics g) {
         // TODO: add part drawing
-        g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
+        //g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
+        ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX+0.5,-sheetY-1,1,2));
     }
 
     public String toString() {
