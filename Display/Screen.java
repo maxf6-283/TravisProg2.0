@@ -60,7 +60,7 @@ public class Screen extends JPanel
 
         sheetList = new JList<File>(sheetFileList);
         sheetScroll = new JScrollPane(sheetList);
-        sheetScroll.setBounds(100, 100, 200, 600);
+        sheetScroll.setBounds(100, 100, 225, 600);
         add(sheetScroll);
         sheetList.addListSelectionListener(this);
 
