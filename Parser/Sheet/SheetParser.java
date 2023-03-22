@@ -78,7 +78,7 @@ public class SheetParser {
                 System.out.println("File name length: " + fileNameLength);
                 String partFileName = "";
                 for (int character = 0; character < fileNameLength; character++) {
-                    partFileName += reader.read();
+                    partFileName += (char)reader.read();
                 }
                 File partFile = new File(partFileName);
                 cut.parts.add(new Part(partFile, partX, partY, partRot));
