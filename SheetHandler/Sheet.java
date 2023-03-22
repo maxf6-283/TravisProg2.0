@@ -52,9 +52,13 @@ public class Sheet {
     public Sheet(File sheetFolder, String sheetName, double width, double height) {
         try {
             File parentFile = new File(sheetFolder, sheetName);
-            parentFile.createNewFile();
+            parentFile.mkdir();
             sheetFile = new File(parentFile, sheetName + ".sheet");
-        } catch (IOException e) {
+            HashMap<String, String> sheetInfo = new HashMap<>();
+            sheetInfo.put("w", ""+width);
+            sheetInfo.put("h", ""+height);
+            SheetParser.saveSheetInfo(sheetFile, sheetInfo);
+        } catch (Exception e) {
             System.err.println("Could not create sheet file\n\n");
         }
 

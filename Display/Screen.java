@@ -15,7 +15,6 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Stroke;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -29,7 +28,7 @@ public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener {
     private JList<File> sheetList;
     private DefaultListModel<File> sheetFileList;
-    private File sheetParent;
+    private File sheetsParent;
     private JButton addSheet;
     private JButton selectSheet;
     private Sheet selectedSheet;
@@ -40,15 +39,16 @@ public class Screen extends JPanel
     private double startX; //for panning
     private double startY;
     private boolean panning = false;
+    private NewSheetPrompt newSheetPrompt;
 
     public Screen() {
         setLayout(null);
         state = State.SHEET_SELECT;
 
         sheetFileList = new DefaultListModel<>();
-        sheetParent = new File("./TestSheets");
-        for(int i = 0; i < sheetParent.listFiles().length; i++){
-            sheetFileList.addElement(new File(sheetParent.listFiles()[i].getAbsolutePath()){
+        sheetsParent = new File("./TestSheets");
+        for(int i = 0; i < sheetsParent.listFiles().length; i++){
+            sheetFileList.addElement(new File(sheetsParent.listFiles()[i].getAbsolutePath()){
                 @Override
                 public String toString(){
                     return getName();
@@ -71,6 +71,10 @@ public class Screen extends JPanel
         add(selectSheet);
         selectSheet.addActionListener(this);
         selectSheet.setEnabled(false);
+
+        newSheetPrompt = new NewSheetPrompt(this);
+        newSheetPrompt.setVisible(false);
+        newSheetPrompt.setAlwaysOnTop(true);
     }
 
     @Override
@@ -94,6 +98,9 @@ public class Screen extends JPanel
                 selectedSheet.draw(g);
                 g2d.translate(-xCorner, -yCorner);
                 g2d.scale(1 / zoom, 1 / zoom);
+            }
+            case SHEET_ADD -> {
+
             }
         }
     }
@@ -143,7 +150,7 @@ public class Screen extends JPanel
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == addSheet) {
-            // TODO: set up creating a new sheet here
+            switchStates(State.SHEET_ADD);
         } else if (e.getSource() == selectSheet) {
             File sheetFile = sheetList.getSelectedValue();
             for (File file : sheetFile.listFiles()) {
@@ -153,15 +160,7 @@ public class Screen extends JPanel
                 }
             }
             selectedSheet = new Sheet(sheetFile);
-            state = State.SHEET_EDIT;
-            selectSheet.setVisible(false);
-            addSheet.setVisible(false);
-            sheetList.setVisible(false);
-            zoom = 20;
-            xCorner = getWidth()/2.0+selectedSheet.getWidth()*10.0;
-            yCorner = getHeight()/2.0-selectedSheet.getHeight()*10.0;
-            xCorner /= zoom;
-            yCorner /= zoom;
+            switchStates(State.SHEET_EDIT);
         }
 
         repaint();
@@ -190,7 +189,7 @@ public class Screen extends JPanel
             yCorner -= yPos;
             
             //something something sigmoid
-            zoom *= 1 / Math.pow(Math.E, e.getPreciseWheelRotation() / 25);
+            zoom *= 1 / Math.pow(Math.E, e.getPreciseWheelRotation() / 10);
 
             //translate the point back
             xCorner += e.getX() / zoom;
@@ -200,4 +199,49 @@ public class Screen extends JPanel
         }
     }
 
+    /**
+     * Create a new sheet based on the given parameters
+     * @param sheetWidth - the width of the sheet (almost always will be negative)
+     * @param sheetY - the height of the sheet
+     * @param sheetName - the name of the sheet
+     */
+    public void enterNewSheetInfo(double sheetWidth, double sheetHeight, String sheetName) {
+        selectedSheet = new Sheet(sheetsParent, sheetName, sheetWidth, sheetHeight);
+    }
+
+    /**
+     * Switch between program states (note: intended for graphical use only; all technical parts are done separately)
+     * @param newState - the state to swtich to
+     */
+    private void switchStates(State newState) {
+        switch (newState) {
+            case SHEET_SELECT -> {
+                state = State.SHEET_SELECT;
+                selectSheet.setVisible(true);
+                addSheet.setVisible(true);
+                sheetList.setVisible(true);
+                newSheetPrompt.setVisible(false);
+            }
+            case SHEET_EDIT -> {
+                state = State.SHEET_EDIT;
+                selectSheet.setVisible(false);
+                addSheet.setVisible(false);
+                sheetList.setVisible(false);
+                zoom = 20;
+                xCorner = getWidth()/2.0+selectedSheet.getWidth()*10.0;
+                yCorner = getHeight()/2.0-selectedSheet.getHeight()*10.0;
+                xCorner /= zoom;
+                yCorner /= zoom;
+                newSheetPrompt.setVisible(false);
+            }
+            case SHEET_ADD -> {
+                state = State.SHEET_ADD;
+                selectSheet.setVisible(false);
+                addSheet.setVisible(false);
+                sheetList.setVisible(false);
+                newSheetPrompt.reset();
+                newSheetPrompt.setVisible(true);
+            }
+        }
+    }
 }
