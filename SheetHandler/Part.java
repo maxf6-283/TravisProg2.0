@@ -62,7 +62,10 @@ public class Part {
     public void draw(Graphics g) {
         // TODO: add part drawing
         //g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
+        Graphics2D g2d = (Graphics2D)g;
+        g2d.rotate(rotation);
         ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX+0.5,-sheetY-1,1,2));
+        g2d.rotate(-rotation);
     }
 
     public String toString() {
