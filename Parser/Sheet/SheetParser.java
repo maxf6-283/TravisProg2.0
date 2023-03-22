@@ -1,5 +1,6 @@
 package Parser.Sheet;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -59,17 +60,22 @@ public class SheetParser {
             reader.read();
             // get number of parts
             int partCount = reader.read();
+            System.out.printf("Parsing %s: %d parts detected.%n", cutFile.getName(), partCount);
             // x, y, rot are in sets of 64 bits
             byte[] nextNumber = new byte[8];
             for (int part = 0; part < partCount; part++) {
-                reader.readNBytes(nextNumber, 0, 8);
+                System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
                 double partX = toDouble(nextNumber);
-                reader.readNBytes(nextNumber, 0, 8);
+                System.out.printf("Part %d's x is %f%n", part, partX);
+                System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
                 double partY = toDouble(nextNumber);
-                reader.readNBytes(nextNumber, 0, 8);
+                System.out.printf("Part %d's y is %f%n", part, partY);
+                System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
                 double partRot = toDouble(nextNumber);
+                System.out.printf("Part %d's r is %f%n", part, partRot);
                 //its in little endian and I hate it
-                int fileNameLength = reader.read() | reader.read() << 8;
+                int fileNameLength = reader.read() << 8 | reader.read();
+                System.out.println("File name length: " + fileNameLength);
                 String partFileName = "";
                 for (int character = 0; character < fileNameLength; character++) {
                     partFileName += reader.read();
