@@ -7,6 +7,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputListener;
 
 import SheetHandler.Sheet;
+import SheetHandler.SheetThickness;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -212,8 +213,8 @@ public class Screen extends JPanel
      * @param sheetY - the height of the sheet
      * @param sheetName - the name of the sheet
      */
-    public void enterNewSheetInfo(double sheetWidth, double sheetHeight, String sheetName) {
-        selectedSheet = new Sheet(sheetsParent, sheetName, sheetWidth, sheetHeight);
+    public void enterNewSheetInfo(double sheetWidth, double sheetHeight, String sheetName, SheetThickness thickness) {
+        selectedSheet = new Sheet(sheetsParent, sheetName, sheetWidth, sheetHeight, thickness);
         switchStates(State.SHEET_SELECT);
     }
 
