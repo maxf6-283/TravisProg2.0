@@ -8,10 +8,14 @@ import SheetHandler.SheetThickness;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 public class NewSheetPrompt extends JFrame implements ActionListener{
     private JButton enterSheetInfo;
@@ -67,7 +71,13 @@ public class NewSheetPrompt extends JFrame implements ActionListener{
         thicknessSelect.setBounds(50, 100, 125, 25);
         add(thicknessSelect);
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                parent.enterNewSheetInfo(-1, -1, null);
+            }
+        });
     }
 
     @Override
