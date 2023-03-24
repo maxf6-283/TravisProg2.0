@@ -3,6 +3,7 @@ package SheetHandler;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,6 +17,9 @@ public class Part {
     private File partFile;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
+        if(partFile == null){
+            //throw new NullPointerException("Part File cannot be null!");
+        }
         this.partFile = partFile;
         sheetX = xLoc;
         sheetY = yLoc;
@@ -70,5 +74,9 @@ public class Part {
 
     public String toString() {
         return partFile.getName();
+    }
+
+    public NGCDocument getNgcDocument(){
+        return ngcDoc;
     }
 }

@@ -85,12 +85,14 @@ public class GCodeParser {
                     } else {
                         if(z>0){
                             doc.newPath2D();
+                            doc.getCurrentPath2D().setZ(z);
                         }
                     }
                 } // rapid move (do Nothing)
                 case 1 -> {
                     if(doc.getRelativity() == true){
-                        //TODO handle relativity(store current point in NGCDocument)
+                        doc.getCurrentPath2D().lineToRelative(x, y);
+                        doc.getCurrentPath2D().setZRelative(z);
                     }else{
                         doc.getCurrentPath2D().lineTo(x, y);
                         doc.getCurrentPath2D().setZ(z);

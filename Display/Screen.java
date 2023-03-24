@@ -115,9 +115,13 @@ public class Screen extends JPanel
     @Override
     public void mousePressed(MouseEvent e) {
         if(e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            startX = xCorner - e.getX() / zoom;
-            startY = yCorner - e.getY() / zoom;
-            panning = true;
+            if(selectedSheet.contains(e.getPoint()) != null){
+                System.out.println("Tourching part!");
+            }else{
+                startX = xCorner - e.getX() / zoom;
+                startY = yCorner - e.getY() / zoom;
+                panning = true;
+            }
         }
         repaint();
     }

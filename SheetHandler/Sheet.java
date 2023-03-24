@@ -2,6 +2,7 @@ package SheetHandler;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.io.File;
 import java.io.IOException;
@@ -94,7 +95,7 @@ public class Sheet {
      * Adds a hole to the active cut
      */
     public void addHole(Hole hole) {
-        activeCut.holes.add(hole);
+        activeCut.parts.add(hole);
     }
 
     /**
@@ -141,5 +142,14 @@ public class Sheet {
         for (Cut cut : cuts) {
             SheetParser.saveCutInfo(cut);
         }
+    }
+
+    public Part contains(Point2D point){
+        for(Part part:activeCut){
+            /*if(part.contains(point)){//TODO finish and fix
+                return part;
+            }*/
+        }
+        return null;
     }
 }

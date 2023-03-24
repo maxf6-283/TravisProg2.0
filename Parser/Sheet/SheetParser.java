@@ -93,7 +93,7 @@ public class SheetParser {
                 double holeX = toDouble(nextNumber);
                 reader.readNBytes(nextNumber, 0, 8);
                 double holeY = toDouble(nextNumber);
-                cut.holes.add(new Hole(holeX, holeY));
+                cut.parts.add(new Hole(holeX, holeY));
                 reader.readNBytes(9);
             }
             reader.close();
@@ -132,6 +132,10 @@ public class SheetParser {
                 writer.write(toByteArray(part.getX()));
                 writer.write(toByteArray(part.getY()));
                 writer.write(toByteArray(part.getRot()));
+                if(part instanceof Hole){
+                    writer.write(1);//for holes
+                    continue;
+                }
 
                 String filePath = part.partFile().getPath();
                 writer.write(filePath.length()%256);
@@ -140,14 +144,6 @@ public class SheetParser {
                 for(int i = 0; i < filePath.length(); i++) {
                     writer.write(filePath.charAt(i));
                 }
-            }
-
-            //write the holes
-            for(Hole hole : cut.holes) {
-                writer.write(toByteArray(hole.x));
-                writer.write(toByteArray(hole.y));
-                writer.write(toByteArray(0));
-                writer.write(1);
             }
 
             writer.close();

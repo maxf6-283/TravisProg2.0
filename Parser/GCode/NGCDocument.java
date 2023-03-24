@@ -1,11 +1,14 @@
 package Parser.GCode;
 
 import java.util.ArrayList;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
 import java.io.File;
 
 public class NGCDocument {
     private File file;
     private ArrayList<RelativePath2D> geometry;
+    private Point3D currentPoint;
     private int SpindleSpeed;
     private double ToolOffset = 0.1575;
     private int implicitGCodeHolder;
@@ -14,6 +17,15 @@ public class NGCDocument {
 
     public NGCDocument() {
         this(null);
+    }
+
+    public boolean contains(Point2D point){
+        for(RelativePath2D path:geometry){
+            if(path.contains(point)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setIsRelative(boolean isRelative){
