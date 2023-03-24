@@ -19,6 +19,7 @@ public class Parser {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        doc.getCurrentPath2D();
         System.out.println();
         System.out.println((System.nanoTime() + time) / 1000.0 / 1000.0 / 1000.0);
     }

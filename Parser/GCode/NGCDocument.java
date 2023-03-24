@@ -11,12 +11,28 @@ public class NGCDocument {
     private Point3D currentPoint;
     private int SpindleSpeed;
     private double ToolOffset = 0.1575;
-    private int implicitGCodeHolder;
+    private double implicitGCodeHolder;
     private boolean isRelativeArc;
     private boolean isRelative;
 
     public NGCDocument() {
         this(null);
+    }
+
+    public void setCurrentPoint(Point3D point){
+        currentPoint = point;
+    }
+
+    public Point3D getCurrentPointr(){
+        return currentPoint;
+    }
+
+    public void setGCodeHolder(double GCode){
+        implicitGCodeHolder = GCode;
+    }
+
+    public double getGCodeHolder(){
+        return implicitGCodeHolder;
     }
 
     public boolean contains(Point2D point){

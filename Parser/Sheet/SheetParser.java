@@ -80,7 +80,7 @@ public class SheetParser {
                     System.out.println("Adding a hole");
                     part-=1;
                 }else{
-                    //is a part
+                    //is a part(reader.read()==0)
                     int fileNameLength = reader.read();
                     if(fileNameLength == -1){
                         break;//end of file
@@ -95,7 +95,8 @@ public class SheetParser {
                 }
             }
 
-            /*
+            /* @Deprecated
+            outdated info
             // hole time
             // holes follow the pattern "double x, double y, empty double, byte with a 1 in
             // it"
