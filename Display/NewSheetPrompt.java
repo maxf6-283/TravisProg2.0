@@ -73,7 +73,7 @@ public class NewSheetPrompt extends JFrame implements ActionListener {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                parent.enterNewSheetInfo(-1, -1, null);
+                parent.returnToNormal();
             }
         });
     }
