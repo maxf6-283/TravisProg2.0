@@ -15,7 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class NewSheetPrompt extends JFrame implements ActionListener{
+public class NewSheetPrompt extends JFrame implements ActionListener {
     private JButton enterSheetInfo;
     private JTextField sheetWidthField;
     private JTextField sheetHeightField;
@@ -39,11 +39,11 @@ public class NewSheetPrompt extends JFrame implements ActionListener{
         widthLabel = new JLabel("Width:");
         widthLabel.setBounds(25, 10, 100, 25);
         add(widthLabel);
-        
+
         sheetWidthField = new JTextField();
         sheetWidthField.setBounds(25, 50, 100, 25);
         add(sheetWidthField);
-        
+
         heightLabel = new JLabel("Height:");
         heightLabel.setBounds(150, 10, 100, 25);
         add(heightLabel);
@@ -85,13 +85,17 @@ public class NewSheetPrompt extends JFrame implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource() == enterSheetInfo) {
+        if (e.getSource() == enterSheetInfo) {
             try {
-                double sheetWidth = - Double.parseDouble(sheetWidthField.getText());
-                double sheetHeight = - Double.parseDouble(sheetWidthField.getText());
+                double sheetWidth = -Double.parseDouble(sheetWidthField.getText());
+                double sheetHeight = -Double.parseDouble(sheetWidthField.getText());
                 String sheetName = sheetNameField.getText();
-                parent.enterNewSheetInfo(sheetWidth, sheetHeight, sheetName);
-            } catch(NumberFormatException err) {
+                if (sheetWidth < 0 || sheetHeight < 0) {
+                    throw new NumberFormatException();
+                } else {
+                    parent.enterNewSheetInfo(sheetWidth, sheetHeight, sheetName);
+                }
+            } catch (NumberFormatException err) {
                 errMsg.setVisible(true);
             }
         }
@@ -102,7 +106,8 @@ public class NewSheetPrompt extends JFrame implements ActionListener{
         sheetWidthField.setText("");
         sheetHeightField.setText("");
         sheetNameField.setText("");
-        setBounds(parent.getParent().getX() + parent.getParent().getWidth()/2 - 425/2, parent.getParent().getY() + parent.getParent().getHeight()/2 - 200/2, 425, 200);
+        setBounds(parent.getParent().getX() + parent.getParent().getWidth() / 2 - 425 / 2,
+                parent.getParent().getY() + parent.getParent().getHeight() / 2 - 200 / 2, 425, 200);
         pack();
     }
 }
