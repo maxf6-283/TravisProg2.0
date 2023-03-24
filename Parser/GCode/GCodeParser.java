@@ -117,3 +117,15 @@ public class GCodeParser {
 
     }
 }
+
+class UnknownGCodeError extends Error{
+    public UnknownGCodeError(String errorMessage){
+        super(errorMessage);
+    }
+}
+
+class IllegalGCodeError extends Error{
+    public IllegalGCodeError(String errorMessage){
+        super(errorMessage);
+    }
+}
