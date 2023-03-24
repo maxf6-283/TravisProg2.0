@@ -2,7 +2,11 @@ package Display;
 
 import javax.swing.JFrame;
 import javax.swing.JTextField;
+
+import SheetHandler.SheetThickness;
+
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 
 import java.awt.Dimension;
@@ -18,6 +22,7 @@ public class NewSheetPrompt extends JFrame implements ActionListener{
     private JLabel widthLabel;
     private JLabel heightLabel;
     private JLabel nameLabel;
+    private JComboBox<SheetThickness> thicknessSelect;
     private Screen parent;
 
     public NewSheetPrompt(Screen parentScreen) {
@@ -25,7 +30,7 @@ public class NewSheetPrompt extends JFrame implements ActionListener{
         parent = parentScreen;
 
         enterSheetInfo = new JButton("Create sheet");
-        enterSheetInfo.setBounds(100, 100, 200, 25);
+        enterSheetInfo.setBounds(225, 100, 125, 25);
         add(enterSheetInfo);
         enterSheetInfo.addActionListener(this);
 
@@ -57,6 +62,10 @@ public class NewSheetPrompt extends JFrame implements ActionListener{
         errMsg.setBounds(150, 0, 200, 10);
         add(errMsg);
         errMsg.setVisible(false);
+
+        thicknessSelect = new JComboBox<>(SheetThickness.values());
+        thicknessSelect.setBounds(50, 100, 125, 25);
+        add(thicknessSelect);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
