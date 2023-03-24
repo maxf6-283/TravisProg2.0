@@ -14,9 +14,24 @@ public class NGCDocument {
     private double implicitGCodeHolder;
     private boolean isRelativeArc;
     private boolean isRelative;
+    private int currentAxisPlane = 0;
 
     public NGCDocument() {
         this(null);
+    }
+
+    public int getCurrentAxisPlane(){
+        if(currentAxisPlane <17 || currentAxisPlane >19){
+            throw new IllegalGCodeError("Axis Plane "+currentAxisPlane+" is not supported or needs to be called before an arc");
+        }
+        return currentAxisPlane;
+    }
+
+    public void setCurrentAxisPlane(int GCode){
+        if(currentAxisPlane <17 || currentAxisPlane >19){
+            throw new IllegalGCodeError("Axis Plane "+currentAxisPlane+" is not supported or needs to be called before an arc");
+        }
+        currentAxisPlane = GCode;
     }
 
     public void setCurrentPoint(Point3D point){

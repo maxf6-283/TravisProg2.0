@@ -98,10 +98,23 @@ public class GCodeParser {
                         doc.getCurrentPath2D().setZ(z);
                     }
                 } // linear move
+                case 2 -> {
+                    if(doc.getCurrentAxisPlane() == 17){//XY-plane
+
+                    }
+                }
+                case 3 -> {
+                    if(doc.getCurrentAxisPlane() == 17){
+                        
+                    }
+                }
+                case 17,18,19 -> {
+                    doc.setCurrentAxisPlane(code);//sets axis planes
+                }
                 case 90 -> doc.setIsRelative(false);// absolute distance mode
                 case 91 -> doc.setIsRelative(true);// incremental distance mode
                 default -> {
-                    throw new UnknownGCodeError("GCode : " + tempCode + " not parsable @ line: " + lineNum);
+                    throw new UnknownGCodeError("GCode : " + tempCode + " not parsable/not supported @ line: " + lineNum);
                 }
             }
         }
