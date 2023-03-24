@@ -213,9 +213,11 @@ public class Screen extends JPanel
      * @param sheetName - the name of the sheet
      */
     public void enterNewSheetInfo(double sheetWidth, double sheetHeight, String sheetName) {
-        if(sheetWidth != -1 && sheetHeight != -1 && sheetName != null){
-            selectedSheet = new Sheet(sheetsParent, sheetName, sheetWidth, sheetHeight);
-        }
+        selectedSheet = new Sheet(sheetsParent, sheetName, sheetWidth, sheetHeight);
+        switchStates(State.SHEET_SELECT);
+    }
+
+    public void returnToNormal(){
         switchStates(State.SHEET_SELECT);
     }
 
