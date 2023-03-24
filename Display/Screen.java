@@ -214,6 +214,7 @@ public class Screen extends JPanel
      */
     public void enterNewSheetInfo(double sheetWidth, double sheetHeight, String sheetName) {
         selectedSheet = new Sheet(sheetsParent, sheetName, sheetWidth, sheetHeight);
+        switchStates(State.SHEET_EDIT);
     }
 
     /**
