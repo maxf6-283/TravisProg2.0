@@ -56,7 +56,7 @@ public class SheetParser {
     public static void parseCutFile(File cutFile, Cut cut) {
         try {
             FileInputStream reader = new FileInputStream(cutFile);
-            // get something or other to do with holes
+            // get something or other to do with something
             reader.read();
             // get number of parts
             int partCount = reader.read();
