@@ -116,7 +116,7 @@ public class Screen extends JPanel
     public void mousePressed(MouseEvent e) {
         if(e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
             if(selectedSheet.contains(e.getPoint()) != null){
-                System.out.println("Tourching part!");
+                System.out.println("Touching part!");
             }else{
                 startX = xCorner - e.getX() / zoom;
                 startY = yCorner - e.getY() / zoom;
