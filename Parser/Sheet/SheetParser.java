@@ -74,16 +74,28 @@ public class SheetParser {
                 double partRot = toDouble(nextNumber);
                 System.out.printf("Part %d's r is %f%n", part, partRot);
                 //its in little endian and I hate it
-                int fileNameLength = reader.read() << 8 | reader.read();
-                System.out.println("File name length: " + fileNameLength);
-                String partFileName = "";
-                for (int character = 0; character < fileNameLength; character++) {
-                    partFileName += (char)reader.read();
+                if(reader.read()==1){
+                    //is a hole
+                    cut.parts.add(new Hole(partX, partY,partRot));
+                    System.out.println("Adding a hole");
+                    part-=1;
+                }else{
+                    //is a part
+                    int fileNameLength = reader.read();
+                    if(fileNameLength == -1){
+                        break;//end of file
+                    }
+                    System.out.println("File name length: " + fileNameLength);
+                    String partFileName = "";
+                    for (int character = 0; character < fileNameLength; character++) {
+                        partFileName += (char)reader.read();
+                    }
+                    File partFile = new File(partFileName);
+                    cut.parts.add(new Part(partFile, partX, partY, partRot));
                 }
-                File partFile = new File(partFileName);
-                cut.parts.add(new Part(partFile, partX, partY, partRot));
             }
 
+            /*
             // hole time
             // holes follow the pattern "double x, double y, empty double, byte with a 1 in
             // it"
@@ -95,7 +107,7 @@ public class SheetParser {
                 double holeY = toDouble(nextNumber);
                 cut.parts.add(new Hole(holeX, holeY));
                 reader.readNBytes(9);
-            }
+            }*/
             reader.close();
 
         } catch (Exception e) {
