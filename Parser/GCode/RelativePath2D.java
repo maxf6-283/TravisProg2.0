@@ -60,7 +60,7 @@ public class RelativePath2D extends Path2D.Double {
 
         double radius = Math.sqrt((ax - x1) * (ax - x1) + (ay - y1) * (ay - y1));
         double angle = startingAngle;
-        while(angle < endingAngle) {
+        while(angle * direction < endingAngle * direction) {
             angle += Math.PI/10 * direction;
             if(angle < endingAngle)
                 lineTo(x1 + radius * Math.cos(angle) , ay + radius * Math.sin(angle));
