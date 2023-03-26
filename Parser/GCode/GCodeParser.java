@@ -8,10 +8,17 @@ public class GCodeParser {
         double x, y, z, i, j, k;
         x = y = z = i = j = k = 0;
         int indexOfG = gcodeLine.indexOf('G') + 1;
-        while (!(indexOfG >= gcodeLine.length() || !(gcodeLine.charAt(indexOfG) != ' '))) {
-            tempCode += gcodeLine.charAt(indexOfG);
-            indexOfG++;
+        if (indexOfG != 0) {
+            while (!(indexOfG >= gcodeLine.length() || !(gcodeLine.charAt(indexOfG) != ' '))) {
+                tempCode += gcodeLine.charAt(indexOfG);
+                indexOfG++;
+            }
+        } else {
+            //there was no G, use the last code
+            System.out.println("asdf");
         }
+        System.out.printf("Parsing line %d: %s%n", lineNum, gcodeLine);
+        System.out.printf("Code: %s%n", tempCode);
         if (gcodeLine.contains("X")) {
             String tempAxis = "";
             int index = gcodeLine.indexOf("X") + 1;
@@ -20,6 +27,8 @@ public class GCodeParser {
                 index++;
             }
             x = Double.parseDouble(tempAxis);
+        } else if (doc.getCurrentPointr() != null) {
+            x = doc.getCurrentPointr().x;
         }
         if (gcodeLine.contains("Y")) {
             String tempAxis = "";
@@ -30,6 +39,8 @@ public class GCodeParser {
             }
             y = Double.parseDouble(tempAxis);
             y = -y;
+        } else if (doc.getCurrentPointr() != null) {
+            y = doc.getCurrentPointr().y;
         }
         if (gcodeLine.contains("Z")) {
             String tempAxis = "";
@@ -39,6 +50,8 @@ public class GCodeParser {
                 index++;
             }
             z = Double.parseDouble(tempAxis);
+        } else if (doc.getCurrentPointr() != null) {
+            z = doc.getCurrentPointr().getZ();
         }
         if (gcodeLine.contains("I")) {
             String tempAxis = "";
@@ -48,6 +61,8 @@ public class GCodeParser {
                 index++;
             }
             i = Double.parseDouble(tempAxis);
+        } else {
+            // TODO: add listening for the mode where it uses the most recent i and j
         }
         if (gcodeLine.contains("J")) {
             String tempAxis = "";
@@ -74,7 +89,7 @@ public class GCodeParser {
             } else if (codeDouble == 90.1) {
                 doc.setIsRelativeArc(false);// absolute arc distance mode
                 throw new IllegalGCodeError("Absolute Arc Distance Mode is not currently supported");
-                //TODO make this supported
+                // TODO make this supported
             } else {
                 throw new UnknownGCodeError("GCode : " + tempCode + " not parsable @ line: " + lineNum);
             }
@@ -84,9 +99,9 @@ public class GCodeParser {
                 case 0 -> {
                     // TODO Detect if Rapid extends out of part or not to detect new path
                     if (doc.getRelativity() == true) {
-                        //TODO set Z-related relativity stuff
+                        // TODO set Z-related relativity stuff
                     } else {
-                        if(z>0){
+                        if (z > 0) {
                             doc.newPath2D();
                             doc.getCurrentPath2D().setZ(z);
                             doc.getCurrentPath2D().moveTo(x, y);
@@ -94,63 +109,65 @@ public class GCodeParser {
                     }
                 } // rapid move (do Nothing)
                 case 1 -> {
-                    if(doc.getRelativity() == true){
+                    if (doc.getRelativity() == true) {
                         doc.getCurrentPath2D().lineToRelative(x, y);
                         doc.getCurrentPath2D().setZRelative(z);
                         System.out.println("relative");
-                    }else{
+                    } else {
                         doc.getCurrentPath2D().lineTo(x, y);
                         doc.getCurrentPath2D().setZ(z);
                     }
                 } // linear move
                 case 2 -> {
-                    if(doc.getCurrentAxisPlane() == 17){//XY-plane
+                    if (doc.getCurrentAxisPlane() == 17) {// XY-plane
                         doc.getCurrentPath2D().arcToRelative(i, j, x, y, -1);
                     }
                 }
                 case 3 -> {
-                    if(doc.getCurrentAxisPlane() == 17){
+                    if (doc.getCurrentAxisPlane() == 17) {
                         doc.getCurrentPath2D().arcToRelative(i, j, x, y, 1);
                     }
                 }
                 case 4 -> {
-                    //dwell aka do nothing
+                    // dwell aka do nothing
                 }
                 case 10 -> {
-                    //WCS Offset Select
+                    // WCS Offset Select
                 }
-                case 17,18,19 -> {
-                    doc.setCurrentAxisPlane(code);//sets axis planes
+                case 17, 18, 19 -> {
+                    doc.setCurrentAxisPlane(code);// sets axis planes
                 }
                 case 20 -> {
-                    //do Nothing(inches mode)
+                    // do Nothing(inches mode)
                 }
-                case 21 ->{
-                    //TODO automatically fix
-                    throw new IllegalGCodeError("Metric Units not allowed in the world of imperial allens and wrenches");
+                case 21 -> {
+                    // TODO automatically fix
+                    throw new IllegalGCodeError(
+                            "Metric Units not allowed in the world of imperial allens and wrenches");
                 }
                 case 43 -> {
-                    //calls which tool offset is used(TODO fix complexities)
+                    // calls which tool offset is used(TODO fix complexities)
                 }
                 case 53 -> {
-                    //Move In Machine Coordinates
-                    if(z != 0){
-                        throw new IllegalGCodeError(gcodeLine +" needs to be z0");
+                    // Move In Machine Coordinates
+                    if (z != 0) {
+                        throw new IllegalGCodeError(gcodeLine + " needs to be z0");
                     }
                 }
-                case 54,55,56,57,58,59 ->{
-                    //WCS Offset(Do nothing for NOW TODO fix this)
+                case 54, 55, 56, 57, 58, 59 -> {
+                    // WCS Offset(Do nothing for NOW TODO fix this)
                 }
                 case 64 -> {
-                    //do Nothing(Path Blending??!!??)
+                    // do Nothing(Path Blending??!!??)
                 }
                 case 90 -> doc.setIsRelative(false);// absolute distance mode
                 case 91 -> doc.setIsRelative(true);// incremental distance mode
                 case 94 -> {
-                    //do Nothing(Feed rate change)
+                    // do Nothing(Feed rate change)
                 }
                 default -> {
-                    throw new UnknownGCodeError("GCode : " + tempCode + " not parsable/not supported @ line: " + (lineNum-1));
+                    throw new UnknownGCodeError(
+                            "GCode : " + tempCode + " not parsable/not supported @ line: " + (lineNum - 1));
                 }
             }
         }
@@ -164,9 +181,9 @@ public class GCodeParser {
     }
 
     public static void parseImplicit(String gcodeLine, int lineNum, NGCDocument doc) {
-        if(doc.getGCodeHolder()-Math.floor(doc.getGCodeHolder()) != 0.0){
-            parse("G"+doc.getGCodeHolder()+" "+gcodeLine, lineNum, doc);
+        if (doc.getGCodeHolder() - Math.floor(doc.getGCodeHolder()) != 0.0) {
+            parse("G" + doc.getGCodeHolder() + " " + gcodeLine, lineNum, doc);
         }
-        parse("G"+(int)(doc.getGCodeHolder())+" "+gcodeLine, lineNum, doc);
+        parse("G" + (int) (doc.getGCodeHolder()) + " " + gcodeLine, lineNum, doc);
     }
 }
