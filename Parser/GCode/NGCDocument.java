@@ -10,7 +10,7 @@ public class NGCDocument {
     private ArrayList<RelativePath2D> geometry;
     private Point3D currentPoint;
     private int SpindleSpeed;
-    private double ToolOffset = 0.1575;
+    private double ToolOffset = 0.1575;// TODO finsih thishoibqwob4eiurboewqb
     private double implicitGCodeHolder;
     private boolean isRelativeArc;
     private boolean isRelative;
@@ -20,58 +20,60 @@ public class NGCDocument {
         this(null);
     }
 
-    public int getCurrentAxisPlane(){
-        if(currentAxisPlane <17 || currentAxisPlane >19){
-            throw new IllegalGCodeError("Axis Plane "+currentAxisPlane+" is not supported or needs to be called before an arc");
+    public int getCurrentAxisPlane() {
+        if (currentAxisPlane < 17 || currentAxisPlane > 19) {
+            throw new IllegalGCodeError(
+                    "Axis Plane " + currentAxisPlane + " is not supported or needs to be called before an arc");
         }
         return currentAxisPlane;
     }
 
-    public void setCurrentAxisPlane(int GCode){
-        if(GCode <17 || GCode >19){
-            throw new IllegalGCodeError("Axis Plane "+GCode+" is not supported or needs to be called before an arc");
+    public void setCurrentAxisPlane(int GCode) {
+        if (GCode < 17 || GCode > 19) {
+            throw new IllegalGCodeError(
+                    "Axis Plane " + GCode + " is not supported or needs to be called before an arc");
         }
         currentAxisPlane = GCode;
     }
 
-    public void setCurrentPoint(Point3D point){
+    public void setCurrentPoint(Point3D point) {
         currentPoint = point;
     }
 
-    public Point3D getCurrentPointr(){
+    public Point3D getCurrentPointr() {
         return currentPoint;
     }
 
-    public void setGCodeHolder(double GCode){
+    public void setGCodeHolder(double GCode) {
         implicitGCodeHolder = GCode;
     }
 
-    public double getGCodeHolder(){
+    public double getGCodeHolder() {
         return implicitGCodeHolder;
     }
 
-    public boolean contains(Point2D point){
-        for(RelativePath2D path:geometry){
-            if(path.contains(point)){
+    public boolean contains(Point2D point) {
+        for (RelativePath2D path : geometry) {
+            if (path.contains(point)) {
                 return true;
             }
         }
         return false;
     }
 
-    public void setIsRelative(boolean isRelative){
+    public void setIsRelative(boolean isRelative) {
         this.isRelative = isRelative;
     }
 
-    public boolean getRelativity(){
+    public boolean getRelativity() {
         return isRelative;
     }
 
-    public void setIsRelativeArc(boolean isRelativeArc){
+    public void setIsRelativeArc(boolean isRelativeArc) {
         this.isRelativeArc = isRelativeArc;
     }
 
-    public boolean getRelativityArc(){
+    public boolean getRelativityArc() {
         return isRelativeArc;
     }
 
@@ -81,7 +83,7 @@ public class NGCDocument {
         geometry.add(new RelativePath2D());
     }
 
-    public ArrayList<RelativePath2D> getRelativePath2Ds(){
+    public ArrayList<RelativePath2D> getRelativePath2Ds() {
         return geometry;
     }
 
@@ -89,7 +91,7 @@ public class NGCDocument {
         return geometry.get(geometry.size() - 1);
     }
 
-    public void newPath2D(){
+    public void newPath2D() {
         geometry.add(new RelativePath2D());
     }
 

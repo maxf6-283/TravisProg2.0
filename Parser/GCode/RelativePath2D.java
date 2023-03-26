@@ -11,6 +11,9 @@ import java.awt.geom.Point2D;
  */
 public class RelativePath2D extends Path2D.Double {
     public Point3D getCurrentPoint3D() {
+        if(getCurrentPoint() == null){
+            return null;
+        }
         return new Point3D(getCurrentPoint().getX(), getCurrentPoint().getY(), z);
     }
 
@@ -62,8 +65,8 @@ public class RelativePath2D extends Path2D.Double {
         double angle = startingAngle;
         while(angle * direction < endingAngle * direction) {
             angle += Math.PI/10 * direction;
-            if(angle < endingAngle){}
-                //lineTo(x1 + radius * Math.cos(angle) , ay + radius * Math.sin(angle));
+            if(angle * direction < endingAngle * direction)
+                lineTo(x1 + radius * Math.cos(angle) , ay + radius * Math.sin(angle));
         }
         lineTo(x2, y2);
     }

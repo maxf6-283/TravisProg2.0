@@ -29,6 +29,7 @@ public class GCodeParser {
                 index++;
             }
             y = Double.parseDouble(tempAxis);
+            y = -y;
         }
         if (gcodeLine.contains("Z")) {
             String tempAxis = "";
