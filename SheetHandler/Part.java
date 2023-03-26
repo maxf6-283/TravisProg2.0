@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
+import Parser.GCode.RelativePath2D;
 
 public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
@@ -19,20 +20,33 @@ public class Part {
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if(partFile == null){
             //throw new NullPointerException("Part File cannot be null!");
+        } else {
+            this.partFile = partFile;
+            try {
+                File[] files = partFile.listFiles();
+                File parent = partFile;
+                partFile = null;
+                for(File file:files){
+                    if(file.getName().lastIndexOf(".")!=-1 && file.getName().substring(file.getName().lastIndexOf(".")+1, file.getName().length()).equals("ngc")){
+                        partFile = file;
+                        break;
+                    }
+                }
+                if(partFile == null){
+                    throw new FileNotFoundException("Not NGC File found in: "+parent.getPath());
+                }
+                ngcDoc = Parser.parse(partFile);
+            } catch (FileNotFoundException e) {
+                System.out.println("File : " + partFile.getAbsolutePath() + " Not Found");
+                e.printStackTrace();
+            } catch (IOException e) {
+                System.out.println("Could not write to System.out!");
+                e.printStackTrace();
+            }
         }
-        this.partFile = partFile;
         sheetX = xLoc;
         sheetY = yLoc;
         rotation = rot;
-        /*try {
-            ngcDoc = Parser.parse(partFile);
-        } catch (FileNotFoundException e) {
-            System.out.println("File : " + partFile.getAbsolutePath() + " Not Found");
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.out.println("Could not write to System.out!");
-            e.printStackTrace();
-        }*/
     }
 
     public double getX() {
@@ -68,7 +82,10 @@ public class Part {
         //g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
         Graphics2D g2d = (Graphics2D)g;
         g2d.rotate(rotation);
-        ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
+        //((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
+        for(RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
+            g2d.draw(path);
+        }
         g2d.rotate(-rotation);
     }
 

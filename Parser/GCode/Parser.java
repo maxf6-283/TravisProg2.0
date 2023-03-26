@@ -33,6 +33,7 @@ public class Parser {
     public static NGCDocument parse(File fileInput) throws IOException, FileNotFoundException {
         int lineNum = 1;
         Scanner input;
+        fileInput = new File(fileInput.getPath());
         input = new Scanner(fileInput);
         NGCDocument doc = new NGCDocument(fileInput);
         while (input.hasNextLine()) {

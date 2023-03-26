@@ -28,8 +28,8 @@ public class NGCDocument {
     }
 
     public void setCurrentAxisPlane(int GCode){
-        if(currentAxisPlane <17 || currentAxisPlane >19){
-            throw new IllegalGCodeError("Axis Plane "+currentAxisPlane+" is not supported or needs to be called before an arc");
+        if(GCode <17 || GCode >19){
+            throw new IllegalGCodeError("Axis Plane "+GCode+" is not supported or needs to be called before an arc");
         }
         currentAxisPlane = GCode;
     }
@@ -79,6 +79,10 @@ public class NGCDocument {
         this.file = file;
         geometry = new ArrayList<>();
         geometry.add(new RelativePath2D());
+    }
+
+    public ArrayList<RelativePath2D> getRelativePath2Ds(){
+        return geometry;
     }
 
     public RelativePath2D getCurrentPath2D() {

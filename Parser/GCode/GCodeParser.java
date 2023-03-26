@@ -16,7 +16,7 @@ public class GCodeParser {
             String tempAxis = "";
             int index = gcodeLine.indexOf("X") + 1;
             while (!(index >= gcodeLine.length() || !(gcodeLine.charAt(index) != ' '))) {
-                tempAxis += gcodeLine.charAt(indexOfG);
+                tempAxis += gcodeLine.charAt(index);
                 index++;
             }
             x = Double.parseDouble(tempAxis);
@@ -25,7 +25,7 @@ public class GCodeParser {
             String tempAxis = "";
             int index = gcodeLine.indexOf("Y") + 1;
             while (!(index >= gcodeLine.length() || !(gcodeLine.charAt(index) != ' '))) {
-                tempAxis += gcodeLine.charAt(indexOfG);
+                tempAxis += gcodeLine.charAt(index);
                 index++;
             }
             y = Double.parseDouble(tempAxis);
@@ -33,8 +33,8 @@ public class GCodeParser {
         if (gcodeLine.contains("Z")) {
             String tempAxis = "";
             int index = gcodeLine.indexOf("Z") + 1;
-            while (!(index >= gcodeLine.length() || !(gcodeLine.charAt(index) != ' '))) {
-                tempAxis += gcodeLine.charAt(indexOfG);
+            while (!(index >= gcodeLine.length() || (gcodeLine.charAt(index) == ' '))) {
+                tempAxis += gcodeLine.charAt(index);
                 index++;
             }
             z = Double.parseDouble(tempAxis);
@@ -43,7 +43,7 @@ public class GCodeParser {
             String tempAxis = "";
             int index = gcodeLine.indexOf("I") + 1;
             while (!(index >= gcodeLine.length() || !(gcodeLine.charAt(index) != ' '))) {
-                tempAxis += gcodeLine.charAt(indexOfG);
+                tempAxis += gcodeLine.charAt(index);
                 index++;
             }
             i = Double.parseDouble(tempAxis);
@@ -52,7 +52,7 @@ public class GCodeParser {
             String tempAxis = "";
             int index = gcodeLine.indexOf("J") + 1;
             while (!(index >= gcodeLine.length() || !(gcodeLine.charAt(index) != ' '))) {
-                tempAxis += gcodeLine.charAt(indexOfG);
+                tempAxis += gcodeLine.charAt(index);
                 index++;
             }
             j = Double.parseDouble(tempAxis);
@@ -61,7 +61,7 @@ public class GCodeParser {
             String tempAxis = "";
             int index = gcodeLine.indexOf("K") + 1;
             while (!(index >= gcodeLine.length() || !(gcodeLine.charAt(index) != ' '))) {
-                tempAxis += gcodeLine.charAt(indexOfG);
+                tempAxis += gcodeLine.charAt(index);
                 index++;
             }
             k = Double.parseDouble(tempAxis);
@@ -88,6 +88,7 @@ public class GCodeParser {
                         if(z>0){
                             doc.newPath2D();
                             doc.getCurrentPath2D().setZ(z);
+                            doc.getCurrentPath2D().moveTo(x, y);
                         }
                     }
                 } // rapid move (do Nothing)
@@ -113,13 +114,41 @@ public class GCodeParser {
                 case 4 -> {
                     //dwell aka do nothing
                 }
+                case 10 -> {
+                    //WCS Offset Select
+                }
                 case 17,18,19 -> {
                     doc.setCurrentAxisPlane(code);//sets axis planes
                 }
+                case 20 -> {
+                    //do Nothing(inches mode)
+                }
+                case 21 ->{
+                    //TODO automatically fix
+                    throw new IllegalGCodeError("Metric Units not allowed in the world of imperial allens and wrenches");
+                }
+                case 43 -> {
+                    //calls which tool offset is used(TODO fix complexities)
+                }
+                case 53 -> {
+                    //Move In Machine Coordinates
+                    if(z != 0){
+                        throw new IllegalGCodeError(gcodeLine +" needs to be z0");
+                    }
+                }
+                case 54,55,56,57,58,59 ->{
+                    //WCS Offset(Do nothing for NOW TODO fix this)
+                }
+                case 64 -> {
+                    //do Nothing(Path Blending??!!??)
+                }
                 case 90 -> doc.setIsRelative(false);// absolute distance mode
                 case 91 -> doc.setIsRelative(true);// incremental distance mode
+                case 94 -> {
+                    //do Nothing(Feed rate change)
+                }
                 default -> {
-                    throw new UnknownGCodeError("GCode : " + tempCode + " not parsable/not supported @ line: " + lineNum);
+                    throw new UnknownGCodeError("GCode : " + tempCode + " not parsable/not supported @ line: " + (lineNum-1));
                 }
             }
         }
