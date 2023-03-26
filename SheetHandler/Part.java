@@ -86,7 +86,6 @@ public class Part {
         g2d.translate(sheetX, sheetY);
         for(RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
-            break;
         }
         g2d.translate(-sheetX, -sheetY);
         g2d.rotate(-rotation);

@@ -53,7 +53,6 @@ public class Cut implements Iterable<Part>{
     public void draw(Graphics g) {
         for(Part part : parts) {
             part.draw(g);
-            break;
         }
     }
 }
