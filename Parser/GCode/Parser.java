@@ -48,7 +48,7 @@ public class Parser {
                 MCodeParser.parse(line, lineNum, doc);
             } else if (line.contains("G")) {
                 GCodeParser.parse(line, lineNum, doc);
-            } else if (line.length() > 0) {
+            } else if (line.length() > 2) {
                 GCodeParser.parseImplicit(line, lineNum, doc);
             }
         }

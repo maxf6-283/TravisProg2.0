@@ -97,6 +97,7 @@ public class GCodeParser {
                     if(doc.getRelativity() == true){
                         doc.getCurrentPath2D().lineToRelative(x, y);
                         doc.getCurrentPath2D().setZRelative(z);
+                        System.out.println("relative");
                     }else{
                         doc.getCurrentPath2D().lineTo(x, y);
                         doc.getCurrentPath2D().setZ(z);
@@ -153,6 +154,7 @@ public class GCodeParser {
                 }
             }
         }
+        doc.setGCodeHolder(Double.parseDouble(tempCode));
         gcodeLine = gcodeLine.substring(0, indexOfG - tempCode.length() - 1)
                 + gcodeLine.substring(indexOfG, gcodeLine.length());
         gcodeLine.trim();
@@ -162,18 +164,9 @@ public class GCodeParser {
     }
 
     public static void parseImplicit(String gcodeLine, int lineNum, NGCDocument doc) {
-
-    }
-}
-
-class UnknownGCodeError extends Error{
-    public UnknownGCodeError(String errorMessage){
-        super(errorMessage);
-    }
-}
-
-class IllegalGCodeError extends Error{
-    public IllegalGCodeError(String errorMessage){
-        super(errorMessage);
+        if(doc.getGCodeHolder()-Math.floor(doc.getGCodeHolder()) != 0.0){
+            parse("G"+doc.getGCodeHolder()+" "+gcodeLine, lineNum, doc);
+        }
+        parse("G"+(int)(doc.getGCodeHolder())+" "+gcodeLine, lineNum, doc);
     }
 }
