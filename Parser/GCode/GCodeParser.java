@@ -72,6 +72,8 @@ public class GCodeParser {
                 doc.setIsRelativeArc(true);// incremental distance mode
             } else if (codeDouble == 90.1) {
                 doc.setIsRelativeArc(false);// absolute arc distance mode
+                throw new IllegalGCodeError("Absolute Arc Distance Mode is not currently supported");
+                //TODO make this supported
             } else {
                 throw new UnknownGCodeError("GCode : " + tempCode + " not parsable @ line: " + lineNum);
             }
@@ -100,13 +102,16 @@ public class GCodeParser {
                 } // linear move
                 case 2 -> {
                     if(doc.getCurrentAxisPlane() == 17){//XY-plane
-
+                        doc.getCurrentPath2D().arcToRelative(i, j, x, y, -1);
                     }
                 }
                 case 3 -> {
                     if(doc.getCurrentAxisPlane() == 17){
-                        
+                        doc.getCurrentPath2D().arcToRelative(i, j, x, y, 1);
                     }
+                }
+                case 4 -> {
+                    //dwell aka do nothing
                 }
                 case 17,18,19 -> {
                     doc.setCurrentAxisPlane(code);//sets axis planes

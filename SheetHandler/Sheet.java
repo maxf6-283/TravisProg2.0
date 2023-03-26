@@ -111,7 +111,7 @@ public class Sheet {
      */
     public void draw(Graphics g) {
         g.setColor(Color.ORANGE);
-        g.drawRect((int) 0, 0, (int) Math.abs(width), (int) (height));
+        g.drawRect( 0, 0, (int) Math.abs(width), (int) (height));
         Graphics2D g2d = (Graphics2D)g;
         g2d.translate(-width, height);
         for (Cut cut : cuts) {

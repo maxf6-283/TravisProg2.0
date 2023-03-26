@@ -50,6 +50,16 @@ public class RelativePath2D extends Path2D.Double {
         curveTo(x1 + ax - k2 * ay, y1 + ay + k2 * ax, x1 + bx + k2 * by, y1 + by - k2 * bx, x2, y2);
     }
 
+    /**
+     * Adds an arc segment, defined by 2 points, by drawing an arc that intersects
+     * {@code (x2,y2)}, using the specified point {@code (x1,y2)}, that are all relative to the previous point
+     * 
+     * @param x1        the X-coordinate of the center of the arc
+     * @param y1        the Y-coordinate of the center of the arc
+     * @param x2        the X-coordinate of the final end point
+     * @param y2        the Y-coordinate of the final end point
+     * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
+     */
     public void arcToRelative(double x1, double y1, double x2, double y2, int direction) {
         arcTo(x1 + xP, y1 + xP, x2 + xP, y2 + yP, direction);
         setRelative(x2, y2);
