@@ -51,7 +51,7 @@ public class Sheet {
      * Declare a new sheet from a path to the list of sheets and the name of the
      * sheet
      */
-    public Sheet(File sheetFolder, String sheetName, double width, double height) {
+    public Sheet(File sheetFolder, String sheetName, double width, double height, SheetThickness thickness) {
         try {
             File parentFile = new File(sheetFolder, sheetName);
             parentFile.mkdir();
@@ -59,6 +59,7 @@ public class Sheet {
             HashMap<String, String> sheetInfo = new HashMap<>();
             sheetInfo.put("w", ""+width);
             sheetInfo.put("h", ""+height);
+            sheetInfo.put("hole_file", thickness.holesFile.getPath());
             SheetParser.saveSheetInfo(sheetFile, sheetInfo);
         } catch (Exception e) {
             System.err.println("Could not create sheet file\n\n");

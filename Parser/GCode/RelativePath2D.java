@@ -36,18 +36,36 @@ public class RelativePath2D extends Path2D.Double {
      * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
      */
     public void arcTo(double x1, double y1, double x2, double y2, int direction) {
-        // TODO fix arc to Bezier conversion(only works for <90 degrees)
         if (direction < -1 || direction > 1) {
             throw new IllegalArgumentException("Direction: " + direction + " is not in the range -1, 1");
         }
         double ax = getCurrentPoint().getX() - x1;
         double ay = getCurrentPoint().getY() - y1;
-        double bx = x2 - x1;
-        double by = y2 - y1;
-        double q1 = ax * ax + ay * ay;
-        double q2 = q1 + ax * bx + ay * by;
-        double k2 = (4.0 / 3) * (Math.sqrt(2 * q1 * q2) - q2) / (ax * by - ay * bx);
-        curveTo(x1 + ax - k2 * ay, y1 + ay + k2 * ax, x1 + bx + k2 * by, y1 + by - k2 * bx, x2, y2);
+
+        double startingAngle = Math.atan((ay - y1) / (ax - x1));
+        if (ax - x1 < 0) {
+            startingAngle += Math.PI;
+        }
+        if (startingAngle < 0) {
+            startingAngle += Math.TAU;
+        }
+
+        double endingAngle = Math.atan((y2 - y1) / (x2 - x1));
+        if (x2 - x1 < 0) {
+            endingAngle += Math.PI;
+        }
+        if (endingAngle < 0) {
+            endingAngle += Math.TAU;
+        }
+
+        double radius = Math.sqrt((ax - x1) * (ax - x1) + (ay - y1) * (ay - y1));
+        double angle = startingAngle;
+        while(angle * direction < endingAngle * direction) {
+            angle += Math.PI/10 * direction;
+            if(angle < endingAngle)
+                lineTo(x1 + radius * Math.cos(angle) , ay + radius * Math.sin(angle));
+        }
+        lineTo(x2, y2);
     }
 
     /**
