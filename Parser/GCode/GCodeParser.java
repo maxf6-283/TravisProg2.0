@@ -14,8 +14,8 @@ public class GCodeParser {
                 indexOfG++;
             }
         }
-        System.out.printf("Parsing line %d: %s%n", lineNum, gcodeLine);
-        System.out.printf("Code: %s%n", tempCode);
+        //System.out.printf("Parsing line %d: %s%n", lineNum, gcodeLine);
+        //System.out.printf("Code: %s%n", tempCode);
         if (gcodeLine.contains("X")) {
             String tempAxis = "";
             int index = gcodeLine.indexOf("X") + 1;
@@ -35,6 +35,7 @@ public class GCodeParser {
                 index++;
             }
             y = Double.parseDouble(tempAxis);
+            y=-y;
         } else if (doc.getCurrentPointr() != null && !doc.getRelativity()) {
             y = doc.getCurrentPointr().y;
         }
@@ -120,14 +121,14 @@ public class GCodeParser {
                     }
                 } // linear move
                 case 2 -> {
-                    if (doc.getCurrentAxisPlane() == 17) {// XY-plane
+                    /*if (doc.getCurrentAxisPlane() == 17) {// XY-plane
                         doc.getCurrentPath2D().arcToRelative(i, j, x, y, -1);
-                    }
+                    }*/
                 }
                 case 3 -> {
-                    if (doc.getCurrentAxisPlane() == 17) {
+                    /*if (doc.getCurrentAxisPlane() == 17) {
                         doc.getCurrentPath2D().arcToRelative(i, j, x, y, 1);
-                    } 
+                    } */
                 }
                 case 4 -> {
                     // dwell aka do nothing
