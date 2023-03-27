@@ -11,7 +11,7 @@ import java.awt.geom.Point2D;
  */
 public class RelativePath2D extends Path2D.Double {
     public Point3D getCurrentPoint3D() {
-        if(getCurrentPoint() == null){
+        if (getCurrentPoint() == null) {
             return null;
         }
         return new Point3D(getCurrentPoint().getX(), getCurrentPoint().getY(), z);
@@ -34,46 +34,69 @@ public class RelativePath2D extends Path2D.Double {
      * 
      * @param x1        the X-coordinate of the center of the arc
      * @param y1        the Y-coordinate of the center of the arc
-     * @param x2        the X-coordinate of the final end point
-     * @param y2        the Y-coordinate of the final end point
+     * @param endX      the X-coordinate of the final end point
+     * @param endY      the Y-coordinate of the final end point
      * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
      */
     public void arcTo(double x1, double y1, double x2, double y2, int direction) {
         if (direction < -1 || direction > 1) {
             throw new IllegalArgumentException("Direction: " + direction + " is not in the range -1, 1");
         }
-        double ax = getCurrentPoint().getX() - x1;
-        double ay = getCurrentPoint().getY() - y1;
+        double startX = getCurrentPoint().getX();
+        double startY = getCurrentPoint().getY();
 
-        double startingAngle = Math.atan((ay - y1) / (ax - x1));
-        if (ax - x1 < 0) {
+        double centerX = startX + x1;
+        double centerY = startY + y1;
+
+        double endX = x2;
+        double endY = y2;
+
+        System.out.printf("Arguments: x1: %f, y1: %f, x2: %f, y2: %f%n", x1, y1, x2, y2);
+        System.out.printf("Arcing from %f, %f to %f, %f around %f, %f%n", startX, startY, endX, endY, centerX, centerY);
+
+        double startingAngle = Math.atan((startY - centerY) / (startX - centerX));
+        if (centerX - x1 < 0) {
             startingAngle += Math.PI;
         }
         if (startingAngle < 0) {
-            startingAngle += Math.TAU;
+            startingAngle += Math.PI * 2;
         }
 
-        double endingAngle = Math.atan((y2 - y1) / (x2 - x1));
-        if (x2 - x1 < 0) {
+        double endingAngle = Math.atan((endY - centerY) / (endX - centerX));
+        if (endX - centerX < 0) {
             endingAngle += Math.PI;
         }
         if (endingAngle < 0) {
-            endingAngle += Math.TAU;
+            endingAngle += Math.PI * 2;
         }
 
-        double radius = Math.sqrt((ax - x1) * (ax - x1) + (ay - y1) * (ay - y1));
-        double angle = startingAngle;
-        while(angle * direction < endingAngle * direction) {
-            angle += Math.PI/10 * direction;
-            if(angle * direction < endingAngle * direction)
-                lineTo(x1 + radius * Math.cos(angle) , ay + radius * Math.sin(angle));
+        double radius = Math.sqrt((startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
+        double radius2 = Math.sqrt((endX - centerX) * (endX - centerX) + (endY - centerY) * (endY - centerY));
+
+        System.out.printf("Raduis is %f, starting angle is %f, ending angle is %f%n", radius, startingAngle,
+                endingAngle);
+
+        if (Math.abs(radius - radius2) > 0.01) {
+            // throw new IllegalGCodeError("Arc is not defined to have a self-similar
+            // radius");
+            System.err.println("Arc is not defined to have a self-similar radius");
+        } else {
+
+            double angle = startingAngle;
+
+            while (angle * direction < endingAngle * direction) {
+                angle += Math.PI / 10 * direction;
+                if (angle * direction < endingAngle * direction)
+                    lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
+            }
         }
-        lineTo(x2, y2);
+        lineTo(endX, endY);
     }
 
     /**
      * Adds an arc segment, defined by 2 points, by drawing an arc that intersects
-     * {@code (x2,y2)}, using the specified point {@code (x1,y2)}, that are all relative to the previous point
+     * {@code (x2,y2)}, using the specified point {@code (x1,y2)}, that are all
+     * relative to the previous point
      * 
      * @param x1        the X-coordinate of the center of the arc
      * @param y1        the Y-coordinate of the center of the arc

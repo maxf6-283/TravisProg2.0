@@ -89,7 +89,7 @@ public class Screen extends JPanel
     @Override
     public void paintComponent(Graphics g) {
         g.setColor(Color.BLACK);
-        g.fillRect(0, 0, 1200, 800);
+        g.fillRect(0, 0, getWidth(), getHeight());
         switch (state) {
             case SHEET_SELECT -> {
 
