@@ -121,12 +121,12 @@ public class GCodeParser {
                 } // linear move
                 case 2 -> {
                     if (doc.getCurrentAxisPlane() == 17) {// XY-plane
-                        doc.getCurrentPath2D().arcToRelative(i, j, x, y, -1);
+                        //doc.getCurrentPath2D().arcToRelative(i, j, x, y, -1);
                     }
                 }
                 case 3 -> {
                     if (doc.getCurrentAxisPlane() == 17) {
-                        doc.getCurrentPath2D().arcToRelative(i, j, x, y, 1);
+                        //doc.getCurrentPath2D().arcToRelative(i, j, x, y, 1);
                     } 
                 }
                 case 4 -> {
