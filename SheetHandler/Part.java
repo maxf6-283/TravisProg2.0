@@ -85,14 +85,14 @@ public class Part {
         // TODO: add part drawing
         // g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
         Graphics2D g2d = (Graphics2D) g;
-        g2d.rotate(rotation);
-        // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         g2d.translate(sheetX, -sheetY);
+        g2d.rotate(-rotation);
+        // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
+        g2d.rotate(rotation);
         g2d.translate(-sheetX, sheetY);
-        g2d.rotate(-rotation);
     }
 
     public String toString() {
