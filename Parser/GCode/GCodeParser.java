@@ -13,9 +13,6 @@ public class GCodeParser {
                 tempCode += gcodeLine.charAt(indexOfG);
                 indexOfG++;
             }
-        } else {
-            //there was no G, use the last code
-            System.out.println("asdf");
         }
         System.out.printf("Parsing line %d: %s%n", lineNum, gcodeLine);
         System.out.printf("Code: %s%n", tempCode);
@@ -27,7 +24,7 @@ public class GCodeParser {
                 index++;
             }
             x = Double.parseDouble(tempAxis);
-        } else if (doc.getCurrentPointr() != null) {
+        } else if (doc.getCurrentPointr() != null && !doc.getRelativity()) {
             x = doc.getCurrentPointr().x;
         }
         if (gcodeLine.contains("Y")) {
@@ -38,8 +35,7 @@ public class GCodeParser {
                 index++;
             }
             y = Double.parseDouble(tempAxis);
-            y = -y;
-        } else if (doc.getCurrentPointr() != null) {
+        } else if (doc.getCurrentPointr() != null && !doc.getRelativity()) {
             y = doc.getCurrentPointr().y;
         }
         if (gcodeLine.contains("Z")) {
@@ -50,7 +46,7 @@ public class GCodeParser {
                 index++;
             }
             z = Double.parseDouble(tempAxis);
-        } else if (doc.getCurrentPointr() != null) {
+        } else if (doc.getCurrentPointr() != null && !doc.getRelativity()) {
             z = doc.getCurrentPointr().getZ();
         }
         if (gcodeLine.contains("I")) {
@@ -105,6 +101,7 @@ public class GCodeParser {
                             doc.newPath2D();
                             doc.getCurrentPath2D().setZ(z);
                             doc.getCurrentPath2D().moveTo(x, y);
+                            doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
                             System.out.println("move to: "+x+", "+y);
                         }
                     }
@@ -113,9 +110,12 @@ public class GCodeParser {
                     if (doc.getRelativity() == true) {
                         doc.getCurrentPath2D().lineToRelative(x, y);
                         doc.getCurrentPath2D().setZRelative(z);
+                        doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
                     }else{
                         doc.getCurrentPath2D().lineTo(x, y);
+                        doc.getCurrentPath2D().setRelative(x, y);
                         doc.getCurrentPath2D().setZ(z);
+                        doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
                         System.out.println("line to: "+x+", "+y);
                     }
                 } // linear move
@@ -127,7 +127,7 @@ public class GCodeParser {
                 case 3 -> {
                     if (doc.getCurrentAxisPlane() == 17) {
                         doc.getCurrentPath2D().arcToRelative(i, j, x, y, 1);
-                    }
+                    } 
                 }
                 case 4 -> {
                     // dwell aka do nothing

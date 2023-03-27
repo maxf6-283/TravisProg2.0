@@ -87,7 +87,7 @@ public class RelativePath2D extends Path2D.Double {
             while (angle * direction < endingAngle * direction) {
                 angle += Math.PI / 10 * direction;
                 if (angle * direction < endingAngle * direction)
-                    lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
+                    ;//lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
             }
         }
         lineTo(endX, endY);
@@ -109,7 +109,7 @@ public class RelativePath2D extends Path2D.Double {
         setRelative(x2, y2);
     }
 
-    private void setRelative(double x, double y) {
+    public void setRelative(double x, double y) {
         xP = x;
         yP = y;
     }
