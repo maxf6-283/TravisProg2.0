@@ -87,11 +87,11 @@ public class Part {
         Graphics2D g2d = (Graphics2D) g;
         g2d.rotate(rotation);
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
-        g2d.translate(sheetX, sheetY);
+        g2d.translate(sheetX, -sheetY);
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
-        g2d.translate(-sheetX, -sheetY);
+        g2d.translate(-sheetX, sheetY);
         g2d.rotate(-rotation);
     }
 
