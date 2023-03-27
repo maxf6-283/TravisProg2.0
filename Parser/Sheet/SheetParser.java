@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import Parser.GCode.GCodeParser;
 import SheetHandler.Hole;
 import SheetHandler.Part;
 import SheetHandler.Cut;
@@ -56,32 +57,44 @@ public class SheetParser {
     public static void parseCutFile(File cutFile, Cut cut) {
         try {
             FileInputStream reader = new FileInputStream(cutFile);
+            long byteCounter = 0;
             // get something or other to do with something
-            reader.read();
-            // get number of parts
-            int partCount = reader.read();
-            System.out.printf("Parsing %s: %d parts detected.%n", cutFile.getName(), partCount);
+            int total = 0;
+            int shift = 0;
+            int num = 0;
+            while(byteCounter <= 0 || (num & 0x80) != 0){
+                num = reader.read();
+                total += (num & 0x7F)<<shift;
+                shift+=7;
+                byteCounter++;
+            }
+            total+=byteCounter;
+            System.out.printf("Parsing %s: %d bytes detected.%n", cutFile.getName(), byteCounter);
             // x, y, rot are in sets of 64 bits
             byte[] nextNumber = new byte[8];
-            for (int part = 0; part < partCount; part++) {
+            while (byteCounter < total) {
                 System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
+                byteCounter+=8;
                 double partX = toDouble(nextNumber);
-                System.out.printf("Part %d's x is %f%n", part, partX);
+                System.out.printf("Part %d's x is %f%n", byteCounter, partX);
                 System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
+                byteCounter+=8;
                 double partY = toDouble(nextNumber);
-                System.out.printf("Part %d's y is %f%n", part, partY);
+                System.out.printf("Part %d's y is %f%n", byteCounter, partY);
                 System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
+                byteCounter+=8;
                 double partRot = toDouble(nextNumber);
-                System.out.printf("Part %d's r is %f%n", part, partRot);
+                System.out.printf("Part %d's r is %f%n", byteCounter, partRot);
                 //its in little endian and I hate it
+                byteCounter++;
                 if(reader.read()==1){
                     //is a hole
                     cut.parts.add(new Hole(partX, partY,partRot));
                     System.out.println("Adding a hole");
-                    part-=1;
                 }else{
                     //is a part(reader.read()==0)
                     int fileNameLength = reader.read();
+                    byteCounter++;
                     if(fileNameLength == -1){
                         break;//end of file
                     }
@@ -89,6 +102,7 @@ public class SheetParser {
                     String partFileName = "";
                     for (int character = 0; character < fileNameLength; character++) {
                         partFileName += (char)reader.read();
+                        byteCounter++;
                     }
                     File partFile = new File(partFileName);
                     cut.parts.add(new Part(partFile, partX, partY, partRot));
