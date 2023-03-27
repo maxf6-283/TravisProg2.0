@@ -25,6 +25,9 @@ public class Part {
                 File[] files = partFile.listFiles();
                 File parent = partFile;
                 partFile = null;
+                if(files == null){
+                    throw new NullPointerException("Folder: "+parent.getName()+" Not Found");
+                }
                 for (File file : files) {
                     if (file.getName().lastIndexOf(".") != -1 && file.getName()
                             .substring(file.getName().lastIndexOf(".") + 1, file.getName().length()).equals("ngc")) {
