@@ -1,5 +1,6 @@
 package SheetHandler;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
@@ -7,6 +8,8 @@ import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
+import javax.swing.SwingUtilities;
 
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
@@ -18,22 +21,23 @@ public class Part {
     private File partFile;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
-        if(partFile == null){
-            //throw new NullPointerException("Part File cannot be null!");
+        if (partFile == null) {
+            // throw new NullPointerException("Part File cannot be null!");
         } else {
             this.partFile = partFile;
             try {
                 File[] files = partFile.listFiles();
                 File parent = partFile;
                 partFile = null;
-                for(File file:files){
-                    if(file.getName().lastIndexOf(".")!=-1 && file.getName().substring(file.getName().lastIndexOf(".")+1, file.getName().length()).equals("ngc")){
+                for (File file : files) {
+                    if (file.getName().lastIndexOf(".") != -1 && file.getName()
+                            .substring(file.getName().lastIndexOf(".") + 1, file.getName().length()).equals("ngc")) {
                         partFile = file;
                         break;
                     }
                 }
-                if(partFile == null){
-                    throw new FileNotFoundException("Not NGC File found in: "+parent.getPath());
+                if (partFile == null) {
+                    throw new FileNotFoundException("Not NGC File found in: " + parent.getPath());
                 }
                 ngcDoc = Parser.parse(partFile);
             } catch (FileNotFoundException e) {
@@ -79,12 +83,12 @@ public class Part {
 
     public void draw(Graphics g) {
         // TODO: add part drawing
-        //g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
-        Graphics2D g2d = (Graphics2D)g;
+        // g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
+        Graphics2D g2d = (Graphics2D) g;
         g2d.rotate(rotation);
-        //((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
+        // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         g2d.translate(sheetX, sheetY);
-        for(RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
+        for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
         g2d.translate(-sheetX, -sheetY);
@@ -95,7 +99,7 @@ public class Part {
         return partFile.getName();
     }
 
-    public NGCDocument getNgcDocument(){
+    public NGCDocument getNgcDocument() {
         return ngcDoc;
     }
 }

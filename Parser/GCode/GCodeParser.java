@@ -90,6 +90,7 @@ public class GCodeParser {
                             doc.newPath2D();
                             doc.getCurrentPath2D().setZ(z);
                             doc.getCurrentPath2D().moveTo(x, y);
+                            System.out.println("move to: "+x+", "+y);
                         }
                     }
                 } // rapid move (do Nothing)
@@ -97,10 +98,10 @@ public class GCodeParser {
                     if(doc.getRelativity() == true){
                         doc.getCurrentPath2D().lineToRelative(x, y);
                         doc.getCurrentPath2D().setZRelative(z);
-                        System.out.println("relative");
                     }else{
                         doc.getCurrentPath2D().lineTo(x, y);
                         doc.getCurrentPath2D().setZ(z);
+                        System.out.println("line to: "+x+", "+y);
                     }
                 } // linear move
                 case 2 -> {

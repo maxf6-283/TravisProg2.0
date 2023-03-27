@@ -39,7 +39,7 @@ public class Parser {
         while (input.hasNextLine()) {
             String line = input.nextLine();
             lineNum++;
-            out.write(line + "\n");
+            //out.write(line + "\n");
             if (line.contains("(")) {
                 line = CommentsParser.parse(line, doc);
             }
