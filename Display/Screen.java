@@ -116,7 +116,7 @@ public class Screen extends JPanel
     @Override
     public void mousePressed(MouseEvent e) {
         if(e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            if(/*selectedSheet.contains(e.getPoint()) != null*/false){
+            if(false && selectSheet != null && selectedSheet.contains(e.getPoint()) != null){
                 System.out.println("Touching part!");
             }else{
                 startX = xCorner - e.getX() / zoom;

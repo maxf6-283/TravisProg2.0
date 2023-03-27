@@ -5,10 +5,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Parser {
-    static BufferedWriter out = new BufferedWriter(new OutputStreamWriter(System.out));
+    public static BufferedWriter out = new BufferedWriter(new OutputStreamWriter(System.out));
+    public static ArrayList<NGCDocument> parsedDocuments = new ArrayList<>();
 
     public static void main(String[] args) {
         NGCDocument doc = new NGCDocument();
@@ -53,6 +55,7 @@ public class Parser {
             }
         }
         input.close();
+        parsedDocuments.add(doc);
         return doc;
     }
 }

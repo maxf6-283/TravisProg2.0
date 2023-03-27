@@ -147,9 +147,12 @@ public class Sheet {
 
     public Part contains(Point2D point){
         for(Part part:activeCut){
-            /*if(part.contains(point)){//TODO finish and fix
+            if(part instanceof Hole){
+                continue;
+            }
+            if(part.contains(point)){//TODO finish and fix for holes
                 return part;
-            }*/
+            }
         }
         return null;
     }

@@ -1,15 +1,11 @@
 package SheetHandler;
 
-import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
-import javax.swing.SwingUtilities;
 
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
@@ -37,9 +33,16 @@ public class Part {
                     }
                 }
                 if (partFile == null) {
-                    throw new FileNotFoundException("Not NGC File found in: " + parent.getPath());
+                    throw new FileNotFoundException("No NGC File found in: " + parent.getPath());
                 }
-                ngcDoc = Parser.parse(partFile);
+                for(NGCDocument doc : Parser.parsedDocuments){
+                    if(doc.getFile().equals(partFile)){
+                        ngcDoc = doc;
+                    }
+                }
+                if(ngcDoc == null){
+                    ngcDoc = Parser.parse(partFile);
+                }
             } catch (FileNotFoundException e) {
                 System.out.println("File : " + partFile.getAbsolutePath() + " Not Found");
                 e.printStackTrace();
@@ -51,6 +54,15 @@ public class Part {
         sheetX = xLoc;
         sheetY = yLoc;
         rotation = rot;
+    }
+
+    public boolean contains(Point2D point){
+        for(RelativePath2D path: ngcDoc.getRelativePath2Ds()){
+            if(path.contains(point)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public double getX() {

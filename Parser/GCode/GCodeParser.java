@@ -1,9 +1,11 @@
 package Parser.GCode;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 public class GCodeParser {
-    public static PrintWriter out = new PrintWriter(System.out);
+    public static BufferedWriter out = new BufferedWriter(new PrintWriter(System.out));
     public static void parse(String gcodeLine, int lineNum, NGCDocument doc) {
         int code;
         double codeDouble;
@@ -106,7 +108,11 @@ public class GCodeParser {
                             doc.getCurrentPath2D().setZ(z);
                             doc.getCurrentPath2D().moveTo(x, y);
                             doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
-                            out.println("move to: "+x+", "+y);
+                            /*try {
+                                out.write("move to: "+x+", "+y+"\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }*/
                         }
                     }
                 } // rapid move (do Nothing)
@@ -120,7 +126,11 @@ public class GCodeParser {
                         doc.getCurrentPath2D().setRelative(x, y);
                         doc.getCurrentPath2D().setZ(z);
                         doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
-                        out.println("line to: "+x+", "+y);
+                        /*try {
+                            out.write("line to: "+x+", "+y+"\n");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }*/
                     }
                 } // linear move
                 case 2 -> {

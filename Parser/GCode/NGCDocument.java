@@ -99,7 +99,7 @@ public class NGCDocument {
         this.file = file;
     }
 
-    public File getFile(File file) {
+    public File getFile() {
         return file;
     }
 
