@@ -13,8 +13,10 @@ public class NGCDocument {
     private double ToolOffset = 0.1575;// TODO finsih thishoibqwob4eiurboewqb
     private double implicitGCodeHolder;
     private boolean isRelativeArc;
-    private boolean isRelative;
+    private boolean isRelative = false;
     private int currentAxisPlane = 0;
+    private double lastI = 0;
+    private double lastJ = 0;
 
     public NGCDocument() {
         this(null);
@@ -109,5 +111,18 @@ public class NGCDocument {
 
     public int getSpindleSpeed() {
         return SpindleSpeed;
+    }
+
+    public void setLastArcCenter(double i, double j) {
+        lastI = i;
+        lastJ = j;
+    }
+
+    public double lastI() {
+        return lastI;
+    }
+
+    public double lastJ() {
+        return lastJ;
     }
 }

@@ -64,7 +64,7 @@ public class GCodeParser {
             }
             i = Double.parseDouble(tempAxis);
         } else {
-            // TODO: add listening for the mode where it uses the most recent i and j
+            i = doc.lastI();
         }
         if (gcodeLine.contains("J")) {
             String tempAxis = "";
@@ -74,6 +74,8 @@ public class GCodeParser {
                 index++;
             }
             j = Double.parseDouble(tempAxis);
+        } else {
+            j = doc.lastJ();
         }
         if (gcodeLine.contains("K")) {
             String tempAxis = "";
@@ -90,8 +92,6 @@ public class GCodeParser {
                 doc.setIsRelativeArc(true);// incremental distance mode
             } else if (codeDouble == 90.1) {
                 doc.setIsRelativeArc(false);// absolute arc distance mode
-                throw new IllegalGCodeError("Absolute Arc Distance Mode is not currently supported");
-                // TODO make this supported
             } else {
                 throw new UnknownGCodeError("GCode : " + tempCode + " not parsable @ line: " + lineNum);
             }
@@ -134,14 +134,24 @@ public class GCodeParser {
                     }
                 } // linear move
                 case 2 -> {
-                    /*if (doc.getCurrentAxisPlane() == 17) {// XY-plane
-                        doc.getCurrentPath2D().arcToRelative(i, j, x, y, -1);
-                    }*/
+                    if (doc.getCurrentAxisPlane() == 17) {// XY-plane
+                        doc.getCurrentPath2D().arcTo(i, j, x, y, -1, doc.getRelativity(), doc.getRelativityArc());
+                    } else {
+                        doc.getCurrentPath2D().lineTo(x, y);
+                    }
+                    doc.getCurrentPath2D().setRelative(x, y);
+                    doc.getCurrentPath2D().setZ(z);
+                    doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
                 }
                 case 3 -> {
-                    /*if (doc.getCurrentAxisPlane() == 17) {
-                        doc.getCurrentPath2D().arcToRelative(i, j, x, y, 1);
-                    } */
+                    if (doc.getCurrentAxisPlane() == 17) {
+                        doc.getCurrentPath2D().arcTo(i, j, x, y, 1, doc.getRelativity(), doc.getRelativityArc());
+                    } else {
+                        doc.getCurrentPath2D().lineTo(x, y);
+                    }
+                    doc.getCurrentPath2D().setRelative(x, y);
+                    doc.getCurrentPath2D().setZ(z);
+                    doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
                 }
                 case 4 -> {
                     // dwell aka do nothing

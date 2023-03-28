@@ -37,19 +37,33 @@ public class RelativePath2D extends Path2D.Double {
      * @param endX      the X-coordinate of the final end point
      * @param endY      the Y-coordinate of the final end point
      * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
+     * @param c
+     * @param b
      */
-    public void arcTo(double x1, double y1, double x2, double y2, int direction) {
+    public void arcTo(double x1, double y1, double x2, double y2, int direction, boolean isRelative, boolean isRelativeArc) {
         if (direction < -1 || direction > 1) {
             throw new IllegalArgumentException("Direction: " + direction + " is not in the range -1, 1");
         }
+
+        direction *= -1;
         double startX = getCurrentPoint().getX();
         double startY = getCurrentPoint().getY();
 
-        double centerX = startX + x1;
-        double centerY = startY + y1;
+        double centerX = x1;
+        double centerY = y1;
+
+        if(isRelativeArc) {
+            centerX += startX;
+            centerY += startY;
+        }
 
         double endX = x2;
         double endY = y2;
+
+        if(isRelative) {
+            endX += startX;
+            endY += startY;
+        }
 
         System.out.printf("Arguments: x1: %f, y1: %f, x2: %f, y2: %f%n", x1, y1, x2, y2);
         System.out.printf("Arcing from %f, %f to %f, %f around %f, %f%n", startX, startY, endX, endY, centerX, centerY);
@@ -66,14 +80,18 @@ public class RelativePath2D extends Path2D.Double {
         if (endX - centerX < 0) {
             endingAngle += Math.PI;
         }
-        if (endingAngle < 0) {
+        if (endingAngle < startingAngle) {
+            endingAngle += Math.PI * 2;
+        }
+        if (endingAngle < startingAngle) {
             endingAngle += Math.PI * 2;
         }
 
         double radius = Math.sqrt((startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
         double radius2 = Math.sqrt((endX - centerX) * (endX - centerX) + (endY - centerY) * (endY - centerY));
+        radius = radius/2 + radius2/2;
 
-        System.out.printf("Raduis is %f, starting angle is %f, ending angle is %f%n", radius, startingAngle,
+        System.out.printf("Radius is %f, starting angle is %f, ending angle is %f%n", radius, startingAngle,
                 endingAngle);
 
         if (Math.abs(radius - radius2) > 0.01) {
@@ -87,26 +105,10 @@ public class RelativePath2D extends Path2D.Double {
             while (angle * direction < endingAngle * direction) {
                 angle += Math.PI / 10 * direction;
                 if (angle * direction < endingAngle * direction)
-                    ;//lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
+                    lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
             }
         }
         lineTo(endX, endY);
-    }
-
-    /**
-     * Adds an arc segment, defined by 2 points, by drawing an arc that intersects
-     * {@code (x2,y2)}, using the specified point {@code (x1,y2)}, that are all
-     * relative to the previous point
-     * 
-     * @param x1        the X-coordinate of the center of the arc
-     * @param y1        the Y-coordinate of the center of the arc
-     * @param x2        the X-coordinate of the final end point
-     * @param y2        the Y-coordinate of the final end point
-     * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
-     */
-    public void arcToRelative(double x1, double y1, double x2, double y2, int direction) {
-        arcTo(x1 + xP, y1 + xP, x2 + xP, y2 + yP, direction);
-        setRelative(x2, y2);
     }
 
     public void setRelative(double x, double y) {
