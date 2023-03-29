@@ -25,6 +25,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
@@ -108,6 +110,13 @@ public class Screen extends JPanel
         }catch(IOException e){
             System.out.println("Logo not Found");
         }
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e){
+                editMenu.setBounds(0, 0, 300, e.getComponent().getHeight());
+            }
+        });
     }
 
     @Override

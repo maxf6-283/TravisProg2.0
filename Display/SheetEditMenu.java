@@ -20,6 +20,6 @@ public class SheetEditMenu extends JPanel {
     public void paintComponent(Graphics g){
         super.paintComponent(g);
         g.setColor(Color.BLACK);
-        g.fillRect(0, 0, 300, 800);
+        g.fillRect(0, 0, getWidth(), getHeight());
     }
 }
