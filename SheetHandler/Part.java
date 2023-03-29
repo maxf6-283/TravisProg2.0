@@ -2,6 +2,7 @@ package SheetHandler;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -104,17 +105,18 @@ public class Part {
     }
 
     public void draw(Graphics g) {
-        // TODO: add part drawing
-        // g.drawOval((int) (sheetX - 1), (int) (-sheetY - 1), 2, 2);
         Graphics2D g2d = (Graphics2D) g;
+        AffineTransform prevTransform = g2d.getTransform();
+        g2d.scale(0.1, 0.1);
+        g2d.drawOval((int) (sheetX*10 - 1), (int) (-sheetY*10 - 1), 2, 2);
+        g2d.scale(10, 10);
         g2d.translate(sheetX, -sheetY);
         g2d.rotate(-rotation);
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
-        g2d.rotate(rotation);
-        g2d.translate(-sheetX, sheetY);
+        g2d.setTransform(prevTransform);
     }
 
     public String toString() {
