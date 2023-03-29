@@ -69,22 +69,16 @@ public class RelativePath2D extends Path2D.Double {
         System.out.printf("Arcing from %f, %f to %f, %f around %f, %f%n", startX, startY, endX, endY, centerX, centerY);
 
         double startingAngle = Math.atan((startY - centerY) / (startX - centerX));
-        if (centerX - x1 < 0) {
+        if (startX - centerX < 0) {
             startingAngle += Math.PI;
-        }
-        if (startingAngle < 0) {
-            startingAngle += Math.PI * 2;
         }
 
         double endingAngle = Math.atan((endY - centerY) / (endX - centerX));
         if (endX - centerX < 0) {
             endingAngle += Math.PI;
         }
-        if (endingAngle < startingAngle) {
-            endingAngle += Math.PI * 2;
-        }
-        if (endingAngle < startingAngle) {
-            endingAngle += Math.PI * 2;
+        while (endingAngle * direction < startingAngle * direction) {
+            endingAngle += Math.PI * 2 * direction;
         }
 
         double radius = Math.sqrt((startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
@@ -108,6 +102,7 @@ public class RelativePath2D extends Path2D.Double {
             }
         }
         lineTo(endX, endY);
+        setRelative(endX, endY);
     }
 
     public void setRelative(double x, double y) {

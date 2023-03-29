@@ -107,6 +107,7 @@ public class GCodeParser {
                             doc.newPath2D();
                             doc.getCurrentPath2D().setZ(z);
                             doc.getCurrentPath2D().moveTo(x, y);
+                            doc.getCurrentPath2D().setRelative(x, y);
                             doc.setCurrentPoint(doc.getCurrentPath2D().getCurrentPoint3D());
                             /*try {
                                 out.write("move to: "+x+", "+y+"\n");
