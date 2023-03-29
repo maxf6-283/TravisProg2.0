@@ -107,9 +107,6 @@ public class Part {
     public void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform prevTransform = g2d.getTransform();
-        g2d.scale(0.1, 0.1);
-        g2d.drawOval((int) (sheetX*10 - 1), (int) (-sheetY*10 - 1), 2, 2);
-        g2d.scale(10, 10);
         g2d.translate(sheetX, -sheetY);
         g2d.rotate(-rotation);
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
