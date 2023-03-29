@@ -16,12 +16,16 @@ import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JList;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -48,6 +52,7 @@ public class Screen extends JPanel
     private JButton addSheet;
     private JButton selectSheet;
     private JButton returnToHome;
+    private JLabel sheetName;
     private Sheet selectedSheet;
     private State state;
     private double xCorner = 0;
@@ -67,12 +72,20 @@ public class Screen extends JPanel
     private double partGrabbedInitialX;
     private double partGrabbedInitialY;
     private NewSheetPrompt newSheetPrompt;
-    private SheetEditMenu editMenu;
+    private JPanel editMenu;
     private BufferedImage img;
     private ArrayList<EditAction> undoList;
     private ArrayList<EditAction> redoList;
     private AbstractAction undo;
     private AbstractAction redo;
+    private JButton addHole;
+    private JButton addItem;
+    private JButton del;
+    private JButton reScan;
+    private JButton emit;
+    private JButton save;
+    private JButton addCut;
+    private JLabel cutName;
 
     public Screen() {
         setLayout(null);
@@ -96,10 +109,10 @@ public class Screen extends JPanel
         sheetList.addListSelectionListener(this);
 
         returnToHome = new JButton("Return to Home");
-        //returnToHome.setBounds(0, 0, 150, 45);
-        //add(returnToHome);
+        // returnToHome.setBounds(0, 0, 150, 45);
+        // add(returnToHome);
         returnToHome.addActionListener(this);
-        //returnToHome.setVisible(false);
+        // returnToHome.setVisible(false);
 
         addSheet = new JButton("Add new sheet");
         addSheet.setBounds(350, 100, 200, 50);
@@ -116,7 +129,115 @@ public class Screen extends JPanel
         newSheetPrompt.setVisible(false);
         newSheetPrompt.setAlwaysOnTop(true);
 
-        editMenu = new SheetEditMenu(returnToHome, selectedSheet);
+        editMenu = new JPanel() {
+            {
+                setLayout(new GridBagLayout());
+                setBounds(0, 0, 300, 800);
+
+                GridBagConstraints c = new GridBagConstraints();
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.anchor = GridBagConstraints.FIRST_LINE_START;
+                c.insets = new Insets(10, 10, 10, 10);
+                c.gridx = 0;
+                c.gridy = 0;
+                c.weightx = 0.5;
+                c.ipady = 40;
+                c.gridwidth = 3;
+                add(returnToHome, c);
+
+                sheetName = new JLabel("Editing Sheet: ");
+                sheetName.setForeground(Color.WHITE);
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.weightx = 0.5;
+                c.gridx = 0;
+                c.gridy = 1;
+                c.ipady = 20;
+                add(sheetName, c);
+
+                addHole = new JButton("Add Hole");
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.weightx = 0.5;
+                c.gridx = 0;
+                c.gridy = 2;
+                c.gridwidth = 1;
+                c.ipady = 20;
+                add(addHole, c);
+
+                addItem = new JButton("Add Item");
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.gridx = 1;
+                c.gridy = 2;
+                add(addItem, c);
+
+                del = new JButton("Del Select");
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.gridx = 2;
+                c.gridy = 2;
+                add(del, c);
+
+                reScan = new JButton("Rescan parts_library");
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.gridx = 0;
+                c.gridwidth = 2;
+                c.gridy = 3;
+                add(reScan, c);
+
+                emit = new JButton("Emit GCode");
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.gridx = 0;
+                c.gridwidth = 1;
+                c.gridy = 4;
+                add(emit, c);
+
+                save = new JButton("Save");
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.gridx = 1;
+                c.gridy = 4;
+                add(save, c);
+
+                addCut = new JButton("Add Cut");
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.gridx = 2;
+                c.gridy = 4;
+                add(addCut, c);
+
+                cutName = new JLabel("Current Cut: ");
+                cutName.setForeground(Color.WHITE);
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.gridx = 0;
+                c.gridwidth = 3;
+                c.gridy = 5;
+                add(cutName, c);
+
+                // bottom buffer
+                c.gridx = 0;
+                c.gridy = 6;
+                c.weighty = 1;
+                add(new JLabel(), c);
+
+                if (selectedSheet != null) {
+                    sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
+                    cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
+                }
+
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(300, 800);
+            }
+
+            @Override
+            public void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (selectedSheet != null) {
+                    sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
+                    cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
+                }
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
         add(editMenu);
         editMenu.setVisible(false);
 
@@ -147,18 +268,18 @@ public class Screen extends JPanel
         undo = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(undoList.size() > 0) {
+                if (undoList.size() > 0) {
                     undoList.get(undoList.size() - 1).undoAction();
                     redoList.add(undoList.remove(undoList.size() - 1));
                     repaint();
                 }
             }
         };
-        
+
         redo = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(redoList.size() > 0) {
+                if (redoList.size() > 0) {
                     redoList.get(redoList.size() - 1).redoAction();
                     undoList.add(redoList.remove(redoList.size() - 1));
                     repaint();
@@ -235,7 +356,7 @@ public class Screen extends JPanel
                         partGrabbedInitialRot = partBeingDragged.getRot();
                         partGrabbedInitialX = partBeingDragged.getX();
                         partGrabbedInitialY = partBeingDragged.getY();
-                        
+
                     } else {
                         draggingPart = true;
                         partGrabbedX = grabLocation.getX();
@@ -257,8 +378,9 @@ public class Screen extends JPanel
     @Override
     public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
-            if(draggingPart) {
-                EditAction toBeUndone = new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY, partGrabbedInitialRot);
+            if (draggingPart) {
+                EditAction toBeUndone = new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY,
+                        partGrabbedInitialRot);
                 undoList.add(toBeUndone);
                 redoList.clear();
             }
@@ -356,7 +478,6 @@ public class Screen extends JPanel
                 }
             }
             selectedSheet = new Sheet(sheetFile);
-            editMenu.setSelectedSheet(selectedSheet);
             switchStates(State.SHEET_EDIT);
         } else if (e.getSource() == returnToHome) {
             switchStates(State.SHEET_SELECT);
@@ -434,7 +555,6 @@ public class Screen extends JPanel
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
-                editMenu.setSelectedSheet(selectedSheet);
                 editMenu.setVisible(true);
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);
