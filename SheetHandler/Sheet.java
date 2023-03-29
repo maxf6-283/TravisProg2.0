@@ -46,6 +46,10 @@ public class Sheet {
         }
     }
 
+    public void removePart(Part part){
+        activeCut.parts.remove(part);
+    }
+
     /**
      * Declare a new sheet from a path to the list of sheets and the name of the
      * sheet

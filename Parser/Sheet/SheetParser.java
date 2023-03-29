@@ -186,6 +186,7 @@ public class SheetParser {
                     writer.write(1);// for holes
                     continue;
                 }
+                writer.write(0);
 
                 String filePath = part.partFile().getPath();
                 writer.write(filePath.length() % 256);

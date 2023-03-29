@@ -1,5 +1,6 @@
 package SheetHandler;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
@@ -16,6 +17,7 @@ public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
     private NGCDocument ngcDoc;
     private File partFile;
+    private boolean selected = false;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if (partFile == null) {
@@ -81,6 +83,14 @@ public class Part {
         return false;
     }
 
+    public void setSelected(boolean selected){
+        this.selected = selected;
+    }
+
+    public boolean getSelected(){
+        return selected;
+    }
+
     public double getX() {
         return sheetX;
     }
@@ -113,12 +123,16 @@ public class Part {
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform prevTransform = g2d.getTransform();
         g2d.translate(sheetX, -sheetY);
+        if(selected == true){
+            g.setColor(Color.RED);
+        }
         g2d.rotate(-rotation);
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
         g2d.setTransform(prevTransform);
+        g.setColor(Color.GREEN);
     }
 
     public String toString() {
@@ -127,5 +141,13 @@ public class Part {
 
     public NGCDocument getNgcDocument() {
         return ngcDoc;
+    }
+
+    @Override
+    public boolean equals(Object obj){
+        if (((Part)obj).getSelected() == true){
+            return true;
+        }
+        return false;
     }
 }

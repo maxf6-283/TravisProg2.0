@@ -87,6 +87,7 @@ public class Screen extends JPanel
     private JButton addCut;
     private JLabel cutName;
     private JButton changeGCodeView;
+    private Part selectedPart = null;
 
     public Screen() {
         setLayout(null);
@@ -238,10 +239,16 @@ public class Screen extends JPanel
             if (selectSheet != null) {
                 Point2D grabLocation = screenToSheet(e.getPoint());
                 partBeingDragged = selectedSheet.contains(grabLocation);
+
                 if (ctrlPressed && rotationPoint == null) {
                     rotatingPart = true;
                     rotationPoint = grabLocation;
                 } else if (partBeingDragged != null) {
+                    if (selectedPart != null && !selectedPart.equals(partBeingDragged)) {
+                        selectedPart.setSelected(false);
+                    }
+                    partBeingDragged.setSelected(true);
+                    selectedPart = partBeingDragged;
                     if (ctrlPressed) {
                         draggingPart = true;
                         partGrabbedX = grabLocation.getX();
@@ -379,7 +386,9 @@ public class Screen extends JPanel
         } else if (e.getSource() == addItem) {
 
         } else if (e.getSource() == del) {
-
+            if (selectedPart != null) {
+                selectedSheet.removePart(selectedPart);
+            }
         } else if (e.getSource() == reScan) {
 
         } else if (e.getSource() == emit) {
