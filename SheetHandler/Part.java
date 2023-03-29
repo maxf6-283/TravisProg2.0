@@ -23,7 +23,12 @@ public class Part {
         } else {
             this.partFile = partFile;
             try {
-                File[] files = partFile.listFiles();
+                File[] files = new File[0];
+                if(this instanceof Hole){
+                    files = new File[]{partFile};
+                } else {
+                    files = partFile.listFiles();
+                }
                 File parent = partFile;
                 partFile = null;
                 if(files == null){
