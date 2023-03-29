@@ -1,5 +1,6 @@
 package Parser.GCode;
 
+import Display.Screen;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.awt.geom.Point2D;
@@ -264,6 +265,9 @@ public class NGCDocument {
                 throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
             }
 
+        }
+        if (Screen.DebugMode == true) {
+            System.out.println(attributes);
         }
 
         previousAttributes = attributes;

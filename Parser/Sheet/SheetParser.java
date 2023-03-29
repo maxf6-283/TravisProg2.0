@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import Display.Screen;
 import Parser.GCode.GCodeParser;
 import SheetHandler.Hole;
 import SheetHandler.Part;
@@ -24,14 +25,14 @@ public class SheetParser {
             HashMap<String, String> decodedFile = new HashMap<>();
             for (String attribute : reader.nextLine().split(",")) {
 
-                String key = attribute.substring(0,attribute.indexOf(':'));
+                String key = attribute.substring(0, attribute.indexOf(':'));
                 key = key.replace("\"", "");
                 key = key.replace("{", "");
 
-                String value = attribute.substring(attribute.indexOf(':')+1);
+                String value = attribute.substring(attribute.indexOf(':') + 1);
                 value = value.replace("\"", "");
                 value = value.replace("}", "");
-                
+
                 decodedFile.put(key, value);
             }
             reader.close();
@@ -44,7 +45,7 @@ public class SheetParser {
     }
 
     private static byte[] toByteArray(double value) {
-        //I hate it its in little endian
+        // I hate it its in little endian
         byte[] bytes = new byte[8];
         ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).putDouble(value);
         return bytes;
@@ -62,46 +63,69 @@ public class SheetParser {
             int total = 0;
             int shift = 0;
             int num = 0;
-            while(byteCounter <= 0 || (num & 0x80) != 0){
+            while (byteCounter <= 0 || (num & 0x80) != 0) {
                 num = reader.read();
-                total += (num & 0x7F)<<shift;
-                shift+=7;
+                total += (num & 0x7F) << shift;
+                shift += 7;
                 byteCounter++;
             }
-            total+=byteCounter;
-            System.out.printf("Parsing %s: %d bytes detected.%n", cutFile.getName(), byteCounter);
+            total += byteCounter;
+            if (Screen.DebugMode == true) {
+                System.out.printf("Parsing %s: %d bytes detected.%n", cutFile.getName(), byteCounter);
+            }
             // x, y, rot are in sets of 64 bits
             byte[] nextNumber = new byte[8];
             while (byteCounter < total) {
-                System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
-                byteCounter+=8;
+                if (Screen.DebugMode == true) {
+                    System.out.println(
+                            "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
+                } else {
+                    reader.readNBytes(nextNumber, 0, 8);
+                }
+                byteCounter += 8;
                 double partX = toDouble(nextNumber);
-                System.out.printf("Part %d's x is %f%n", byteCounter, partX);
-                System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
-                byteCounter+=8;
+                if (Screen.DebugMode == true) {
+                    System.out.printf("Part %d's x is %f%n", byteCounter, partX);
+                    System.out.println(
+                            "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
+                } else {
+                    reader.readNBytes(nextNumber, 0, 8);
+                }
+                byteCounter += 8;
                 double partY = toDouble(nextNumber);
-                System.out.printf("Part %d's y is %f%n", byteCounter, partY);
-                System.out.println("Part read:" + reader.readNBytes(nextNumber, 0, 8) +": " + Arrays.toString(nextNumber));
-                byteCounter+=8;
+                if (Screen.DebugMode == true) {
+                    System.out.printf("Part %d's y is %f%n", byteCounter, partY);
+                    System.out.println(
+                            "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
+                } else {
+                    reader.readNBytes(nextNumber, 0, 8);
+                }
+                byteCounter += 8;
                 double partRot = toDouble(nextNumber);
-                System.out.printf("Part %d's r is %f%n", byteCounter, partRot);
-                //its in little endian and I hate it
+                if (Screen.DebugMode == true) {
+                    System.out.printf("Part %d's r is %f%n", byteCounter, partRot);
+                }
+                // its in little endian and I hate it
                 byteCounter++;
-                if(reader.read()==1){
-                    //is a hole
-                    cut.parts.add(new Hole(partX, partY,partRot));
-                    System.out.println("Adding a hole");
-                }else{
-                    //is a part(reader.read()==0)
+                if (reader.read() == 1) {
+                    // is a hole
+                    cut.parts.add(new Hole(partX, partY, partRot));
+                    if (Screen.DebugMode == true) {
+                        System.out.println("Adding a hole");
+                    }
+                } else {
+                    // is a part(reader.read()==0)
                     int fileNameLength = reader.read();
                     byteCounter++;
-                    if(fileNameLength == -1){
-                        break;//end of file
+                    if (fileNameLength == -1) {
+                        break;// end of file
                     }
-                    System.out.println("File name length: " + fileNameLength);
+                    if (Screen.DebugMode == true) {
+                        System.out.println("File name length: " + fileNameLength);
+                    }
                     String partFileName = "";
                     for (int character = 0; character < fileNameLength; character++) {
-                        partFileName += (char)reader.read();
+                        partFileName += (char) reader.read();
                         byteCounter++;
                     }
                     File partFile = new File(partFileName);
@@ -109,20 +133,23 @@ public class SheetParser {
                 }
             }
 
-            /* @Deprecated
-            outdated info
-            // hole time
-            // holes follow the pattern "double x, double y, empty double, byte with a 1 in
-            // it"
-            // I don't know why and I hate it
-            while (reader.available() != 0) {
-                reader.readNBytes(nextNumber, 0, 8);
-                double holeX = toDouble(nextNumber);
-                reader.readNBytes(nextNumber, 0, 8);
-                double holeY = toDouble(nextNumber);
-                cut.parts.add(new Hole(holeX, holeY));
-                reader.readNBytes(9);
-            }*/
+            /*
+             * @Deprecated
+             * outdated info
+             * // hole time
+             * // holes follow the pattern "double x, double y, empty double, byte with a 1
+             * in
+             * // it"
+             * // I don't know why and I hate it
+             * while (reader.available() != 0) {
+             * reader.readNBytes(nextNumber, 0, 8);
+             * double holeX = toDouble(nextNumber);
+             * reader.readNBytes(nextNumber, 0, 8);
+             * double holeY = toDouble(nextNumber);
+             * cut.parts.add(new Hole(holeX, holeY));
+             * reader.readNBytes(9);
+             * }
+             */
             reader.close();
 
         } catch (Exception e) {
@@ -150,32 +177,32 @@ public class SheetParser {
         FileOutputStream writer;
         try {
             writer = new FileOutputStream(cut.cutFile());
-            //TODO: figure out what the first byte indicates
+            // TODO: figure out what the first byte indicates
             writer.write(255);
             writer.write(cut.parts.size());
 
-            //write the parts
-            for(Part part : cut.parts) {
+            // write the parts
+            for (Part part : cut.parts) {
                 writer.write(toByteArray(part.getX()));
                 writer.write(toByteArray(part.getY()));
                 writer.write(toByteArray(part.getRot()));
-                if(part instanceof Hole){
-                    writer.write(1);//for holes
+                if (part instanceof Hole) {
+                    writer.write(1);// for holes
                     continue;
                 }
 
                 String filePath = part.partFile().getPath();
-                writer.write(filePath.length()%256);
-                writer.write(filePath.length()>>8);
+                writer.write(filePath.length() % 256);
+                writer.write(filePath.length() >> 8);
 
-                for(int i = 0; i < filePath.length(); i++) {
+                for (int i = 0; i < filePath.length(); i++) {
                     writer.write(filePath.charAt(i));
                 }
             }
 
             writer.close();
 
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("Cannot save cut file???\n\n");
         }
     }

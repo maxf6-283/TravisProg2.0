@@ -1,5 +1,6 @@
 package Parser.GCode;
 
+import Display.Screen;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 
@@ -40,7 +41,8 @@ public class RelativePath2D extends Path2D.Double {
      * @param c
      * @param b
      */
-    public void arcTo(double x1, double y1, double x2, double y2, int direction, boolean isRelative, boolean isRelativeArc) {
+    public void arcTo(double x1, double y1, double x2, double y2, int direction, boolean isRelative,
+            boolean isRelativeArc) {
         if (direction < -1 || direction > 1) {
             throw new IllegalArgumentException("Direction: " + direction + " is not in the range -1, 1");
         }
@@ -52,7 +54,7 @@ public class RelativePath2D extends Path2D.Double {
         double centerX = x1;
         double centerY = y1;
 
-        if(isRelativeArc) {
+        if (isRelativeArc) {
             centerX += startX;
             centerY += startY;
         }
@@ -60,9 +62,15 @@ public class RelativePath2D extends Path2D.Double {
         double endX = x2;
         double endY = y2;
 
-        if(isRelative) {
+        if (isRelative) {
             endX += startX;
             endY += startY;
+        }
+
+        if (Screen.DebugMode == true) {
+            System.out.printf("Arguments: x1: %f, y1: %f, x2: %f, y2: %f%n", x1, y1, x2, y2);
+            System.out.printf("Arcing from %f, %f to %f, %f around %f, %f%n", startX, startY, endX, endY, centerX,
+                    centerY);
         }
 
         double startingAngle = Math.atan((startY - centerY) / (startX - centerX));
@@ -80,11 +88,16 @@ public class RelativePath2D extends Path2D.Double {
 
         double radius = Math.sqrt((startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
         double radius2 = Math.sqrt((endX - centerX) * (endX - centerX) + (endY - centerY) * (endY - centerY));
-        
-        if (Math.abs(radius - radius2) > 0.05 || (Math.abs(radius - radius2) > 0.05 && Math.abs(radius - radius2) > (radius + radius2)/2*0.001)) {
+
+        if (Screen.DebugMode == true) {
+            System.out.printf("Radius is %f, starting angle is %f, ending angle is %f%n", radius, startingAngle,
+                    endingAngle);
+        }
+
+        if (Math.abs(radius - radius2) > 0.05 || (Math.abs(radius - radius2) > 0.05 && Math.abs(radius - radius2) > (radius + radius2) / 2 * 0.001)) {
             throw new IllegalGCodeError("Arc is not defined to have a self-similar radius");
         } else {
-            radius = radius/2 + radius2/2;
+            radius = radius / 2 + radius2 / 2;
             double angle = startingAngle;
 
             while (angle * direction < endingAngle * direction) {
