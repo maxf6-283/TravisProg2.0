@@ -24,12 +24,14 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.io.File;
 
 public class Screen extends JPanel
-        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener {
+        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener {
     public static volatile boolean DebugMode = false;
     private JList<File> sheetList;
     private JScrollPane sheetScroll;
@@ -47,8 +49,11 @@ public class Screen extends JPanel
     private double startY;
     private boolean panning = false;
     private boolean draggingPart = false;
+    private boolean rotatingPart = false;
+    private boolean ctrlPressed = false;
+    private Point2D rotationPoint;
     private Part partBeingDragged;
-    private double partGrabbedX; // the location on the part that is grabbed in sheet coords
+    private double partGrabbedX;
     private double partGrabbedY;
     private NewSheetPrompt newSheetPrompt;
 
@@ -93,6 +98,14 @@ public class Screen extends JPanel
         newSheetPrompt = new NewSheetPrompt(this);
         newSheetPrompt.setVisible(false);
         newSheetPrompt.setAlwaysOnTop(true);
+
+        addMouseListener(this);
+        addMouseMotionListener(this);
+        addMouseWheelListener(this);
+        addKeyListener(this);
+
+        setFocusable(true);
+        requestFocus();
     }
 
     @Override
@@ -116,13 +129,14 @@ public class Screen extends JPanel
                 selectedSheet.draw(g);
                 g2d.translate(-xCorner, -yCorner);
                 g2d.scale(1 / zoom, 1 / zoom);
-                // test every point on screen for part touching
-                for (int x = 0; x < getWidth(); x += 10) {
-                    for (int y = 0; y < getHeight(); y += 10) {
-                        if (selectSheet != null && selectedSheet.contains(screenToSheet(new Point(x, y))) != null) {
-                            g.fillRect(x, y, 5, 5);
-                        }
-                    }
+
+                if (rotationPoint != null) {
+                    g2d.setColor(Color.ORANGE);
+                    Point2D rPnt = sheetToScreen(rotationPoint);
+                    g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() - 5, (int) rPnt.getX() + 5,
+                            (int) rPnt.getY() + 5);
+                    g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() + 5, (int) rPnt.getX() + 5,
+                            (int) rPnt.getY() - 5);
                 }
             }
             case SHEET_ADD -> {
@@ -142,9 +156,20 @@ public class Screen extends JPanel
                 Point2D grabLocation = screenToSheet(e.getPoint());
                 partBeingDragged = selectedSheet.contains(grabLocation);
                 if (partBeingDragged != null) {
-                    draggingPart = true;
-                    partGrabbedX = grabLocation.getX();
-                    partGrabbedY = grabLocation.getY();
+                    if (ctrlPressed) {
+                        if (rotationPoint == null) {
+                            rotatingPart = true;
+                            rotationPoint = grabLocation;
+                        } else {
+                            draggingPart = true;
+                            partGrabbedX = grabLocation.getX();
+                            partGrabbedY = grabLocation.getY();
+                        }
+                    } else {
+                        draggingPart = true;
+                        partGrabbedX = grabLocation.getX();
+                        partGrabbedY = grabLocation.getY();
+                    }
                 } else {
                     startX = xCorner - e.getX() / zoom;
                     startY = yCorner - e.getY() / zoom;
@@ -178,9 +203,24 @@ public class Screen extends JPanel
             yCorner = startY + e.getY() / zoom;
         } else if (draggingPart) {
             Point2D movedPoint = screenToSheet(e.getPoint());
-            partBeingDragged.setX(partBeingDragged.getX() - partGrabbedX + movedPoint.getX());
-            partBeingDragged.setY(partBeingDragged.getY() + partGrabbedY - movedPoint.getY());
-            
+            if (rotatingPart) {
+                // oo fun rotation i had no pain at all coding this
+
+                // get the starting angle from the rotation point
+                double startingAngle = Math
+                        .atan((partGrabbedY - rotationPoint.getY()) / (partGrabbedX - rotationPoint.getX()));
+
+                // get the ending angle from the rotation point
+                double endingAngle = Math
+                        .atan((movedPoint.getY() - rotationPoint.getY()) / (movedPoint.getX() - rotationPoint.getX()));
+
+                // roate the part the requisite amount
+                partBeingDragged.setRot(endingAngle - startingAngle);
+            } else {
+                partBeingDragged.setX(partBeingDragged.getX() - partGrabbedX + movedPoint.getX());
+                partBeingDragged.setY(partBeingDragged.getY() + partGrabbedY - movedPoint.getY());
+            }
+
             partGrabbedX = movedPoint.getX();
             partGrabbedY = movedPoint.getY();
         }
@@ -318,5 +358,26 @@ public class Screen extends JPanel
         out.setLocation(out.getX() * zoom, out.getY() * zoom);
         out.setLocation(out.getX() + xCorner * zoom, out.getY() + yCorner * zoom);
         return out;
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+        // Unused
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == 17) {
+            ctrlPressed = true;
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == 17) {
+            ctrlPressed = false;
+            rotatingPart = false;
+            rotationPoint = null;
+        }
     }
 }
