@@ -261,26 +261,21 @@ public class Screen extends JPanel
                 // offset
                 Point2D.Double ctrlPoint = (Point2D.Double) rotationPoint.clone();
 
-                System.out.printf("Ctrl pnt at start: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
                 // translate it so the part center is at 0,0
                 ctrlPoint.setLocation(ctrlPoint.getX() - partGrabbedInitialX + selectedSheet.getWidth(),
                         ctrlPoint.getY() + partGrabbedInitialY - selectedSheet.getHeight());
 
-                System.out.printf("Ctrl pnt at center: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
                 // rotate it the same angle
                 ctrlPoint.setLocation(ctrlPoint.getX() * Math.cos(rot) + ctrlPoint.getY() * -Math.sin(rot),
                         ctrlPoint.getX() * Math.sin(rot) + ctrlPoint.getY() * Math.cos(rot));
 
-                System.out.printf("Ctrl pnt at rot: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
                 // translate it back
                 ctrlPoint.setLocation(ctrlPoint.getX() + partGrabbedInitialX - selectedSheet.getWidth(),
                         ctrlPoint.getY() - partGrabbedInitialY + selectedSheet.getHeight());
-                System.out.printf("Ctrl pnt at back: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
 
                 // get the difference
                 double xDiff = ctrlPoint.getX() - rotationPoint.getX();
                 double yDiff = ctrlPoint.getY() - rotationPoint.getY();
-                System.out.printf("Xdiff: %f, yDiff: %f%n%n", xDiff, yDiff);
 
                 // translate part
                 partBeingDragged.setX(partGrabbedInitialX - xDiff);
