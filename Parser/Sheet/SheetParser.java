@@ -153,10 +153,7 @@ public class SheetParser {
             reader.close();
 
         } catch (Exception e) {
-            System.err.println("Cut file is wonky!\n\n");
-
             e.printStackTrace();
-
             System.exit(1);
         }
     }
