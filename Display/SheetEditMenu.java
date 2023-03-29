@@ -10,58 +10,94 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class SheetEditMenu extends JPanel implements ActionListener {
-    private JButton emit;
+import SheetHandler.Sheet;
+import SheetHandler.SheetThickness;
 
-    public SheetEditMenu() {
+public class SheetEditMenu extends JPanel implements ActionListener {
+    private Sheet selectedSheet;
+    private JLabel sheetName;
+    private JLabel cutName;
+    private JButton emit;
+    private JButton addHole;
+    private JButton addItem;
+    private JButton del;
+    private JButton reScan;
+    private JButton save;
+    private JButton addCut;
+    private JButton selectGCodeView;
+
+    public SheetEditMenu(JButton returnTo, Sheet currentSheet) {
         setLayout(new GridBagLayout());
         setBounds(0, 0, 300, 800);
-        GridBagConstraints c = new GridBagConstraints();
 
-        emit = new JButton("Emit Gcode");
+        GridBagConstraints c = new GridBagConstraints();
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.FIRST_LINE_START;
+        c.insets = new Insets(10, 10, 10, 10);
         c.gridx = 0;
         c.gridy = 0;
-        add(emit, c);
-        JPanel pane = this;
-        JButton button;
-
-        button = new JButton("Button 2");
-        c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 0.5;
-        c.gridx = 1;
-        c.gridy = 0;
-        pane.add(button, c);
-
-        button = new JButton("Button 3");
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.weightx = 0.5;
-        c.gridx = 2;
-        c.gridy = 0;
-        pane.add(button, c);
-
-        button = new JButton("Long-Named Button 4");
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.ipady = 40; // make this component tall
-        c.weightx = 0.0;
+        c.ipady = 40;
         c.gridwidth = 3;
+        add(returnTo, c);
+
+        sheetName = new JLabel("Editing Sheet: ");
+        sheetName.setForeground(Color.WHITE);
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 0.5;
         c.gridx = 0;
         c.gridy = 1;
-        pane.add(button, c);
+        c.ipady = 20;
+        add(sheetName, c);
 
-        button = new JButton("5");
+        cutName = new JLabel("Current Cut: ");
+        cutName.setForeground(Color.WHITE);
+
+        addHole = new JButton("Add Hole");
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.ipady = 0; // reset to default
-        c.weighty = 1.0; // request any extra vertical space
-        c.anchor = GridBagConstraints.PAGE_END; // bottom of space
-        c.insets = new Insets(10, 0, 0, 0); // top padding
-        c.gridx = 1; // aligned with button 2
-        c.gridwidth = 2; // 2 columns wide
-        c.gridy = 2; // third row
-        pane.add(button, c);
+        c.weightx = 0.5;
+        c.gridx = 0;
+        c.gridy = 2;
+        c.gridwidth = 1;
+        c.ipady = 20;
+        add(addHole, c);
 
+        addItem = new JButton("Add Item");
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 1;
+        c.gridy = 2;
+        add(addItem, c);
+
+        del = new JButton("Del Select");
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 2;
+        add(del, c);
+
+        reScan = new JButton("Rescan parts_library");
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0; // aligned with button 2
+        c.gridwidth = 2; // 2 columns wide
+        c.gridy = 3; // third row
+        add(reScan, c);
+
+        c.gridx = 0;
+        c.gridy = 5;
+        c.weighty = 1;
+        add(new JLabel(), c);
+
+        selectedSheet = currentSheet;
+        if (selectedSheet != null) {
+            sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
+            cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
+        }
+    }
+
+    public void setSelectedSheet(Sheet selectedSheet) {
+        this.selectedSheet = selectedSheet;
     }
 
     @Override
@@ -77,6 +113,10 @@ public class SheetEditMenu extends JPanel implements ActionListener {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        if (selectedSheet != null) {
+            sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
+            cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
+        }
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, getWidth(), getHeight());
     }

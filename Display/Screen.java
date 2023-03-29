@@ -86,10 +86,10 @@ public class Screen extends JPanel
         sheetList.addListSelectionListener(this);
 
         returnToHome = new JButton("Return to Home");
-        returnToHome.setBounds(0, 0, 150, 45);
-        add(returnToHome);
+        //returnToHome.setBounds(0, 0, 150, 45);
+        //add(returnToHome);
         returnToHome.addActionListener(this);
-        returnToHome.setVisible(false);
+        //returnToHome.setVisible(false);
 
         addSheet = new JButton("Add new sheet");
         addSheet.setBounds(350, 100, 200, 50);
@@ -106,7 +106,7 @@ public class Screen extends JPanel
         newSheetPrompt.setVisible(false);
         newSheetPrompt.setAlwaysOnTop(true);
 
-        editMenu = new SheetEditMenu();
+        editMenu = new SheetEditMenu(returnToHome, selectedSheet);
         add(editMenu);
         editMenu.setVisible(false);
 
@@ -272,6 +272,7 @@ public class Screen extends JPanel
                 }
             }
             selectedSheet = new Sheet(sheetFile);
+            editMenu.setSelectedSheet(selectedSheet);
             switchStates(State.SHEET_EDIT);
         } else if (e.getSource() == returnToHome) {
             switchStates(State.SHEET_SELECT);
@@ -349,6 +350,7 @@ public class Screen extends JPanel
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
+                editMenu.setSelectedSheet(selectedSheet);
                 editMenu.setVisible(true);
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);

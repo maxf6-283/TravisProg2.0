@@ -56,8 +56,8 @@ public class Sheet {
             parentFile.mkdir();
             sheetFile = new File(parentFile, sheetName + ".sheet");
             HashMap<String, String> sheetInfo = new HashMap<>();
-            sheetInfo.put("w", ""+width);
-            sheetInfo.put("h", ""+height);
+            sheetInfo.put("w", "" + width);
+            sheetInfo.put("h", "" + height);
             sheetInfo.put("hole_file", thickness.holesFile.getPath());
             SheetParser.saveSheetInfo(sheetFile, sheetInfo);
         } catch (Exception e) {
@@ -70,17 +70,19 @@ public class Sheet {
 
     /**
      * returns the width of the sheet
+     * 
      * @return the width of the sheet
      */
-    public double getWidth(){
+    public double getWidth() {
         return width;
     }
 
     /**
      * returns the height of the sheet
+     * 
      * @return the height of the sheet
      */
-    public double getHeight(){
+    public double getHeight() {
         return height;
     }
 
@@ -111,8 +113,8 @@ public class Sheet {
      */
     public void draw(Graphics g) {
         g.setColor(Color.ORANGE);
-        g.drawRect( 0, 0, (int) Math.abs(width), (int) (height));
-        Graphics2D g2d = (Graphics2D)g;
+        g.drawRect(0, 0, (int) Math.abs(width), (int) (height));
+        Graphics2D g2d = (Graphics2D) g;
         g2d.translate(-width, height);
         for (Cut cut : cuts) {
             if (cut == activeCut) {
@@ -144,19 +146,27 @@ public class Sheet {
         }
     }
 
-    public Part contains(Point2D point){
-        if(activeCut == null){
+    public Part contains(Point2D point) {
+        if (activeCut == null) {
             return null;
         }
         Point2D pointToCheck = new Point2D.Double(-width - point.getX(), height - point.getY());
-        for(Part part:activeCut){
-            if(part instanceof Hole){
+        for (Part part : activeCut) {
+            if (part instanceof Hole) {
                 continue;
             }
-            if(part.contains(pointToCheck)){
+            if (part.contains(pointToCheck)) {
                 return part;
             }
         }
         return null;
+    }
+
+    public File getActiveCutFile() {
+        return activeCutFile;
+    }
+
+    public File getSheetFile() {
+        return sheetFile;
     }
 }
