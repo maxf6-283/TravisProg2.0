@@ -9,6 +9,7 @@ import javax.swing.event.MouseInputListener;
 import SheetHandler.Sheet;
 import SheetHandler.SheetThickness;
 
+import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JList;
@@ -25,7 +26,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener {
@@ -46,6 +49,8 @@ public class Screen extends JPanel
     private double startY;
     private boolean panning = false;
     private NewSheetPrompt newSheetPrompt;
+    private SheetEditMenu editMenu;
+    private BufferedImage img;
 
     public Screen() {
         setLayout(null);
@@ -88,6 +93,16 @@ public class Screen extends JPanel
         newSheetPrompt = new NewSheetPrompt(this);
         newSheetPrompt.setVisible(false);
         newSheetPrompt.setAlwaysOnTop(true);
+
+        editMenu = new SheetEditMenu();
+        add(editMenu);
+        editMenu.setVisible(false);
+
+        try{
+            img = ImageIO.read(new File("Display\\971 large logo.png"));
+        }catch(IOException e){
+            System.out.println("Logo not Found");
+        }
     }
 
     @Override
@@ -97,8 +112,10 @@ public class Screen extends JPanel
 
     @Override
     public void paintComponent(Graphics g) {
-        g.setColor(Color.BLACK);
+        super.paintComponent(g);
+        g.setColor(new Color(33, 30, 31));
         g.fillRect(0, 0, getWidth(), getHeight());
+        g.drawImage(img, 200, 0, null);
         switch (state) {
             case SHEET_SELECT -> {
 
@@ -258,9 +275,11 @@ public class Screen extends JPanel
                 sheetScroll.setVisible(true);
                 newSheetPrompt.setVisible(false);
                 returnToHome.setVisible(false);
+                editMenu.setVisible(false);
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
+                editMenu.setVisible(true);
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
@@ -275,6 +294,7 @@ public class Screen extends JPanel
             }
             case SHEET_ADD -> {
                 state = State.SHEET_ADD;
+                editMenu.setVisible(false);
                 returnToHome.setVisible(false);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
