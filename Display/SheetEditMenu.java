@@ -14,7 +14,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import SheetHandler.Sheet;
-import SheetHandler.SheetThickness;
 
 public class SheetEditMenu extends JPanel implements ActionListener {
     private Sheet selectedSheet;
@@ -53,9 +52,6 @@ public class SheetEditMenu extends JPanel implements ActionListener {
         c.ipady = 20;
         add(sheetName, c);
 
-        cutName = new JLabel("Current Cut: ");
-        cutName.setForeground(Color.WHITE);
-
         addHole = new JButton("Add Hole");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 0.5;
@@ -73,19 +69,47 @@ public class SheetEditMenu extends JPanel implements ActionListener {
 
         del = new JButton("Del Select");
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.gridx = 0;
+        c.gridx = 2;
         c.gridy = 2;
         add(del, c);
 
         reScan = new JButton("Rescan parts_library");
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.gridx = 0; // aligned with button 2
-        c.gridwidth = 2; // 2 columns wide
-        c.gridy = 3; // third row
+        c.gridx = 0; 
+        c.gridwidth = 2; 
+        c.gridy = 3; 
         add(reScan, c);
 
+        emit = new JButton("Emit GCode");
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0; 
+        c.gridwidth = 1; 
+        c.gridy = 4; 
+        add(emit, c);
+
+        save = new JButton("Save");
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 1; 
+        c.gridy = 4; 
+        add(save, c);
+
+        addCut = new JButton("Add Cut");
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 2; 
+        c.gridy = 4; 
+        add(addCut, c);
+
+        cutName = new JLabel("Current Cut: ");
+        cutName.setForeground(Color.WHITE);
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0; 
+        c.gridwidth = 3; 
+        c.gridy = 5; 
+        add(cutName, c);
+
+        //bottom buffer
         c.gridx = 0;
-        c.gridy = 5;
+        c.gridy = 6;
         c.weighty = 1;
         add(new JLabel(), c);
 

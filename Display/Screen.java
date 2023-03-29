@@ -129,7 +129,7 @@ public class Screen extends JPanel
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                editMenu.setBounds(0, 0, 300, e.getComponent().getHeight());
+                editMenu.setBounds(0, 0, 400, e.getComponent().getHeight());
             }
         });
 
