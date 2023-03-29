@@ -2,6 +2,7 @@ package Display;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputListener;
@@ -11,15 +12,16 @@ import SheetHandler.Sheet;
 import SheetHandler.SheetThickness;
 
 import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JList;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -34,6 +36,7 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener {
@@ -66,6 +69,10 @@ public class Screen extends JPanel
     private NewSheetPrompt newSheetPrompt;
     private SheetEditMenu editMenu;
     private BufferedImage img;
+    private ArrayList<EditAction> undoList;
+    private ArrayList<EditAction> redoList;
+    private AbstractAction undo;
+    private AbstractAction redo;
 
     public Screen() {
         setLayout(null);
@@ -116,7 +123,7 @@ public class Screen extends JPanel
         try {
             img = ImageIO.read(new File("Display\\971 large logo.png"));
         } catch (IOException e) {
-            System.out.println("Logo not Found");
+            System.err.println("Logo not Found");
         }
 
         addComponentListener(new ComponentAdapter() {
@@ -133,6 +140,37 @@ public class Screen extends JPanel
 
         setFocusable(true);
         requestFocus();
+
+        undoList = new ArrayList<>();
+        redoList = new ArrayList<>();
+
+        undo = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(undoList.size() > 0) {
+                    undoList.get(undoList.size() - 1).undoAction();
+                    redoList.add(undoList.remove(undoList.size() - 1));
+                    repaint();
+                }
+            }
+        };
+        
+        redo = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(redoList.size() > 0) {
+                    redoList.get(redoList.size() - 1).redoAction();
+                    undoList.add(redoList.remove(redoList.size() - 1));
+                    repaint();
+                }
+            }
+        };
+
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Z"), "undo");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Y"), "redo");
+
+        getActionMap().put("undo", undo);
+        getActionMap().put("redo", redo);
     }
 
     @Override
@@ -197,11 +235,14 @@ public class Screen extends JPanel
                         partGrabbedInitialRot = partBeingDragged.getRot();
                         partGrabbedInitialX = partBeingDragged.getX();
                         partGrabbedInitialY = partBeingDragged.getY();
-
+                        
                     } else {
                         draggingPart = true;
                         partGrabbedX = grabLocation.getX();
                         partGrabbedY = grabLocation.getY();
+                        partGrabbedInitialRot = partBeingDragged.getRot();
+                        partGrabbedInitialX = partBeingDragged.getX();
+                        partGrabbedInitialY = partBeingDragged.getY();
                     }
                 } else {
                     startX = xCorner - e.getX() / zoom;
@@ -216,6 +257,11 @@ public class Screen extends JPanel
     @Override
     public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
+            if(draggingPart) {
+                EditAction toBeUndone = new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY, partGrabbedInitialRot);
+                undoList.add(toBeUndone);
+                redoList.clear();
+            }
             panning = false;
             draggingPart = false;
         }
@@ -433,7 +479,6 @@ public class Screen extends JPanel
 
     @Override
     public void keyTyped(KeyEvent e) {
-        // Unused
     }
 
     @Override

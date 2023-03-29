@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 import Display.Screen;
-import Parser.GCode.GCodeParser;
 import SheetHandler.Hole;
 import SheetHandler.Part;
 import SheetHandler.Cut;
