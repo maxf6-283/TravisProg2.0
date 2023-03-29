@@ -11,8 +11,14 @@ import java.io.File;
 public class Cut implements Iterable<Part>{
     public ArrayList<Part> parts;
     private File cutFile;
+    private File holeFile;
 
-    public Cut(File cutFile) {
+    public File getHoleFile(){
+        return holeFile;
+    }
+
+    public Cut(File cutFile, File holeFile) {
+        this.holeFile = holeFile;
         this.cutFile = cutFile;
 
         parts = new ArrayList<>();

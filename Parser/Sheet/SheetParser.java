@@ -108,7 +108,7 @@ public class SheetParser {
                 byteCounter++;
                 if (reader.read() == 1) {
                     // is a hole
-                    cut.parts.add(new Hole(partX, partY, partRot));
+                    cut.parts.add(new Hole(cut.getHoleFile(), partX, partY, partRot));
                     if (Screen.DebugMode == true) {
                         System.out.println("Adding a hole");
                     }

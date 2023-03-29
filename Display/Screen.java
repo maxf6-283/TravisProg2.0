@@ -517,7 +517,7 @@ public class Screen extends JPanel
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.HORIZONTAL;
             c.anchor = GridBagConstraints.FIRST_LINE_START;
-            c.insets = new Insets(10, 10, 10, 10);
+            c.insets = new Insets(10, 5, 10, 5);
             c.gridx = 0;
             c.gridy = 0;
             c.weightx = 0.5;

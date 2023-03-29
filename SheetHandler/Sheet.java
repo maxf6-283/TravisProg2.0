@@ -38,7 +38,7 @@ public class Sheet {
             if (!cutFile.getName().endsWith(".cut")) {
                 continue;
             }
-            Cut newCut = new Cut(cutFile);
+            Cut newCut = new Cut(cutFile, holeFile);
             cuts.add(newCut);
             if (cutFile.getName().equals(activeCutFile.getName())) {
                 activeCut = newCut;
