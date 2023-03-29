@@ -197,7 +197,7 @@ public class Screen extends JPanel
         g.setColor(new Color(33, 30, 31));
         g.fillRect(0, 0, getWidth(), getHeight());
         if (state == State.SHEET_SELECT) {
-            g.drawImage(img, 200, 0, null);
+            g.drawImage(img, (getWidth()-800)/2, (getHeight()-800)/2, null);
         }
         switch (state) {
             case SHEET_SELECT -> {
