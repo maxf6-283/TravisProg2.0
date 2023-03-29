@@ -1,5 +1,6 @@
 package Parser.GCode;
 
+import Display.Screen;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.awt.geom.Point2D;
@@ -265,7 +266,9 @@ public class NGCDocument {
             }
 
         }
-        System.out.println(attributes);
+        if (Screen.DebugMode == true) {
+            System.out.println(attributes);
+        }
 
         previousAttributes = attributes;
     }

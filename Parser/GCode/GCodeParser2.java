@@ -1,5 +1,6 @@
 package Parser.GCode;
 
+import Display.Screen;
 import java.util.HashMap;
 
 public class GCodeParser2 {
@@ -13,7 +14,9 @@ public class GCodeParser2 {
                 }
             }
         } else {
+            if(Screen.DebugMode == true){
             System.out.println(gcodeLine);
+            }
             HashMap<String, Double> attributes = new HashMap<>();
             for (String datum : gcodeLine.trim().split(" ")) {
                 try {
