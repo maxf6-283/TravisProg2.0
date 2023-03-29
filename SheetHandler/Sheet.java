@@ -146,11 +146,12 @@ public class Sheet {
     }
 
     public Part contains(Point2D point){
+        Point2D pointToCheck = new Point2D.Double(-width - point.getX(), height - point.getY());
         for(Part part:activeCut){
             if(part instanceof Hole){
                 continue;
             }
-            if(part.contains(point)){
+            if(part.contains(pointToCheck)){
                 return part;
             }
         }
