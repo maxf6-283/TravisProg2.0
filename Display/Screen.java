@@ -61,6 +61,8 @@ public class Screen extends JPanel
     private double partGrabbedX;
     private double partGrabbedY;
     private double partGrabbedInitialRot;
+    private double partGrabbedInitialX;
+    private double partGrabbedInitialY;
     private NewSheetPrompt newSheetPrompt;
     private SheetEditMenu editMenu;
     private BufferedImage img;
@@ -194,6 +196,8 @@ public class Screen extends JPanel
                             partGrabbedX = grabLocation.getX();
                             partGrabbedY = grabLocation.getY();
                             partGrabbedInitialRot = partBeingDragged.getRot();
+                            partGrabbedInitialX = partBeingDragged.getX();
+                            partGrabbedInitialY = partBeingDragged.getY();
                         }
                     } else {
                         draggingPart = true;
@@ -255,23 +259,27 @@ public class Screen extends JPanel
                 //so baiscally what i need to do is translate the ctrl point along the same rotation as if it were attachted to the part and then move the part by the offset
                 Point2D.Double ctrlPoint = (Point2D.Double)rotationPoint.clone();
                 
+                System.out.printf("Ctrl pnt at start: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
                 //translate it so the part center is at 0,0
-                ctrlPoint.setLocation(ctrlPoint.getX() - partBeingDragged.getX(), ctrlPoint.getY() + partBeingDragged.getY());
+                ctrlPoint.setLocation(ctrlPoint.getX() - partGrabbedInitialX + selectedSheet.getWidth(), ctrlPoint.getY() + partGrabbedInitialY - selectedSheet.getHeight());
                 
+                System.out.printf("Ctrl pnt at center: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
                 //rotate it the same angle
                 ctrlPoint.setLocation(ctrlPoint.getX() * Math.cos(rot) + ctrlPoint.getY() * -Math.sin(rot), ctrlPoint.getX() * Math.sin(rot) + ctrlPoint.getY() * Math.cos(rot));
                 
+                System.out.printf("Ctrl pnt at rot: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
                 //translate it back
-                ctrlPoint.setLocation(ctrlPoint.getX() + partBeingDragged.getX(), ctrlPoint.getY() - partBeingDragged.getY());
+                ctrlPoint.setLocation(ctrlPoint.getX() + partGrabbedInitialX - selectedSheet.getWidth(), ctrlPoint.getY() - partGrabbedInitialY + selectedSheet.getHeight());
+                System.out.printf("Ctrl pnt at back: %f, %f%n", ctrlPoint.getX(), ctrlPoint.getY());
                 
                 //get the difference
                 double xDiff = ctrlPoint.getX() - rotationPoint.getX();
                 double yDiff = ctrlPoint.getY() - rotationPoint.getY();
-                System.out.printf("Xdiff: %f, yDiff: %f%n", xDiff, yDiff);
+                System.out.printf("Xdiff: %f, yDiff: %f%n%n", xDiff, yDiff);
                 
-                //translate part
-                //partBeingDragged.setX(partBeingDragged.getX() + xDiff);
-                //partBeingDragged.setY(partBeingDragged.getY() + yDiff);
+                // translate part
+                partBeingDragged.setX(partGrabbedInitialX + xDiff);
+                partBeingDragged.setY(partGrabbedInitialY + yDiff);
                 partBeingDragged.setRot(partGrabbedInitialRot - rot);
                 //it doesnt work because it hates me ):
             } else {
