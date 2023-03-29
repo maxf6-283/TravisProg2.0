@@ -409,6 +409,7 @@ public class Screen extends JPanel
             ctrlPressed = false;
             rotatingPart = false;
             rotationPoint = null;
+            repaint();
         }
     }
 }
