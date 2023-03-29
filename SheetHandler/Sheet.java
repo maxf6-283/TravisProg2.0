@@ -5,7 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.awt.Color;
 
@@ -146,6 +145,9 @@ public class Sheet {
     }
 
     public Part contains(Point2D point){
+        if(activeCut == null){
+            return null;
+        }
         Point2D pointToCheck = new Point2D.Double(-width - point.getX(), height - point.getY());
         for(Part part:activeCut){
             if(part instanceof Hole){
