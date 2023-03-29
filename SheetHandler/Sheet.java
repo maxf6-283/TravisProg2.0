@@ -150,7 +150,7 @@ public class Sheet {
             if(part instanceof Hole){
                 continue;
             }
-            if(part.contains(point)){//TODO finish and fix for holes
+            if(part.contains(point)){
                 return part;
             }
         }

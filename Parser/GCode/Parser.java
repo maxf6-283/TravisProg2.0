@@ -49,7 +49,7 @@ public class Parser {
             if (line.contains("M")) {
                 MCodeParser.parse(line, lineNum, doc);
             } else if(line.length() > 2){
-                GCodeParser2.parse(line, lineNum, doc);
+                GCodeParser.parse(line, lineNum, doc);
             }
         }
         input.close();

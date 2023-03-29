@@ -265,7 +265,6 @@ public class NGCDocument {
             }
 
         }
-        System.out.println(attributes);
 
         previousAttributes = attributes;
     }

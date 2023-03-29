@@ -65,9 +65,6 @@ public class RelativePath2D extends Path2D.Double {
             endY += startY;
         }
 
-        System.out.printf("Arguments: x1: %f, y1: %f, x2: %f, y2: %f%n", x1, y1, x2, y2);
-        System.out.printf("Arcing from %f, %f to %f, %f around %f, %f%n", startX, startY, endX, endY, centerX, centerY);
-
         double startingAngle = Math.atan((startY - centerY) / (startX - centerX));
         if (startX - centerX < 0) {
             startingAngle += Math.PI;
@@ -84,13 +81,8 @@ public class RelativePath2D extends Path2D.Double {
         double radius = Math.sqrt((startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
         double radius2 = Math.sqrt((endX - centerX) * (endX - centerX) + (endY - centerY) * (endY - centerY));
         
-        System.out.printf("Radius is %f, starting angle is %f, ending angle is %f%n", radius, startingAngle,
-        endingAngle);
-        
         if (Math.abs(radius - radius2) > 0.05 || (Math.abs(radius - radius2) > 0.05 && Math.abs(radius - radius2) > (radius + radius2)/2*0.001)) {
-            // throw new IllegalGCodeError("Arc is not defined to have a self-similar
-            // radius");
-            System.err.println("Arc is not defined to have a self-similar radius");
+            throw new IllegalGCodeError("Arc is not defined to have a self-similar radius");
         } else {
             radius = radius/2 + radius2/2;
             double angle = startingAngle;

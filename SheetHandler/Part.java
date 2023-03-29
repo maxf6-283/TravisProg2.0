@@ -2,6 +2,8 @@ package SheetHandler;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -61,7 +63,9 @@ public class Part {
 
     public boolean contains(Point2D point){
         for(RelativePath2D path: ngcDoc.getRelativePath2Ds()){
-            if(path.contains(point)){
+            Path2D pathToCheck = (Path2D)path.clone();
+            pathToCheck.transform(new AffineTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0));
+            if(pathToCheck.contains(point)){
                 return true;
             }
         }

@@ -17,6 +17,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -24,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseWheelListener;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 
 public class Screen extends JPanel
@@ -102,6 +104,14 @@ public class Screen extends JPanel
                 selectedSheet.draw(g);
                 g2d.translate(-xCorner, -yCorner);
                 g2d.scale(1 / zoom, 1 / zoom);
+                //test every point on screen for part touching
+                for(int x = 0; x < getWidth(); x += 10) {
+                    for(int y = 0; y < getHeight(); y += 10) {
+                        if(selectSheet != null && selectedSheet.contains(screenToSheet(new Point(x, y))) != null) {
+                            g.fillRect(x, y, 5, 5);
+                        }
+                    }
+                }
             }
             case SHEET_ADD -> {
 
@@ -116,7 +126,7 @@ public class Screen extends JPanel
     @Override
     public void mousePressed(MouseEvent e) {
         if(e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            if(false && selectSheet != null && selectedSheet.contains(e.getPoint()) != null){
+            if(selectSheet != null && selectedSheet.contains(screenToSheet(e.getPoint())) != null){
                 System.out.println("Touching part!");
             }else{
                 startX = xCorner - e.getX() / zoom;
@@ -259,5 +269,20 @@ public class Screen extends JPanel
                 newSheetPrompt.setVisible(true);
             }
         }
+    }
+
+    private Point2D screenToSheet(Point2D in) {
+        Point2D out = new Point2D.Double(in.getX(), in.getY());
+        out.setLocation(out.getX() - xCorner * zoom, out.getY() - yCorner * zoom);
+        out.setLocation(out.getX() / zoom, out.getY() / zoom);
+        return out;
+
+    }
+
+    private Point2D sheetToScreen(Point2D in) {
+        Point2D out = new Point2D.Double(in.getX(), in.getY());
+        out.setLocation(out.getX() * zoom, out.getY() * zoom);
+        out.setLocation(out.getX() + xCorner * zoom, out.getY() + yCorner * zoom);
+        return out;
     }
 }
