@@ -6,6 +6,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputListener;
 
+import SheetHandler.Part;
 import SheetHandler.Sheet;
 import SheetHandler.SheetThickness;
 
@@ -48,6 +49,10 @@ public class Screen extends JPanel
     private double startX; // for panning
     private double startY;
     private boolean panning = false;
+    private boolean draggingPart = false;
+    private Part partBeingDragged;
+    private double partGrabbedX; // the location on the part that is grabbed in sheet coords
+    private double partGrabbedY;
     private NewSheetPrompt newSheetPrompt;
     private SheetEditMenu editMenu;
     private BufferedImage img;
@@ -128,10 +133,10 @@ public class Screen extends JPanel
                 selectedSheet.draw(g);
                 g2d.translate(-xCorner, -yCorner);
                 g2d.scale(1 / zoom, 1 / zoom);
-                //test every point on screen for part touching
-                for(int x = 0; x < getWidth(); x += 10) {
-                    for(int y = 0; y < getHeight(); y += 10) {
-                        if(selectSheet != null && selectedSheet.contains(screenToSheet(new Point(x, y))) != null) {
+                // test every point on screen for part touching
+                for (int x = 0; x < getWidth(); x += 10) {
+                    for (int y = 0; y < getHeight(); y += 10) {
+                        if (selectSheet != null && selectedSheet.contains(screenToSheet(new Point(x, y))) != null) {
                             g.fillRect(x, y, 5, 5);
                         }
                     }
@@ -149,13 +154,19 @@ public class Screen extends JPanel
 
     @Override
     public void mousePressed(MouseEvent e) {
-        if(e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            if(selectSheet != null && selectedSheet.contains(screenToSheet(e.getPoint())) != null){
-                System.out.println("Touching part!");
-            }else{
-                startX = xCorner - e.getX() / zoom;
-                startY = yCorner - e.getY() / zoom;
-                panning = true;
+        if (e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
+            if (selectSheet != null) {
+                Point2D grabLocation = screenToSheet(e.getPoint());
+                partBeingDragged = selectedSheet.contains(grabLocation);
+                if (partBeingDragged != null) {
+                    draggingPart = true;
+                    partGrabbedX = grabLocation.getX();
+                    partGrabbedY = grabLocation.getY();
+                } else {
+                    startX = xCorner - e.getX() / zoom;
+                    startY = yCorner - e.getY() / zoom;
+                    panning = true;
+                }
             }
         }
         repaint();
@@ -165,6 +176,7 @@ public class Screen extends JPanel
     public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
             panning = false;
+            draggingPart = false;
         }
     }
 
@@ -181,6 +193,13 @@ public class Screen extends JPanel
         if (panning) {
             xCorner = startX + e.getX() / zoom;
             yCorner = startY + e.getY() / zoom;
+        } else if (draggingPart) {
+            Point2D movedPoint = screenToSheet(e.getPoint());
+            partBeingDragged.setX(partBeingDragged.getX() - partGrabbedX + movedPoint.getX());
+            partBeingDragged.setY(partBeingDragged.getY() + partGrabbedY - movedPoint.getY());
+            
+            partGrabbedX = movedPoint.getX();
+            partGrabbedY = movedPoint.getY();
         }
         repaint();
     }
