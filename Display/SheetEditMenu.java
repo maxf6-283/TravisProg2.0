@@ -85,19 +85,19 @@ public class SheetEditMenu extends JPanel implements ActionListener {
         c.gridx = 0; 
         c.gridwidth = 1; 
         c.gridy = 4; 
-        add(reScan, c);
+        add(emit, c);
 
         save = new JButton("Save");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 1; 
         c.gridy = 4; 
-        add(reScan, c);
+        add(save, c);
 
         addCut = new JButton("Add Cut");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 2; 
         c.gridy = 4; 
-        add(reScan, c);
+        add(addCut, c);
 
         cutName = new JLabel("Current Cut: ");
         cutName.setForeground(Color.WHITE);
@@ -105,7 +105,7 @@ public class SheetEditMenu extends JPanel implements ActionListener {
         c.gridx = 0; 
         c.gridwidth = 3; 
         c.gridy = 5; 
-        add(reScan, c);
+        add(cutName, c);
 
         //bottom buffer
         c.gridx = 0;
