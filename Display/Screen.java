@@ -86,6 +86,7 @@ public class Screen extends JPanel
     private JButton save;
     private JButton addCut;
     private JLabel cutName;
+    private JButton changeGCodeView;
 
     public Screen() {
         setLayout(null);
@@ -197,7 +198,7 @@ public class Screen extends JPanel
         g.setColor(new Color(33, 30, 31));
         g.fillRect(0, 0, getWidth(), getHeight());
         if (state == State.SHEET_SELECT) {
-            g.drawImage(img, (getWidth()-800)/2, (getHeight()-800)/2, null);
+            g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
         }
         switch (state) {
             case SHEET_SELECT -> {
@@ -373,8 +374,23 @@ public class Screen extends JPanel
             switchStates(State.SHEET_EDIT);
         } else if (e.getSource() == returnToHome) {
             switchStates(State.SHEET_SELECT);
-        }
+        } else if (e.getSource() == addHole) {
 
+        } else if (e.getSource() == addItem) {
+
+        } else if (e.getSource() == del) {
+
+        } else if (e.getSource() == reScan) {
+
+        } else if (e.getSource() == emit) {
+
+        } else if (e.getSource() == save) {
+
+        } else if (e.getSource() == addCut) {
+
+        } else if (e.getSource() == changeGCodeView) {
+
+        }
         repaint();
     }
 
@@ -509,8 +525,9 @@ public class Screen extends JPanel
             repaint();
         }
     }
-    public class SheetEditMenu extends JPanel{
-        public SheetEditMenu(){
+
+    public class SheetEditMenu extends JPanel {
+        public SheetEditMenu() {
             setLayout(new GridBagLayout());
             setBounds(0, 0, 300, 800);
 
@@ -542,18 +559,21 @@ public class Screen extends JPanel
             c.gridwidth = 1;
             c.ipady = 20;
             add(addHole, c);
+            addHole.addActionListener(Screen.this);
 
             addItem = new JButton("Add Item");
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 1;
             c.gridy = 2;
             add(addItem, c);
+            addItem.addActionListener(Screen.this);
 
             del = new JButton("Del Select");
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 2;
             c.gridy = 2;
             add(del, c);
+            del.addActionListener(Screen.this);
 
             reScan = new JButton("Rescan parts_library");
             c.fill = GridBagConstraints.HORIZONTAL;
@@ -561,6 +581,7 @@ public class Screen extends JPanel
             c.gridwidth = 2;
             c.gridy = 3;
             add(reScan, c);
+            reScan.addActionListener(Screen.this);
 
             emit = new JButton("Emit GCode");
             c.fill = GridBagConstraints.HORIZONTAL;
@@ -568,18 +589,21 @@ public class Screen extends JPanel
             c.gridwidth = 1;
             c.gridy = 4;
             add(emit, c);
+            emit.addActionListener(Screen.this);
 
             save = new JButton("Save");
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 1;
             c.gridy = 4;
             add(save, c);
+            save.addActionListener(Screen.this);
 
             addCut = new JButton("Add Cut");
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 2;
             c.gridy = 4;
             add(addCut, c);
+            addCut.addActionListener(Screen.this);
 
             cutName = new JLabel("Current Cut: ");
             cutName.setForeground(Color.WHITE);
@@ -588,6 +612,13 @@ public class Screen extends JPanel
             c.gridwidth = 3;
             c.gridy = 5;
             add(cutName, c);
+
+            changeGCodeView = new JButton("Change GCode viewed");
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridy = 7;
+            add(changeGCodeView, c);
+            changeGCodeView.addActionListener(Screen.this);
 
             // bottom buffer
             c.gridx = 0;
