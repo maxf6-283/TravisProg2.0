@@ -167,8 +167,8 @@ public class Part {
 
     public void generateOutline() {
         outline = new Area(ngcDoc.getCurrentPath2D());
-        Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10);
+        Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_SQUARE, BasicStroke.JOIN_BEVEL, 0);
         Area strokeShape = new Area(stroke.createStrokedShape(outline));
-        outline.add(strokeShape);
+        outline = strokeShape;
     }
 }
