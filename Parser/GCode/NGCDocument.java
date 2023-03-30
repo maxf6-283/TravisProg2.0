@@ -11,7 +11,7 @@ public class NGCDocument {
     private ArrayList<RelativePath2D> geometry;
     private Point3D currentPoint;
     private int SpindleSpeed;
-    private double ToolOffset = 0.1575;// TODO finsih thishoibqwob4eiurboewqb
+    private double toolOffset = 0.1575;// TODO finsih thishoibqwob4eiurboewqb
     private double implicitGCodeHolder;
     private boolean isRelativeArc;
     private boolean isRelative = false;
@@ -160,13 +160,13 @@ public class NGCDocument {
             case 0 -> {
                 if (getRelativity()) {
                     if (attributes.get("Z") + getCurrentPointr().getZ() > 0) {
-                        newPath2D();
+                        // newPath2D();
                     }
                     getCurrentPath2D().moveToRelative(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZRelative(attributes.get("Z"));
                 } else {
                     if (attributes.get("Z") > 0) {
-                        newPath2D();
+                        // newPath2D();
                     }
                     getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZ(attributes.get("Z"));
@@ -279,5 +279,9 @@ public class NGCDocument {
 
     public boolean usingMachineCoordinates() {
         return machineCoordinates;
+    }
+
+    public double getToolOffset() {
+        return toolOffset;
     }
 }

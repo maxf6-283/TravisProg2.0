@@ -5,6 +5,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.Area;
+import java.awt.Stroke;
+import java.awt.BasicStroke;
+import java.awt.geom.PathIterator;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -18,6 +23,7 @@ public class Part {
     private NGCDocument ngcDoc;
     private File partFile;
     private boolean selected = false;
+    private Area outline;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if (partFile == null) {
@@ -65,6 +71,8 @@ public class Part {
         sheetX = xLoc;
         sheetY = yLoc;
         rotation = rot;
+
+        generateOutline();
     }
 
     public boolean contains(Point2D point){
@@ -123,16 +131,22 @@ public class Part {
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform prevTransform = g2d.getTransform();
         g2d.translate(sheetX, -sheetY);
+        Color prevColor = g.getColor();
+        g2d.rotate(-rotation);
         if(selected == true){
             g.setColor(Color.RED);
+        } else {
+            g.setColor(Color.ORANGE);
         }
-        g2d.rotate(-rotation);
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
+        g.setColor(prevColor);
+        g2d.draw(outline);
+
+
         g2d.setTransform(prevTransform);
-        g.setColor(Color.GREEN);
     }
 
     public String toString() {
@@ -149,5 +163,12 @@ public class Part {
             return true;
         }
         return false;
+    }
+
+    public void generateOutline() {
+        outline = new Area(ngcDoc.getCurrentPath2D());
+        Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10);
+        Area strokeShape = new Area(stroke.createStrokedShape(outline));
+        outline.add(strokeShape);
     }
 }
