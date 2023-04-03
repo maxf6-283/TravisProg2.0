@@ -35,11 +35,11 @@ public class RelativePath2D extends Path2D.Double {
      * 
      * @param x1        the X-coordinate of the center of the arc
      * @param y1        the Y-coordinate of the center of the arc
-     * @param endX      the X-coordinate of the final end point
-     * @param endY      the Y-coordinate of the final end point
+     * @param x2        the X-coordinate of the final end point
+     * @param y2        the Y-coordinate of the final end point
      * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
-     * @param c
-     * @param b
+     * @param isRelative whether or not x2 and y2 are relative
+     * @param isRelativeArc whether or not x1 and y1 are relative
      */
     public void arcTo(double x1, double y1, double x2, double y2, int direction, boolean isRelative,
             boolean isRelativeArc) {
