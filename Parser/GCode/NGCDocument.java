@@ -160,13 +160,13 @@ public class NGCDocument {
             case 0 -> {
                 if (getRelativity()) {
                     if (attributes.get("Z") + getCurrentPointr().getZ() > 0) {
-                        // newPath2D();
+                         newPath2D();
                     }
                     getCurrentPath2D().moveToRelative(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZRelative(attributes.get("Z"));
                 } else {
                     if (attributes.get("Z") > 0) {
-                        // newPath2D();
+                         newPath2D();
                     }
                     getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZ(attributes.get("Z"));

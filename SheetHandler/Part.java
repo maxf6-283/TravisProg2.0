@@ -3,8 +3,10 @@ package SheetHandler;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Area;
 import java.awt.Stroke;
@@ -23,7 +25,7 @@ public class Part {
     private NGCDocument ngcDoc;
     private File partFile;
     private boolean selected = false;
-    private Area outline;
+    private Shape outline;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if (partFile == null) {
@@ -143,8 +145,8 @@ public class Part {
             g2d.draw(path);
         }
         g.setColor(prevColor);
-        g2d.draw(outline);
 
+        g2d.draw(outline);
 
         g2d.setTransform(prevTransform);
     }
@@ -166,9 +168,21 @@ public class Part {
     }
 
     public void generateOutline() {
-        outline = new Area(ngcDoc.getCurrentPath2D());
+        //outline = new Area(ngcDoc.getCurrentPath2D());
         Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_SQUARE, BasicStroke.JOIN_BEVEL, 0);
-        Area strokeShape = new Area(stroke.createStrokedShape(outline));
-        outline = strokeShape;
+        //Area strokeShape = new Area(stroke.createStrokedShape(outline));
+
+        RelativePath2D temp = ngcDoc.getCurrentPath2D();
+        for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
+            if(calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())){
+                temp = path;
+            }
+        }
+
+        outline = stroke.createStrokedShape(temp);
+    }
+
+    private double calcArea(Rectangle2D rect){
+        return rect.getWidth()*rect.getHeight();
     }
 }
