@@ -78,6 +78,7 @@ public class Screen extends JPanel
     private ArrayList<EditAction> redoList;
     private AbstractAction undo;
     private AbstractAction redo;
+    private AbstractAction deleteSelected;
     private JButton addHole;
     private JButton addItem;
     private JButton del;
@@ -163,7 +164,7 @@ public class Screen extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (undoList.size() > 0) {
-                    undoList.get(undoList.size() - 1).undoAction();
+                    undoList.get(undoList.size() - 1).undoAction(selectedSheet);
                     redoList.add(undoList.remove(undoList.size() - 1));
                     repaint();
                 }
@@ -174,8 +175,19 @@ public class Screen extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (redoList.size() > 0) {
-                    redoList.get(redoList.size() - 1).redoAction();
+                    redoList.get(redoList.size() - 1).redoAction(selectedSheet);
                     undoList.add(redoList.remove(redoList.size() - 1));
+                    repaint();
+                }
+            }
+        };
+
+        deleteSelected = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (selectedPart != null) {
+                    selectedSheet.removePart(selectedPart);
+                    undoList.add(new EditAction(selectedPart, false));
                     repaint();
                 }
             }
@@ -183,9 +195,11 @@ public class Screen extends JPanel
 
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Z"), "undo");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Y"), "redo");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("DELETE"), "delete");
 
         getActionMap().put("undo", undo);
         getActionMap().put("redo", redo);
+        getActionMap().put("delete", deleteSelected);
     }
 
     @Override
@@ -349,7 +363,6 @@ public class Screen extends JPanel
                 partBeingDragged.setX(partGrabbedInitialX - xDiff);
                 partBeingDragged.setY(partGrabbedInitialY + yDiff);
                 partBeingDragged.setRot(partGrabbedInitialRot - rot);
-                // it doesnt work because it hates me ):
             } else {
                 partBeingDragged.setX(partBeingDragged.getX() - partGrabbedX + movedPoint.getX());
                 partBeingDragged.setY(partBeingDragged.getY() + partGrabbedY - movedPoint.getY());
@@ -386,9 +399,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == addItem) {
 
         } else if (e.getSource() == del) {
-            if (selectedPart != null) {
-                selectedSheet.removePart(selectedPart);
-            }
+            deleteSelected.actionPerformed(e);
         } else if (e.getSource() == reScan) {
 
         } else if (e.getSource() == emit) {
