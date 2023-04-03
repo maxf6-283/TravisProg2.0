@@ -165,8 +165,13 @@ public class Screen extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (undoList.size() > 0) {
-                    undoList.get(undoList.size() - 1).undoAction(selectedSheet);
-                    redoList.add(undoList.remove(undoList.size() - 1));
+                    EditAction action = undoList.get(undoList.size() - 1);
+                    action.undoAction(selectedSheet);
+                    undoList.remove(action);
+                    redoList.add(action);
+                    if(!action.doesSomething()) {
+                        this.actionPerformed(e);
+                    }
                     repaint();
                 }
             }
@@ -176,8 +181,13 @@ public class Screen extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (redoList.size() > 0) {
-                    redoList.get(redoList.size() - 1).redoAction(selectedSheet);
-                    undoList.add(redoList.remove(redoList.size() - 1));
+                    EditAction action = redoList.get(redoList.size() - 1);
+                    action.redoAction(selectedSheet);
+                    redoList.remove(action);
+                    undoList.add(action);
+                    if(!action.doesSomething()) {
+                        this.actionPerformed(e);
+                    }
                     repaint();
                 }
             }
