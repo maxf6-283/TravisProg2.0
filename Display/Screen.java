@@ -44,7 +44,7 @@ import java.util.ArrayList;
 
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener {
-    public static volatile boolean DebugMode = false;
+    public static final boolean DebugMode = false;
     private JList<File> sheetList;
     private JScrollPane sheetScroll;
     private DefaultListModel<File> sheetFileList;
@@ -169,7 +169,7 @@ public class Screen extends JPanel
                     action.undoAction(selectedSheet);
                     undoList.remove(action);
                     redoList.add(action);
-                    if(!action.doesSomething()) {
+                    if (!action.doesSomething()) {
                         this.actionPerformed(e);
                     }
                     repaint();
@@ -185,7 +185,7 @@ public class Screen extends JPanel
                     action.redoAction(selectedSheet);
                     redoList.remove(action);
                     undoList.add(action);
-                    if(!action.doesSomething()) {
+                    if (!action.doesSomething()) {
                         this.actionPerformed(e);
                     }
                     repaint();
@@ -197,9 +197,10 @@ public class Screen extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (selectedPart != null) {
-                    //correct for deleting and moving a part at the same time
-                    if(selectedPart == partBeingDragged) {
-                        undoList.add(new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY, partGrabbedInitialRot));
+                    // correct for deleting and moving a part at the same time
+                    if (selectedPart == partBeingDragged) {
+                        undoList.add(new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY,
+                                partGrabbedInitialRot));
                         draggingPart = false;
                         partBeingDragged = null;
                     }
