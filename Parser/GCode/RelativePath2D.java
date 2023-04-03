@@ -103,7 +103,7 @@ public class RelativePath2D extends Path2D.Double {
             double incrVal = Math.abs(startingAngle - endingAngle) / 10;
 
             while (angle * direction < endingAngle * direction) {
-                angle += incrVal;
+                angle += incrVal * direction;
                 if (angle * direction < endingAngle * direction)
                     lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
             }
