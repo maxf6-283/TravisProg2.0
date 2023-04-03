@@ -137,9 +137,9 @@ public class Part {
         g2d.rotate(-rotation);
         if(selected == true){
             g.setColor(Color.RED);
-        } else {
+        } /*else {
             g.setColor(Color.ORANGE);
-        }
+        }*/
         Stroke currentStrok = g2d.getStroke();
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         
@@ -147,6 +147,7 @@ public class Part {
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
+        g2d.setColor(prevColor);
         g2d.setStroke(currentStrok);
 
         //g2d.draw(outline);
