@@ -74,6 +74,7 @@ public class NewSheetPrompt extends JFrame implements ActionListener {
             @Override
             public void windowClosing(WindowEvent e) {
                 parent.returnToNormal();
+                parent.repaint();
             }
         });
     }
