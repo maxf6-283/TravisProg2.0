@@ -299,10 +299,12 @@ public class Screen extends JPanel
                         partGrabbedInitialY = partBeingDragged.getY();
                     }
                 } else {
+                    if (selectedPart != null) {
+                        selectedPart.setSelected(false);
+                        selectedPart = null;
+                    }
                     startX = xCorner - e.getX() / zoom;
                     startY = yCorner - e.getY() / zoom;
-                    selectedPart.setSelected(false);
-                    selectedPart = null;
                     panning = true;
                 }
             }
