@@ -260,10 +260,20 @@ public class Screen extends JPanel
                 if(isMeasuring) {
                     g2d.setColor(Color.YELLOW);
                     g2d.setStroke(new BasicStroke(2));
-                    g2d.fillOval((int)measurePoint1.getX()-5, (int)measurePoint1.getY()-5, 10, 10);
-                    g2d.fillOval((int)measurePoint2.getX()-5, (int)measurePoint2.getY()-5, 10, 10);
-                    g2d.drawLine((int)measurePoint1.getX(), (int)measurePoint1.getY(), (int)measurePoint2.getX(), (int)measurePoint2.getY());
-                
+                    Point2D screenPoint1 = null;
+                    Point2D screenPoint2 = null;
+                    if(measurePoint1 != null) {
+                        screenPoint1 = sheetToScreen(measurePoint1);
+                        g2d.fillOval((int)screenPoint1.getX()-5, (int)screenPoint1.getY()-5, 10, 10);
+                    }
+                    if(measurePoint2 != null) {
+                        screenPoint2 = sheetToScreen(measurePoint2);
+                        g2d.fillOval((int)screenPoint2.getX()-5, (int)screenPoint2.getY()-5, 10, 10);
+                    }
+                    if(measurePoint1 != null && measurePoint2 != null) {
+                        g2d.drawLine((int)screenPoint1.getX(), (int)screenPoint1.getY(), (int)screenPoint2.getX(), (int)screenPoint2.getY());
+                        g2d.drawString(String.format("%.3f\"", measurePoint1.distance(measurePoint2)), (int)(screenPoint1.getX() / 2 + screenPoint2.getX() / 2 + 10), (int)(screenPoint1.getY() / 2 + screenPoint2.getY() / 2 - 10));
+                    }
                 }
             }
             case SHEET_ADD -> {
@@ -281,9 +291,9 @@ public class Screen extends JPanel
         if (e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
             if (isMeasuring) {
                 if(measurePoint1 == null) {
-                    measurePoint1 = new Point2D.Double(e.getX(), e.getY());
+                    measurePoint1 = (Point2D.Double)screenToSheet(new Point2D.Double(e.getX(), e.getY()));
                 } else if (measurePoint2 == null) {
-                    measurePoint2 = new Point2D.Double(e.getX(), e.getY());
+                    measurePoint2 = (Point2D.Double)screenToSheet(new Point2D.Double(e.getX(), e.getY()));
                 } else {
                     measurePoint1 = null;
                     measurePoint2 = null;
@@ -321,8 +331,10 @@ public class Screen extends JPanel
                     } else {
                         startX = xCorner - e.getX() / zoom;
                         startY = yCorner - e.getY() / zoom;
-                        selectedPart.setSelected(false);
-                        selectedPart = null;
+                        if(selectedPart != null){
+                            selectedPart.setSelected(false);
+                            selectedPart = null;
+                        }
                         panning = true;
                     }
                 }
