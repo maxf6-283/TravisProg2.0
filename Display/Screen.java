@@ -186,6 +186,13 @@ public class Screen extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (selectedPart != null) {
+                    //correct for deleting and moving a part at the same time
+                    if(selectedPart == partBeingDragged) {
+                        undoList.add(new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY, partGrabbedInitialRot));
+                        draggingPart = false;
+                        partBeingDragged = null;
+                    }
+                    redoList.clear();
                     selectedSheet.removePart(selectedPart);
                     undoList.add(new EditAction(selectedPart, false));
                     repaint();
@@ -297,6 +304,7 @@ public class Screen extends JPanel
                         partGrabbedInitialRot);
                 undoList.add(toBeUndone);
                 redoList.clear();
+                partBeingDragged = null;
             }
             panning = false;
             draggingPart = false;
