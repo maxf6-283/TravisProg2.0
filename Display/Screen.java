@@ -468,6 +468,7 @@ public class Screen extends JPanel
 
         } else if (e.getSource() == measure) {
             isMeasuring = !isMeasuring;
+            measure.setForeground(isMeasuring ? Color.LIGHT_GRAY : null);
         }
         repaint();
     }
