@@ -100,8 +100,10 @@ public class RelativePath2D extends Path2D.Double {
             radius = radius / 2 + radius2 / 2;
             double angle = startingAngle;
 
+            double incrVal = Math.abs(startingAngle - endingAngle) / 10;
+
             while (angle * direction < endingAngle * direction) {
-                angle += Math.PI / 10 * direction;
+                angle += incrVal;
                 if (angle * direction < endingAngle * direction)
                     lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
             }
