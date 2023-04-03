@@ -36,6 +36,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -90,6 +91,9 @@ public class Screen extends JPanel
     private JLabel cutName;
     private JButton changeGCodeView;
     private Part selectedPart = null;
+    private boolean isMeasuring = false;
+    private Point2D.Double measurePoint1;
+    private Point2D.Double measurePoint2;
 
     public Screen() {
         setLayout(null);
@@ -231,29 +235,35 @@ public class Screen extends JPanel
         super.paintComponent(g);
         g.setColor(new Color(33, 30, 31));
         g.fillRect(0, 0, getWidth(), getHeight());
-        if (state == State.SHEET_SELECT) {
-            g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
-        }
         switch (state) {
             case SHEET_SELECT -> {
-
+                g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
             }
             case SHEET_EDIT -> {
                 Graphics2D g2d = (Graphics2D) g;
+                AffineTransform prevTransform = g2d.getTransform();
                 g2d.scale(zoom, zoom);
                 g2d.translate(xCorner, yCorner);
-                g2d.setStroke(new BasicStroke((float) (1 / zoom)));
+                g2d.setStroke(new BasicStroke((float)(1/zoom)));
                 selectedSheet.draw(g);
-                g2d.translate(-xCorner, -yCorner);
-                g2d.scale(1 / zoom, 1 / zoom);
+                g2d.setTransform(prevTransform);
 
                 if (rotationPoint != null) {
                     g2d.setColor(Color.ORANGE);
                     Point2D rPnt = sheetToScreen(rotationPoint);
+                    g2d.setStroke(new BasicStroke(2));
                     g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() - 5, (int) rPnt.getX() + 5,
-                            (int) rPnt.getY() + 5);
+                    (int) rPnt.getY() + 5);
                     g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() + 5, (int) rPnt.getX() + 5,
-                            (int) rPnt.getY() - 5);
+                    (int) rPnt.getY() - 5);
+                }
+                if(isMeasuring) {
+                    g2d.setColor(Color.YELLOW);
+                    g2d.setStroke(new BasicStroke(2));
+                    g2d.fillOval((int)measurePoint1.getX()-5, (int)measurePoint1.getY()-5, 10, 10);
+                    g2d.fillOval((int)measurePoint2.getX()-5, (int)measurePoint2.getY()-5, 10, 10);
+                    g2d.drawLine((int)measurePoint1.getX(), (int)measurePoint1.getY(), (int)measurePoint2.getX(), (int)measurePoint2.getY());
+                
                 }
             }
             case SHEET_ADD -> {
@@ -269,41 +279,52 @@ public class Screen extends JPanel
     @Override
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            if (selectSheet != null) {
-                Point2D grabLocation = screenToSheet(e.getPoint());
-                partBeingDragged = selectedSheet.contains(grabLocation);
-
-                if (ctrlPressed && rotationPoint == null) {
-                    rotatingPart = true;
-                    rotationPoint = grabLocation;
-                } else if (partBeingDragged != null) {
-                    if (selectedPart != null && !selectedPart.equals(partBeingDragged)) {
-                        selectedPart.setSelected(false);
-                    }
-                    partBeingDragged.setSelected(true);
-                    selectedPart = partBeingDragged;
-                    if (ctrlPressed) {
-                        draggingPart = true;
-                        partGrabbedX = grabLocation.getX();
-                        partGrabbedY = grabLocation.getY();
-                        partGrabbedInitialRot = partBeingDragged.getRot();
-                        partGrabbedInitialX = partBeingDragged.getX();
-                        partGrabbedInitialY = partBeingDragged.getY();
-
-                    } else {
-                        draggingPart = true;
-                        partGrabbedX = grabLocation.getX();
-                        partGrabbedY = grabLocation.getY();
-                        partGrabbedInitialRot = partBeingDragged.getRot();
-                        partGrabbedInitialX = partBeingDragged.getX();
-                        partGrabbedInitialY = partBeingDragged.getY();
-                    }
+            if (isMeasuring) {
+                if(measurePoint1 == null) {
+                    measurePoint1 = new Point2D.Double(e.getX(), e.getY());
+                } else if (measurePoint2 == null) {
+                    measurePoint2 = new Point2D.Double(e.getX(), e.getY());
                 } else {
-                    startX = xCorner - e.getX() / zoom;
-                    startY = yCorner - e.getY() / zoom;
-                    selectedPart.setSelected(false);
-                    selectedPart = null;
-                    panning = true;
+                    measurePoint1 = null;
+                    measurePoint2 = null;
+                }
+            } else {
+                if (selectSheet != null) {
+                    Point2D grabLocation = screenToSheet(e.getPoint());
+                    partBeingDragged = selectedSheet.contains(grabLocation);
+
+                    if (ctrlPressed && rotationPoint == null) {
+                        rotatingPart = true;
+                        rotationPoint = grabLocation;
+                    } else if (partBeingDragged != null) {
+                        if (selectedPart != null && !selectedPart.equals(partBeingDragged)) {
+                            selectedPart.setSelected(false);
+                        }
+                        partBeingDragged.setSelected(true);
+                        selectedPart = partBeingDragged;
+                        if (ctrlPressed) {
+                            draggingPart = true;
+                            partGrabbedX = grabLocation.getX();
+                            partGrabbedY = grabLocation.getY();
+                            partGrabbedInitialRot = partBeingDragged.getRot();
+                            partGrabbedInitialX = partBeingDragged.getX();
+                            partGrabbedInitialY = partBeingDragged.getY();
+
+                        } else {
+                            draggingPart = true;
+                            partGrabbedX = grabLocation.getX();
+                            partGrabbedY = grabLocation.getY();
+                            partGrabbedInitialRot = partBeingDragged.getRot();
+                            partGrabbedInitialX = partBeingDragged.getX();
+                            partGrabbedInitialY = partBeingDragged.getY();
+                        }
+                    } else {
+                        startX = xCorner - e.getX() / zoom;
+                        startY = yCorner - e.getY() / zoom;
+                        selectedPart.setSelected(false);
+                        selectedPart = null;
+                        panning = true;
+                    }
                 }
             }
         }
@@ -433,7 +454,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == changeGCodeView) {
 
         } else if (e.getSource() == measure) {
-
+            isMeasuring = !isMeasuring;
         }
         repaint();
     }
