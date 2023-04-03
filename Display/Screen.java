@@ -290,6 +290,8 @@ public class Screen extends JPanel
                 } else {
                     startX = xCorner - e.getX() / zoom;
                     startY = yCorner - e.getY() / zoom;
+                    selectedPart.setSelected(false);
+                    selectedPart = null;
                     panning = true;
                 }
             }
