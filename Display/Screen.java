@@ -86,6 +86,7 @@ public class Screen extends JPanel
     private JButton emit;
     private JButton save;
     private JButton addCut;
+    private JButton measure;
     private JLabel cutName;
     private JButton changeGCodeView;
     private Part selectedPart = null;
@@ -428,6 +429,8 @@ public class Screen extends JPanel
 
         } else if (e.getSource() == changeGCodeView) {
 
+        } else if (e.getSource() == measure) {
+
         }
         repaint();
     }
@@ -657,6 +660,13 @@ public class Screen extends JPanel
             c.gridy = 7;
             add(changeGCodeView, c);
             changeGCodeView.addActionListener(Screen.this);
+
+            measure = new JButton("Measure");
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 2;
+            c.gridy = 3;
+            add(measure, c);
+            measure.addActionListener(Screen.this);
 
             // bottom buffer
             c.gridx = 0;
