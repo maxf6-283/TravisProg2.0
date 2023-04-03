@@ -140,13 +140,16 @@ public class Part {
         } else {
             g.setColor(Color.ORANGE);
         }
+        Stroke currentStrok = g2d.getStroke();
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
+        
+        g2d.setStroke(new BasicStroke((float)ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 100000));
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             g2d.draw(path);
         }
-        g.setColor(prevColor);
+        g2d.setStroke(currentStrok);
 
-        g2d.draw(outline);
+        //g2d.draw(outline);
 
         g2d.setTransform(prevTransform);
     }
