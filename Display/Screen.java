@@ -88,12 +88,14 @@ public class Screen extends JPanel
     private JButton save;
     private JButton addCut;
     private JButton measure;
+    private JButton changeCut;
     private JLabel cutName;
     private JButton changeGCodeView;
     private Part selectedPart = null;
     private boolean isMeasuring = false;
     private Point2D.Double measurePoint1;
     private Point2D.Double measurePoint2;
+    private SheetMenuState menuState = SheetMenuState.NULL;
 
     public Screen() {
         setLayout(null);
@@ -236,6 +238,8 @@ public class Screen extends JPanel
         super.paintComponent(g);
         g.setColor(new Color(33, 30, 31));
         g.fillRect(0, 0, getWidth(), getHeight());
+        // set all menu JPanels not visible
+        editMenu.setVisible(false);
         switch (state) {
             case SHEET_SELECT -> {
                 g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
@@ -245,7 +249,7 @@ public class Screen extends JPanel
                 AffineTransform prevTransform = g2d.getTransform();
                 g2d.scale(zoom, zoom);
                 g2d.translate(xCorner, yCorner);
-                g2d.setStroke(new BasicStroke((float)(1/zoom)));
+                g2d.setStroke(new BasicStroke((float) (1 / zoom)));
                 selectedSheet.draw(g);
                 g2d.setTransform(prevTransform);
 
@@ -254,27 +258,34 @@ public class Screen extends JPanel
                     Point2D rPnt = sheetToScreen(rotationPoint);
                     g2d.setStroke(new BasicStroke(2));
                     g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() - 5, (int) rPnt.getX() + 5,
-                    (int) rPnt.getY() + 5);
+                            (int) rPnt.getY() + 5);
                     g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() + 5, (int) rPnt.getX() + 5,
-                    (int) rPnt.getY() - 5);
+                            (int) rPnt.getY() - 5);
                 }
-                if(isMeasuring) {
+                if (isMeasuring) {
                     g2d.setColor(Color.YELLOW);
                     g2d.setStroke(new BasicStroke(2));
                     Point2D screenPoint1 = null;
                     Point2D screenPoint2 = null;
-                    if(measurePoint1 != null) {
+                    if (measurePoint1 != null) {
                         screenPoint1 = sheetToScreen(measurePoint1);
-                        g2d.fillOval((int)screenPoint1.getX()-5, (int)screenPoint1.getY()-5, 10, 10);
+                        g2d.fillOval((int) screenPoint1.getX() - 5, (int) screenPoint1.getY() - 5, 10, 10);
                     }
-                    if(measurePoint2 != null) {
+                    if (measurePoint2 != null) {
                         screenPoint2 = sheetToScreen(measurePoint2);
-                        g2d.fillOval((int)screenPoint2.getX()-5, (int)screenPoint2.getY()-5, 10, 10);
+                        g2d.fillOval((int) screenPoint2.getX() - 5, (int) screenPoint2.getY() - 5, 10, 10);
                     }
-                    if(measurePoint1 != null && measurePoint2 != null) {
-                        g2d.drawLine((int)screenPoint1.getX(), (int)screenPoint1.getY(), (int)screenPoint2.getX(), (int)screenPoint2.getY());
-                        g2d.drawString(String.format("%.3f\"", measurePoint1.distance(measurePoint2)), (int)(screenPoint1.getX() / 2 + screenPoint2.getX() / 2 + 10), (int)(screenPoint1.getY() / 2 + screenPoint2.getY() / 2 - 10));
+                    if (measurePoint1 != null && measurePoint2 != null) {
+                        g2d.drawLine((int) screenPoint1.getX(), (int) screenPoint1.getY(), (int) screenPoint2.getX(),
+                                (int) screenPoint2.getY());
+                        g2d.drawString(String.format("%.3f\"", measurePoint1.distance(measurePoint2)),
+                                (int) (screenPoint1.getX() / 2 + screenPoint2.getX() / 2 + 10),
+                                (int) (screenPoint1.getY() / 2 + screenPoint2.getY() / 2 - 10));
                     }
+                }
+                switch (menuState) {
+                    case HOME -> editMenu.setVisible(true);
+                    default -> throw new IllegalStateException("State Not Possible: "+menuState);
                 }
             }
             case SHEET_ADD -> {
@@ -291,10 +302,10 @@ public class Screen extends JPanel
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
             if (isMeasuring) {
-                if(measurePoint1 == null) {
-                    measurePoint1 = (Point2D.Double)screenToSheet(new Point2D.Double(e.getX(), e.getY()));
+                if (measurePoint1 == null) {
+                    measurePoint1 = (Point2D.Double) screenToSheet(new Point2D.Double(e.getX(), e.getY()));
                 } else if (measurePoint2 == null) {
-                    measurePoint2 = (Point2D.Double)screenToSheet(new Point2D.Double(e.getX(), e.getY()));
+                    measurePoint2 = (Point2D.Double) screenToSheet(new Point2D.Double(e.getX(), e.getY()));
                 } else {
                     measurePoint1 = null;
                     measurePoint2 = null;
@@ -332,7 +343,7 @@ public class Screen extends JPanel
                     } else {
                         startX = xCorner - e.getX() / zoom;
                         startY = yCorner - e.getY() / zoom;
-                        if(selectedPart != null){
+                        if (selectedPart != null) {
                             selectedPart.setSelected(false);
                             selectedPart = null;
                         }
@@ -469,6 +480,8 @@ public class Screen extends JPanel
         } else if (e.getSource() == measure) {
             isMeasuring = !isMeasuring;
             measure.setForeground(isMeasuring ? Color.LIGHT_GRAY : null);
+        } else if (e.getSource() == changeCut) {
+
         }
         repaint();
     }
@@ -532,17 +545,17 @@ public class Screen extends JPanel
         switch (newState) {
             case SHEET_SELECT -> {
                 state = State.SHEET_SELECT;
+                menuState = SheetMenuState.NULL;
                 selectSheet.setVisible(true);
                 addSheet.setVisible(true);
                 sheetList.setVisible(true);
                 sheetScroll.setVisible(true);
                 newSheetPrompt.setVisible(false);
                 returnToHome.setVisible(false);
-                editMenu.setVisible(false);
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
-                editMenu.setVisible(true);
+                menuState = SheetMenuState.HOME;
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
@@ -557,7 +570,7 @@ public class Screen extends JPanel
             }
             case SHEET_ADD -> {
                 state = State.SHEET_ADD;
-                editMenu.setVisible(false);
+                menuState = SheetMenuState.NULL;
                 returnToHome.setVisible(false);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
@@ -605,7 +618,7 @@ public class Screen extends JPanel
         }
     }
 
-    public class SheetEditMenu extends JPanel {
+    private class SheetEditMenu extends JPanel {
         public SheetEditMenu() {
             setLayout(new GridBagLayout());
             setBounds(0, 0, 300, 800);
@@ -689,13 +702,14 @@ public class Screen extends JPanel
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 0;
             c.gridwidth = 3;
-            c.gridy = 5;
+            c.gridy = 6;
             add(cutName, c);
 
             changeGCodeView = new JButton("Change GCode viewed");
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 0;
-            c.gridy = 7;
+            c.gridy = 8;
+            c.gridwidth = 1;
             add(changeGCodeView, c);
             changeGCodeView.addActionListener(Screen.this);
 
@@ -706,9 +720,18 @@ public class Screen extends JPanel
             add(measure, c);
             measure.addActionListener(Screen.this);
 
-            // bottom buffer
+            changeCut = new JButton("Select Cut");
+            c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 0;
-            c.gridy = 6;
+            c.weightx = 0;
+            c.gridy = 5;
+            add(changeCut, c);
+            changeCut.addActionListener(Screen.this);
+
+            // bottom buffer
+            c.gridwidth = 3;
+            c.gridx = 0;
+            c.gridy = 7;
             c.weighty = 1;
             add(new JLabel(), c);
 
@@ -733,5 +756,15 @@ public class Screen extends JPanel
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
+    }
+
+    private class cutSelect extends JPanel {
+        private cutSelect() {
+
+        }
+    }
+
+    private enum SheetMenuState {
+        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, EMIT_SELECT, ADD_ITEM, ADD_HOLE
     }
 }
