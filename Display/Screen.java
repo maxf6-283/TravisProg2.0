@@ -92,7 +92,6 @@ public class Screen extends JPanel
     private JLabel cutName;
     private JButton changeGCodeView;
     private Part selectedPart = null;
-    private boolean isMeasuring = false;
     private Point2D.Double measurePoint1;
     private Point2D.Double measurePoint2;
     private SheetMenuState menuState = SheetMenuState.NULL;
@@ -262,7 +261,7 @@ public class Screen extends JPanel
                     g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() + 5, (int) rPnt.getX() + 5,
                             (int) rPnt.getY() - 5);
                 }
-                if (isMeasuring) {
+                if (menuState == SheetMenuState.MEASURE) {
                     g2d.setColor(Color.YELLOW);
                     g2d.setStroke(new BasicStroke(2));
                     Point2D screenPoint1 = null;
@@ -284,14 +283,19 @@ public class Screen extends JPanel
                     }
                 }
                 switch (menuState) {
-                    case HOME -> editMenu.setVisible(true);
-                    default -> throw new IllegalStateException("State Not Possible: "+menuState);
+                    case HOME, MEASURE -> editMenu.setVisible(true);
+                    default -> throw new IllegalStateException("State Not Possible: " + menuState);
                 }
             }
             case SHEET_ADD -> {
 
             }
         }
+    }
+
+    public void switchMenuStates(SheetMenuState newState){
+        menuState = newState;
+        repaint();
     }
 
     @Override
@@ -301,7 +305,7 @@ public class Screen extends JPanel
     @Override
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            if (isMeasuring) {
+            if (menuState == SheetMenuState.MEASURE) {
                 if (measurePoint1 == null) {
                     measurePoint1 = (Point2D.Double) screenToSheet(new Point2D.Double(e.getX(), e.getY()));
                 } else if (measurePoint2 == null) {
@@ -478,8 +482,14 @@ public class Screen extends JPanel
         } else if (e.getSource() == changeGCodeView) {
 
         } else if (e.getSource() == measure) {
-            isMeasuring = !isMeasuring;
-            measure.setForeground(isMeasuring ? Color.LIGHT_GRAY : null);
+            if (menuState == SheetMenuState.MEASURE) {
+                switchMenuStates(SheetMenuState.HOME);
+            } else if (menuState == SheetMenuState.HOME){
+                switchMenuStates(SheetMenuState.MEASURE);
+            } else {
+                throw new IllegalStateException();
+            }
+            measure.setForeground(menuState == SheetMenuState.MEASURE ? Color.LIGHT_GRAY : null);
         } else if (e.getSource() == changeCut) {
 
         }
@@ -545,7 +555,7 @@ public class Screen extends JPanel
         switch (newState) {
             case SHEET_SELECT -> {
                 state = State.SHEET_SELECT;
-                menuState = SheetMenuState.NULL;
+                switchMenuStates(SheetMenuState.NULL);
                 selectSheet.setVisible(true);
                 addSheet.setVisible(true);
                 sheetList.setVisible(true);
@@ -555,7 +565,7 @@ public class Screen extends JPanel
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
-                menuState = SheetMenuState.HOME;
+                switchMenuStates(SheetMenuState.HOME);
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
@@ -570,7 +580,7 @@ public class Screen extends JPanel
             }
             case SHEET_ADD -> {
                 state = State.SHEET_ADD;
-                menuState = SheetMenuState.NULL;
+                switchMenuStates(SheetMenuState.NULL);
                 returnToHome.setVisible(false);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
