@@ -239,6 +239,7 @@ public class Screen extends JPanel
         g.fillRect(0, 0, getWidth(), getHeight());
         // set all menu JPanels not visible
         editMenu.setVisible(false);
+        measure.setForeground(menuState == SheetMenuState.MEASURE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
                 g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
@@ -774,7 +775,7 @@ public class Screen extends JPanel
         }
     }
 
-    private enum SheetMenuState {
+    public enum SheetMenuState {
         NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, EMIT_SELECT, ADD_ITEM, ADD_HOLE
     }
 }
