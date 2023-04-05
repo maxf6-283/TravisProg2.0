@@ -90,10 +90,11 @@ public class NGCDocument {
         this.file = file;
         if(file != null) {
             try {
-                gCodeFile = String.join(",",Files.readAllLines(file.toPath()));
+                gCodeFile = String.join("\n",Files.readAllLines(file.toPath()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            System.out.println(gCodeFile);
         }
         geometry = new ArrayList<>();
         geometry.add(new RelativePath2D());
