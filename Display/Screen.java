@@ -73,7 +73,6 @@ public class Screen extends JPanel
     private double partGrabbedInitialX;
     private double partGrabbedInitialY;
     private NewSheetPrompt newSheetPrompt;
-    private JPanel editMenu;
     private BufferedImage img;
     private ArrayList<EditAction> undoList;
     private ArrayList<EditAction> redoList;
@@ -95,6 +94,9 @@ public class Screen extends JPanel
     private Point2D.Double measurePoint1;
     private Point2D.Double measurePoint2;
     private SheetMenuState menuState = SheetMenuState.NULL;
+    private ArrayList<JPanel> menuPanels = new ArrayList<>();
+    private JPanel editMenu;
+    private JPanel cutPanel;
 
     public Screen() {
         setLayout(null);
@@ -140,7 +142,13 @@ public class Screen extends JPanel
 
         editMenu = new SheetEditMenu();
         add(editMenu);
-        editMenu.setVisible(false);
+        menuPanels.add(editMenu);
+
+        cutPanel = new cutSelect();
+        add(cutPanel);
+        menuPanels.add(cutPanel);
+
+        menuPanels.stream().forEach(e -> e.setVisible(false));
 
         try {
             img = ImageIO.read(new File("Display\\971 large logo.png"));
@@ -238,7 +246,7 @@ public class Screen extends JPanel
         g.setColor(new Color(33, 30, 31));
         g.fillRect(0, 0, getWidth(), getHeight());
         // set all menu JPanels not visible
-        editMenu.setVisible(false);
+        menuPanels.stream().forEach(e -> e.setVisible(false));
         measure.setForeground(menuState == SheetMenuState.MEASURE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
@@ -772,6 +780,11 @@ public class Screen extends JPanel
     private class cutSelect extends JPanel {
         private cutSelect() {
 
+        }
+
+        @Override
+        public void paintComponent(Graphics g){
+            super.paintComponent(g);
         }
     }
 
