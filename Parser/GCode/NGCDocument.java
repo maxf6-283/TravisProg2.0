@@ -94,7 +94,6 @@ public class NGCDocument {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println(gCodeFile);
         }
         geometry = new ArrayList<>();
         geometry.add(new RelativePath2D());
