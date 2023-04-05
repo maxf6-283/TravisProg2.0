@@ -498,7 +498,7 @@ public class Screen extends JPanel
             } else {
                 throw new IllegalStateException();
             }
-            measure.setForeground(menuState == SheetMenuState.MEASURE ? Color.LIGHT_GRAY : null);
+            measure.setSelected(menuState == SheetMenuState.MEASURE);
         } else if (e.getSource() == changeCut) {
 
         }
