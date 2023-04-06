@@ -20,6 +20,7 @@ public class NGCDocument {
     private double lastJ = 0;
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates;
+    private String gCode;
 
     public NGCDocument() {
         this(null);
@@ -266,7 +267,7 @@ public class NGCDocument {
             }
 
         }
-        if (Screen.DebugMode == true) {
+        if (Screen.DebugMode) {
             System.out.println(attributes);
         }
 
@@ -284,4 +285,6 @@ public class NGCDocument {
     public double getToolOffset() {
         return toolOffset;
     }
+
+    
 }

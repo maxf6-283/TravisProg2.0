@@ -4,7 +4,10 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.awt.Color;
 
@@ -169,5 +172,44 @@ public class Sheet {
 
     public File getSheetFile() {
         return sheetFile;
+    }
+
+    /**
+     * Emits the gCode from the active cut into the given file
+     * @param gCodeFile - the file to put the GCode into.
+     */
+    public void emitGCode(File gCodeFile) {
+        /*specific mechanics: sandwich each part between a translation to and from their position */
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(gCodeFile));
+            
+            for(Part part : activeCut) {
+                writer.write(gCodeTranslateTo(part));
+                //writer.write(part.getNgcDocument().getGCode());
+                writer.write(gCodeTranslateFrom(part));
+            }
+
+        } catch(IOException e) {
+            System.err.println("Could not emit GCode");
+            e.printStackTrace();
+        }
+    }
+
+    private String gCodeTranslateTo(Part part) {
+        double x = part.getX();
+        double y = part.getY(); 
+        double rot = part.getRot();
+
+
+        return String.format("G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3", x, y, rot);
+    }
+
+    private String gCodeTranslateFrom(Part part) {
+        double x = -part.getX();
+        double y = -part.getY(); 
+        double rot = -part.getRot();
+        
+
+        return String.format("G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3", x, y, rot);
     }
 }
