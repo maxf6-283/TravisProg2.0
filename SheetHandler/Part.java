@@ -144,9 +144,7 @@ public class Part {
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
         
         g2d.setStroke(new BasicStroke((float)ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 100000));
-        for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
-            g2d.draw(path);
-        }
+        ngcDoc.getRelativePath2Ds().stream().forEach(e -> g2d.draw(e));
         g2d.setColor(prevColor);
         g2d.setStroke(currentStrok);
 

@@ -3,8 +3,11 @@ package Parser.GCode;
 import Display.Screen;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 public class NGCDocument {
     private File file;
@@ -20,7 +23,7 @@ public class NGCDocument {
     private double lastJ = 0;
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates;
-    private String gCode;
+    private String gCodeFile;
 
     public NGCDocument() {
         this(null);
@@ -85,6 +88,13 @@ public class NGCDocument {
 
     public NGCDocument(File file) {
         this.file = file;
+        if(file != null) {
+            try {
+                gCodeFile = String.join("\n",Files.readAllLines(file.toPath()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         geometry = new ArrayList<>();
         geometry.add(new RelativePath2D());
     }
