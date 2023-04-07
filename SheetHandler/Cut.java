@@ -49,7 +49,7 @@ public class Cut implements Iterable<Part>{
         return it;
     }
 
-    public File cutFile() {
+    public File getCutFile() {
         return cutFile;
     }
 

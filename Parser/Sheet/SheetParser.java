@@ -172,7 +172,7 @@ public class SheetParser {
     public static void saveCutInfo(Cut cut) {
         FileOutputStream writer;
         try {
-            writer = new FileOutputStream(cut.cutFile());
+            writer = new FileOutputStream(cut.getCutFile());
             // TODO: figure out what the first byte indicates
             writer.write(255);
             writer.write(cut.parts.size());

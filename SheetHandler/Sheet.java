@@ -4,6 +4,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.File;
 import java.util.HashMap;
 import java.awt.Color;
@@ -14,7 +15,7 @@ public class Sheet {
     private ArrayList<Cut> cuts;
     private Cut activeCut;
     private double width, height; // in inches
-    private File sheetFile, holeFile, activeCutFile;
+    private File sheetFile, holeFile, activeCutFile, parentFile;
 
     /**
      * Declares a new sheet from a file
@@ -33,7 +34,7 @@ public class Sheet {
         activeCutFile = new File(decodedFile.get("active"));
 
         // time to get the parts
-        File parentFile = sheetFile.getParentFile();
+        parentFile = sheetFile.getParentFile();
         for (File cutFile : parentFile.listFiles()) {
             if (!cutFile.getName().endsWith(".cut")) {
                 continue;
@@ -46,7 +47,24 @@ public class Sheet {
         }
     }
 
-    public void removePart(Part part){
+    public File getParentFile() {
+        return parentFile;
+    }
+
+    public void changeActiveCutFile(File newCut) {
+        if (newCut == null || newCut == activeCutFile) {
+            return;
+        }
+
+        if (!Arrays.stream(parentFile.listFiles()).anyMatch(newCut::equals)) {
+            throw new IllegalArgumentException("Cut file is not available!, Internal Error");
+        }
+
+        activeCut = cuts.stream().filter(e -> e.getCutFile().equals(newCut)).findFirst().get();
+        activeCutFile = activeCut.getCutFile();
+    }
+
+    public void removePart(Part part) {
         activeCut.parts.remove(part);
     }
 
