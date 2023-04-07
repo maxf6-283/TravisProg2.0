@@ -510,10 +510,8 @@ public class Screen extends JPanel
         } else if (e.getSource() == changeCut) {
             if (menuState == SheetMenuState.CUT_SELECT) {
                 switchMenuStates(SheetMenuState.HOME);
-            } else if (menuState == SheetMenuState.HOME) {
-                switchMenuStates(SheetMenuState.CUT_SELECT);
             } else {
-                throw new IllegalStateException();
+                switchMenuStates(SheetMenuState.CUT_SELECT);
             }
         } else if (e.getSource() == returnToHomeMenu) {
             switchMenuStates(SheetMenuState.HOME);
@@ -610,7 +608,7 @@ public class Screen extends JPanel
                 cutPanel.setBounds(editMenu.getBounds());
                 menuPanels.add(cutPanel);
 
-                // menuPanels.stream().forEach(e -> e.setVisible(false));
+                menuPanels.stream().forEach(e -> e.setVisible(false));
             }
             case SHEET_ADD -> {
                 state = State.SHEET_ADD;
