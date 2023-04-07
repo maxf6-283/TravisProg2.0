@@ -501,10 +501,8 @@ public class Screen extends JPanel
         } else if (e.getSource() == measure) {
             if (menuState == SheetMenuState.MEASURE) {
                 switchMenuStates(SheetMenuState.HOME);
-            } else if (menuState == SheetMenuState.HOME) {
-                switchMenuStates(SheetMenuState.MEASURE);
             } else {
-                throw new IllegalStateException();
+                switchMenuStates(SheetMenuState.MEASURE);
             }
             measure.setSelected(menuState == SheetMenuState.MEASURE);
         } else if (e.getSource() == changeCut) {
