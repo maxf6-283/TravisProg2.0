@@ -94,7 +94,8 @@ public class NewSheetPrompt extends JFrame implements ActionListener {
                 if (sheetWidth < 0 || sheetHeight < 0) {
                     throw new NumberFormatException();
                 } else {
-                    parent.enterNewSheetInfo(sheetWidth, sheetHeight, sheetName, (SheetThickness)thicknessSelect.getSelectedItem());
+                    parent.enterNewSheetInfo(sheetWidth, sheetHeight, sheetName,
+                            (SheetThickness) thicknessSelect.getSelectedItem());
                 }
             } catch (NumberFormatException err) {
                 errMsg.setVisible(true);

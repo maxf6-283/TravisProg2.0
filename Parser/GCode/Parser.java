@@ -41,14 +41,14 @@ public class Parser {
         while (input.hasNextLine()) {
             String line = input.nextLine();
             lineNum++;
-            //out.write(line + "\n");
+            // out.write(line + "\n");
             if (line.contains("(")) {
                 line = CommentsParser.parse(line, doc);
             }
             line.trim();
             if (line.contains("M")) {
                 MCodeParser.parse(line, lineNum, doc);
-            } else if(line.length() > 2){
+            } else if (line.length() > 2) {
                 GCodeParser.parse(line, lineNum, doc);
             }
         }

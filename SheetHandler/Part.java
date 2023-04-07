@@ -34,15 +34,15 @@ public class Part {
             this.partFile = partFile;
             try {
                 File[] files = new File[0];
-                if(this instanceof Hole){
-                    files = new File[]{partFile};
+                if (this instanceof Hole) {
+                    files = new File[] { partFile };
                 } else {
                     files = partFile.listFiles();
                 }
                 File parent = partFile;
                 partFile = null;
-                if(files == null){
-                    throw new NullPointerException("Folder: "+parent.getName()+" Not Found");
+                if (files == null) {
+                    throw new NullPointerException("Folder: " + parent.getName() + " Not Found");
                 }
                 for (File file : files) {
                     if (file.getName().lastIndexOf(".") != -1 && file.getName()
@@ -54,12 +54,12 @@ public class Part {
                 if (partFile == null) {
                     throw new FileNotFoundException("No NGC File found in: " + parent.getPath());
                 }
-                for(NGCDocument doc : Parser.parsedDocuments){
-                    if(doc.getFile().equals(partFile)){
+                for (NGCDocument doc : Parser.parsedDocuments) {
+                    if (doc.getFile().equals(partFile)) {
                         ngcDoc = doc;
                     }
                 }
-                if(ngcDoc == null){
+                if (ngcDoc == null) {
                     ngcDoc = Parser.parse(partFile);
                 }
             } catch (FileNotFoundException e) {
@@ -77,27 +77,29 @@ public class Part {
         generateOutline();
     }
 
-    public boolean contains(Point2D point){
-        for(RelativePath2D path: ngcDoc.getRelativePath2Ds()){
+    public boolean contains(Point2D point) {
+        for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
             Point2D.Double pointToCheck = new Point2D.Double(point.getX(), -point.getY());
             pointToCheck.setLocation(pointToCheck.getX() + sheetX, pointToCheck.getY() + sheetY);
-            
-            pointToCheck.setLocation(pointToCheck.getX() * Math.cos(-rotation) + pointToCheck.getY() * -Math.sin(-rotation), pointToCheck.getX() * Math.sin(-rotation) + pointToCheck.getY() * Math.cos(-rotation));
-            
+
+            pointToCheck.setLocation(
+                    pointToCheck.getX() * Math.cos(-rotation) + pointToCheck.getY() * -Math.sin(-rotation),
+                    pointToCheck.getX() * Math.sin(-rotation) + pointToCheck.getY() * Math.cos(-rotation));
+
             pointToCheck.setLocation(-pointToCheck.getX(), pointToCheck.getY());
 
-            if(path.contains(pointToCheck)){
+            if (path.contains(pointToCheck)) {
                 return true;
             }
         }
         return false;
     }
 
-    public void setSelected(boolean selected){
+    public void setSelected(boolean selected) {
         this.selected = selected;
     }
 
-    public boolean getSelected(){
+    public boolean getSelected() {
         return selected;
     }
 
@@ -135,20 +137,23 @@ public class Part {
         g2d.translate(sheetX, -sheetY);
         Color prevColor = g.getColor();
         g2d.rotate(-rotation);
-        if(selected == true){
+        if (selected == true) {
             g.setColor(Color.RED);
-        } /*else {
-            g.setColor(Color.ORANGE);
-        }*/
+        } /*
+           * else {
+           * g.setColor(Color.ORANGE);
+           * }
+           */
         Stroke currentStrok = g2d.getStroke();
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
-        
-        g2d.setStroke(new BasicStroke((float)ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 100000));
+
+        g2d.setStroke(
+                new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 100000));
         ngcDoc.getRelativePath2Ds().stream().forEach(e -> g2d.draw(e));
         g2d.setColor(prevColor);
         g2d.setStroke(currentStrok);
 
-        //g2d.draw(outline);
+        // g2d.draw(outline);
 
         g2d.setTransform(prevTransform);
     }
@@ -162,21 +167,22 @@ public class Part {
     }
 
     @Override
-    public boolean equals(Object obj){
-        if (((Part)obj).getSelected() == true){
+    public boolean equals(Object obj) {
+        if (((Part) obj).getSelected() == true) {
             return true;
         }
         return false;
     }
 
     public void generateOutline() {
-        //outline = new Area(ngcDoc.getCurrentPath2D());
-        Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0);
-        //Area strokeShape = new Area(stroke.createStrokedShape(outline));
+        // outline = new Area(ngcDoc.getCurrentPath2D());
+        Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
+                0);
+        // Area strokeShape = new Area(stroke.createStrokedShape(outline));
 
         RelativePath2D temp = ngcDoc.getCurrentPath2D();
         for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
-            if(calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())){
+            if (calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())) {
                 temp = path;
             }
         }
@@ -184,7 +190,7 @@ public class Part {
         outline = stroke.createStrokedShape(temp);
     }
 
-    private double calcArea(Rectangle2D rect){
-        return rect.getWidth()*rect.getHeight();
+    private double calcArea(Rectangle2D rect) {
+        return rect.getWidth() * rect.getHeight();
     }
 }

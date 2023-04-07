@@ -33,12 +33,13 @@ public class RelativePath2D extends Path2D.Double {
      * Adds an arc segment, defined by 2 points, by drawing an arc that intersects
      * {@code (x2,y2)}, using the specified point {@code (x1,y2)}
      * 
-     * @param x1        the X-coordinate of the center of the arc
-     * @param y1        the Y-coordinate of the center of the arc
-     * @param x2        the X-coordinate of the final end point
-     * @param y2        the Y-coordinate of the final end point
-     * @param direction -1 = clockwise, 0 = nothing, 1 = counterclockwise, throws
-     * @param isRelative whether or not x2 and y2 are relative
+     * @param x1            the X-coordinate of the center of the arc
+     * @param y1            the Y-coordinate of the center of the arc
+     * @param x2            the X-coordinate of the final end point
+     * @param y2            the Y-coordinate of the final end point
+     * @param direction     -1 = clockwise, 0 = nothing, 1 = counterclockwise,
+     *                      throws
+     * @param isRelative    whether or not x2 and y2 are relative
      * @param isRelativeArc whether or not x1 and y1 are relative
      */
     public void arcTo(double x1, double y1, double x2, double y2, int direction, boolean isRelative,
@@ -94,7 +95,8 @@ public class RelativePath2D extends Path2D.Double {
                     endingAngle);
         }
 
-        if (Math.abs(radius - radius2) > 0.05 || (Math.abs(radius - radius2) > 0.05 && Math.abs(radius - radius2) > (radius + radius2) / 2 * 0.001)) {
+        if (Math.abs(radius - radius2) > 0.05
+                || (Math.abs(radius - radius2) > 0.05 && Math.abs(radius - radius2) > (radius + radius2) / 2 * 0.001)) {
             throw new IllegalGCodeError("Arc is not defined to have a self-similar radius");
         } else {
             radius = radius / 2 + radius2 / 2;
