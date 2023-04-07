@@ -1,5 +1,7 @@
 package Display;
 
+import static Display.Screen.SheetMenuState.*;
+
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -99,7 +101,7 @@ public class Screen extends JPanel
     private Part selectedPart = null;
     private Point2D.Double measurePoint1;
     private Point2D.Double measurePoint2;
-    private SheetMenuState menuState = SheetMenuState.NULL;
+    private SheetMenuState menuState = NULL;
     private ArrayList<JPanel> menuPanels = new ArrayList<>();
     private JPanel editMenu;
     private JPanel cutPanel;
@@ -251,7 +253,7 @@ public class Screen extends JPanel
         g.fillRect(0, 0, getWidth(), getHeight());
         // set all menu JPanels not visible
         menuPanels.stream().forEach(e -> e.setVisible(false));
-        measure.setForeground(menuState == SheetMenuState.MEASURE ? Color.LIGHT_GRAY : null);
+        measure.setForeground(menuState == MEASURE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
                 g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
@@ -322,7 +324,7 @@ public class Screen extends JPanel
     @Override
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            if (menuState == SheetMenuState.MEASURE) {
+            if (menuState == MEASURE) {
                 if (measurePoint1 == null) {
                     measurePoint1 = (Point2D.Double) screenToSheet(new Point2D.Double(e.getX(), e.getY()));
                 } else if (measurePoint2 == null) {
@@ -499,20 +501,20 @@ public class Screen extends JPanel
         } else if (e.getSource() == changeGCodeView) {
 
         } else if (e.getSource() == measure) {
-            if (menuState == SheetMenuState.MEASURE) {
-                switchMenuStates(SheetMenuState.HOME);
+            if (menuState == MEASURE) {
+                switchMenuStates(HOME);
             } else {
-                switchMenuStates(SheetMenuState.MEASURE);
+                switchMenuStates(MEASURE);
             }
-            measure.setSelected(menuState == SheetMenuState.MEASURE);
+            measure.setSelected(menuState == MEASURE);
         } else if (e.getSource() == changeCut) {
-            if (menuState == SheetMenuState.CUT_SELECT) {
-                switchMenuStates(SheetMenuState.HOME);
+            if (menuState == CUT_SELECT) {
+                switchMenuStates(HOME);
             } else {
-                switchMenuStates(SheetMenuState.CUT_SELECT);
+                switchMenuStates(CUT_SELECT);
             }
         } else if (e.getSource() == returnToHomeMenu) {
-            switchMenuStates(SheetMenuState.HOME);
+            switchMenuStates(HOME);
         } else if (e.getSource() instanceof FileJRadioButton) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
         }
@@ -578,7 +580,7 @@ public class Screen extends JPanel
         switch (newState) {
             case SHEET_SELECT -> {
                 state = State.SHEET_SELECT;
-                switchMenuStates(SheetMenuState.NULL);
+                switchMenuStates(NULL);
                 selectSheet.setVisible(true);
                 addSheet.setVisible(true);
                 sheetList.setVisible(true);
@@ -588,7 +590,7 @@ public class Screen extends JPanel
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
-                switchMenuStates(SheetMenuState.HOME);
+                switchMenuStates(HOME);
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
@@ -610,7 +612,7 @@ public class Screen extends JPanel
             }
             case SHEET_ADD -> {
                 state = State.SHEET_ADD;
-                switchMenuStates(SheetMenuState.NULL);
+                switchMenuStates(NULL);
                 returnToHome.setVisible(false);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
