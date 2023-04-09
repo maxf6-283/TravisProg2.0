@@ -5,6 +5,7 @@ import static Display.Screen.SheetMenuState.*;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -106,7 +107,7 @@ public class Screen extends JPanel
     private ArrayList<JPanel> menuPanels = new ArrayList<>();
     private JPanel editMenu;
     private JPanel cutPanel;
-    private JPanel emitPanel;
+    private EmitSelect emitPanel;
     private JButton[] suffixes;
     private JButton returnToHomeMenu;
 
@@ -320,7 +321,7 @@ public class Screen extends JPanel
 
     public void switchMenuStates(SheetMenuState newState) {
         menuState = newState;
-        if(newState == SheetMenuState.EMIT_SELECT) {
+        if (newState == SheetMenuState.EMIT_SELECT) {
 
         }
         repaint();
@@ -526,10 +527,14 @@ public class Screen extends JPanel
             switchMenuStates(HOME);
         } else if (e.getSource() instanceof FileJRadioButton) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
+        } else if(e.getSource() == emitPanel.returnToMain) {
+            switchMenuStates(HOME);
         } else {
-            for(JButton button : suffixes) {
-                if(e.getSource() == button) {
-                    File outputFile = new File("./output/TestFolder/testOutput.ngc");
+            for (JButton button : suffixes) {
+                if (e.getSource() == button) {
+                    File outputFolder = new File("./output/" + java.time.LocalDate.now().toString().replaceAll("-", ""));
+                    outputFolder.mkdir();
+                    File outputFile = new File(outputFolder, emitPanel.gCodeName.getText() + ".ngc");
                     selectedSheet.emitGCode(outputFile, button.getText());
                 }
             }
@@ -860,27 +865,43 @@ public class Screen extends JPanel
         }
     }
 
-
     private class EmitSelect extends JPanel {
+        public JTextField gCodeName;
+        public JLabel gCodeNameLabel;
+        public JButton returnToMain;
 
         public EmitSelect() {
             setLayout(null);
-            setBounds(0, 0, 300, 800);
 
             HashSet<String> suffixStrings = new HashSet<>();
-            for(Part part : selectedSheet.getActiveCut()) {
-                for(String suffix : part.getSuffixes()) {
+            for (Part part : selectedSheet.getActiveCut()) {
+                for (String suffix : part.getSuffixes()) {
                     suffixStrings.add(suffix);
                 }
             }
 
             suffixes = new JButton[suffixStrings.size()];
-            for(int i = 0; i < suffixes.length; i++) {
-                suffixes[i] = new JButton((String)(suffixStrings.toArray()[i]));
+            for (int i = 0; i < suffixes.length; i++) {
+                suffixes[i] = new JButton((String) (suffixStrings.toArray()[i]));
                 suffixes[i].setBounds(50, 150 + 50 * i, 200, 25);
                 add(suffixes[i]);
                 suffixes[i].addActionListener(Screen.this);
+                if (i == suffixes.length - 1) {
+                    returnToMain = new JButton("Done emitting gCode");
+                    returnToMain.setBounds(50, 150 + 50 * (i + 1), 200, 50);
+                    add(returnToMain);
+                    returnToMain.addActionListener(Screen.this);
+                }
             }
+
+            gCodeName = new JTextField(selectedSheet.getActiveCut().getCutFile().getName().substring(0, selectedSheet.getActiveCut().getCutFile().getName().lastIndexOf('.')));
+            gCodeName.setBounds(50, 50, 200, 25);
+            add(gCodeName);
+
+            gCodeNameLabel = new JLabel("gCode emission name:");
+            gCodeNameLabel.setBounds(50, 25, 200, 25);
+            gCodeNameLabel.setForeground(Color.WHITE);
+            add(gCodeNameLabel);
         }
 
         @Override
