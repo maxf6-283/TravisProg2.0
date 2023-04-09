@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 public class NGCDocument {
-    private File file;
+    private File gcodeFile;
     private ArrayList<RelativePath2D> geometry;
     private Point3D currentPoint;
     private int SpindleSpeed;
@@ -87,7 +87,7 @@ public class NGCDocument {
     }
 
     public NGCDocument(File file) {
-        this.file = file;
+        this.gcodeFile = file;
         if (file != null) {
             try {
                 gCodeFile = String.join("\n", Files.readAllLines(file.toPath()));
@@ -111,12 +111,12 @@ public class NGCDocument {
         geometry.add(new RelativePath2D());
     }
 
-    public void setFile(File file) {
-        this.file = file;
+    public void setGcodeFile(File file) {
+        this.gcodeFile = file;
     }
 
-    public File getFile() {
-        return file;
+    public File getGcodeFile() {
+        return gcodeFile;
     }
 
     public void setSpindleSpeed(int SpindleSpeed) {

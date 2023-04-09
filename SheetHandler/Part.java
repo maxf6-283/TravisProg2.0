@@ -3,18 +3,16 @@ package SheetHandler;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.Path2D;
-import java.awt.geom.Area;
 import java.awt.Stroke;
 import java.awt.BasicStroke;
-import java.awt.geom.PathIterator;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
@@ -22,10 +20,11 @@ import Parser.GCode.RelativePath2D;
 
 public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
-    private NGCDocument ngcDoc;
+    private ArrayList<NGCDocument> activeNgcDocs = new ArrayList<>();
+    private ArrayList<NGCDocument> allNGCDocs = new ArrayList<>();
     private File partFile;
     private boolean selected = false;
-    private Shape outline;
+    //private Shape outline;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if (partFile == null) {
@@ -39,29 +38,36 @@ public class Part {
                 } else {
                     files = partFile.listFiles();
                 }
+                ArrayList<File> ngcFiles = new ArrayList<>();
                 File parent = partFile;
-                partFile = null;
                 if (files == null) {
                     throw new NullPointerException("Folder: " + parent.getName() + " Not Found");
                 }
                 for (File file : files) {
                     if (file.getName().lastIndexOf(".") != -1 && file.getName()
                             .substring(file.getName().lastIndexOf(".") + 1, file.getName().length()).equals("ngc")) {
-                        partFile = file;
-                        break;
+                        ngcFiles.add(file);
                     }
                 }
-                if (partFile == null) {
+                if (ngcFiles.size() <= 0) {
                     throw new FileNotFoundException("No NGC File found in: " + parent.getPath());
                 }
-                for (NGCDocument doc : Parser.parsedDocuments) {
-                    if (doc.getFile().equals(partFile)) {
-                        ngcDoc = doc;
+                ArrayList<File> newFiles = new ArrayList<>();
+                for (File file : ngcFiles) {
+                    end: {
+                        for (NGCDocument doc : Parser.parsedDocuments) {
+                            if (doc.getGcodeFile().equals(file)) {
+                                allNGCDocs.add(doc);
+                                break end;
+                            }
+                        }
+                        newFiles.add(file);
                     }
                 }
-                if (ngcDoc == null) {
-                    ngcDoc = Parser.parse(partFile);
+                for (File file : newFiles) {
+                    allNGCDocs.add(Parser.parse(file));
                 }
+                activeNgcDocs.add(allNGCDocs.get(0));
             } catch (FileNotFoundException e) {
                 System.out.println("File : " + partFile.getAbsolutePath() + " Not Found");
                 e.printStackTrace();
@@ -74,22 +80,42 @@ public class Part {
         sheetY = yLoc;
         rotation = rot;
 
-        generateOutline();
+        //generateOutline();
+    }
+
+    public ArrayList<NGCDocument> getAllNgcDocuments() {
+        return allNGCDocs;
+    }
+
+    public void addActiveGcode(NGCDocument doc) {
+        if (!allNGCDocs.stream().anyMatch(e -> e.equals(doc))) {
+            throw new IllegalArgumentException("GCode doc dothe not appataine to this part");
+        }
+        activeNgcDocs.add(doc);
+    }
+
+    public void removeActiveGcode(NGCDocument doc) {
+        if (!activeNgcDocs.stream().anyMatch(e -> e.equals(doc))) {
+            throw new IllegalArgumentException("GCode doc dothe not appataine to this part");
+        }
+        activeNgcDocs.removeAll(Arrays.asList(doc));
     }
 
     public boolean contains(Point2D point) {
-        for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
-            Point2D.Double pointToCheck = new Point2D.Double(point.getX(), -point.getY());
-            pointToCheck.setLocation(pointToCheck.getX() + sheetX, pointToCheck.getY() + sheetY);
+        for (NGCDocument activeNgcDoc : activeNgcDocs) {
+            for (RelativePath2D path : activeNgcDoc.getRelativePath2Ds()) {
+                Point2D.Double pointToCheck = new Point2D.Double(point.getX(), -point.getY());
+                pointToCheck.setLocation(pointToCheck.getX() + sheetX, pointToCheck.getY() + sheetY);
 
-            pointToCheck.setLocation(
-                    pointToCheck.getX() * Math.cos(-rotation) + pointToCheck.getY() * -Math.sin(-rotation),
-                    pointToCheck.getX() * Math.sin(-rotation) + pointToCheck.getY() * Math.cos(-rotation));
+                pointToCheck.setLocation(
+                        pointToCheck.getX() * Math.cos(-rotation) + pointToCheck.getY() * -Math.sin(-rotation),
+                        pointToCheck.getX() * Math.sin(-rotation) + pointToCheck.getY() * Math.cos(-rotation));
 
-            pointToCheck.setLocation(-pointToCheck.getX(), pointToCheck.getY());
+                pointToCheck.setLocation(-pointToCheck.getX(), pointToCheck.getY());
 
-            if (path.contains(pointToCheck)) {
-                return true;
+                if (path.contains(pointToCheck)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -147,9 +173,12 @@ public class Part {
         Stroke currentStrok = g2d.getStroke();
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
 
-        g2d.setStroke(
-                new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 100000));
-        ngcDoc.getRelativePath2Ds().stream().forEach(e -> g2d.draw(e));
+        for (NGCDocument activeNgcDoc : activeNgcDocs) {
+            g2d.setStroke(
+                    new BasicStroke((float) activeNgcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
+                            100000));
+            activeNgcDoc.getRelativePath2Ds().stream().forEach(e -> g2d.draw(e));
+        }
         g2d.setColor(prevColor);
         g2d.setStroke(currentStrok);
 
@@ -162,8 +191,8 @@ public class Part {
         return partFile.getName();
     }
 
-    public NGCDocument getNgcDocument() {
-        return ngcDoc;
+    public ArrayList<NGCDocument> getNgcDocuments() {
+        return activeNgcDocs;
     }
 
     @Override
@@ -174,21 +203,23 @@ public class Part {
         return false;
     }
 
+    /*@Deprecated
     public void generateOutline() {
         // outline = new Area(ngcDoc.getCurrentPath2D());
-        Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
+        Stroke stroke = new BasicStroke((float) activeNgcDoc.getToolOffset(), BasicStroke.CAP_ROUND,
+                BasicStroke.JOIN_ROUND,
                 0);
         // Area strokeShape = new Area(stroke.createStrokedShape(outline));
 
-        RelativePath2D temp = ngcDoc.getCurrentPath2D();
-        for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
+        RelativePath2D temp = activeNgcDoc.getCurrentPath2D();
+        for (RelativePath2D path : activeNgcDoc.getRelativePath2Ds()) {
             if (calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())) {
                 temp = path;
             }
         }
 
         outline = stroke.createStrokedShape(temp);
-    }
+    }*/
 
     private double calcArea(Rectangle2D rect) {
         return rect.getWidth() * rect.getHeight();

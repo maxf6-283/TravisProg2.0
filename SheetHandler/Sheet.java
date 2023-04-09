@@ -51,6 +51,10 @@ public class Sheet {
         return parentFile;
     }
 
+    public ArrayList<Cut> getCuts() {
+        return cuts;
+    }
+
     public void changeActiveCutFile(File newCut) {
         if (newCut == null || newCut == activeCutFile) {
             return;

@@ -3,13 +3,15 @@ package Display;
 import static Display.Screen.SheetMenuState.*;
 
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputListener;
 
+import Parser.GCode.NGCDocument;
+import SheetHandler.Cut;
+import SheetHandler.Hole;
 import SheetHandler.Part;
 import SheetHandler.Sheet;
 import SheetHandler.SheetThickness;
@@ -19,12 +21,12 @@ import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
 import java.awt.BasicStroke;
-import java.awt.Button;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -39,6 +41,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseWheelListener;
@@ -48,11 +52,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class Screen extends JPanel
-        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener {
+        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener,
+        ItemListener {
     public static final boolean DebugMode = false;
     private JList<File> sheetList;
     private JScrollPane sheetScroll;
@@ -105,7 +109,9 @@ public class Screen extends JPanel
     private ArrayList<JPanel> menuPanels = new ArrayList<>();
     private JPanel editMenu;
     private JPanel cutPanel;
-    private JButton returnToHomeMenu;
+    private JPanel gcodeCutPanel;
+    private JPanel gcodePartPanel;
+    private ReturnToHomeJButton returnToHomeMenu;
 
     public Screen() {
         setLayout(null);
@@ -153,7 +159,7 @@ public class Screen extends JPanel
         add(editMenu);
         menuPanels.add(editMenu);
 
-        returnToHomeMenu = new JButton("Return to Home");
+        returnToHomeMenu = new ReturnToHomeJButton("Return to Home");
         returnToHomeMenu.addActionListener(this);
 
         try {
@@ -303,6 +309,8 @@ public class Screen extends JPanel
                     case CUT_SELECT -> {
                         cutPanel.setVisible(true);
                     }
+                    case GCODE_SELECT -> gcodeCutPanel.setVisible(true);
+                    case GCODE_SELECT_PART -> gcodePartPanel.setVisible(true);
                     default -> throw new IllegalStateException("State Not Possible: " + menuState);
                 }
             }
@@ -499,7 +507,11 @@ public class Screen extends JPanel
         } else if (e.getSource() == addCut) {
 
         } else if (e.getSource() == changeGCodeView) {
-
+            if (menuState == GCODE_SELECT) {
+                switchMenuStates(HOME);
+            } else {
+                switchMenuStates(GCODE_SELECT);
+            }
         } else if (e.getSource() == measure) {
             if (menuState == MEASURE) {
                 switchMenuStates(HOME);
@@ -513,10 +525,24 @@ public class Screen extends JPanel
             } else {
                 switchMenuStates(CUT_SELECT);
             }
-        } else if (e.getSource() == returnToHomeMenu) {
+        } else if (e.getSource() instanceof ReturnToHomeJButton) {
             switchMenuStates(HOME);
-        } else if (e.getSource() instanceof FileJRadioButton) {
+        } else if (e.getSource() instanceof FileJRadioButton
+                && ((FileJRadioButton) e.getSource()).getType().equals(CUT_SELECT)) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
+        } else if (e.getSource() instanceof SheetHandlerJButtonCut) {
+            gcodePartPanel = new PartSelectGcode(((SheetHandlerJButtonCut) e.getSource()).getgenericThing());
+            add(gcodePartPanel);
+            gcodePartPanel.setBounds(editMenu.getBounds());
+            menuPanels.add(gcodePartPanel);
+            switchMenuStates(GCODE_SELECT_PART);
+        } else if (e.getSource() instanceof SheetHandlerJButtonPart) {
+            remove(gcodePartPanel);
+            menuPanels.remove(gcodePartPanel);
+            gcodePartPanel = new GCodeSelectGcode(((SheetHandlerJButtonPart)e.getSource()).getgenericThing());
+            gcodePartPanel.setBounds(editMenu.getBounds());
+            add(gcodePartPanel);
+            menuPanels.add(gcodePartPanel);
         }
         repaint();
     }
@@ -603,7 +629,12 @@ public class Screen extends JPanel
                 yCorner /= zoom;
                 newSheetPrompt.setVisible(false);
 
-                cutPanel = new cutSelect();
+                gcodeCutPanel = new CutSelectGcode();
+                add(gcodeCutPanel);
+                gcodeCutPanel.setBounds(editMenu.getBounds());
+                menuPanels.add(gcodeCutPanel);
+
+                cutPanel = new CutSelect();
                 add(cutPanel);
                 cutPanel.setBounds(editMenu.getBounds());
                 menuPanels.add(cutPanel);
@@ -658,6 +689,21 @@ public class Screen extends JPanel
             rotationPoint = null;
             repaint();
         }
+    }
+
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+        Object source = e.getItemSelectable();
+        if (source instanceof SheetHandlerJCheckBoxNGCDoc) {
+            SheetHandlerJCheckBoxNGCDoc thing = (SheetHandlerJCheckBoxNGCDoc) source;
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                thing.getPart().addActiveGcode(thing.getgenericThing());
+            }
+            if (e.getStateChange() == ItemEvent.DESELECTED) {
+                thing.getPart().removeActiveGcode(thing.getgenericThing());
+            }
+        }
+        repaint();
     }
 
     private class SheetEditMenu extends JPanel {
@@ -800,12 +846,102 @@ public class Screen extends JPanel
         }
     }
 
-    private class cutSelect extends JPanel {
+    private class CutSelectGcode extends JPanel {
+        private CutSelectGcode() {
+            setLayout(new GridLayout(0, 1));
+            add(returnToHomeMenu.clone());
+            add(new JLabel("Select Cut to Change: ") {
+                {
+                    setForeground(Color.WHITE);
+                }
+            });
+
+            for (Cut cut : selectedSheet.getCuts()) {
+                add(new SheetHandlerJButtonCut(cut.getCutFile().getName(), cut) {
+                    {
+                        addActionListener(Screen.this);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+
+    private class PartSelectGcode extends JPanel {
+        private Cut cut;
+
+        private PartSelectGcode(Cut cut) {
+            this.cut = cut;
+            setLayout(new GridLayout(0, 1));
+            add(returnToHomeMenu.clone());
+            add(new JLabel("Select Part to Change: ") {
+                {
+                    setForeground(Color.WHITE);
+                }
+            });
+
+            for (Part part : cut) {
+                if (part instanceof Hole) {
+                    continue;
+                }
+                add(new SheetHandlerJButtonPart(part.partFile().getName(), part) {
+                    {
+                        addActionListener(Screen.this);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+
+    private class GCodeSelectGcode extends JPanel {
+        private GCodeSelectGcode(Part part) {
+            setLayout(new GridLayout(0, 1));
+            add(returnToHomeMenu.clone());
+            add(new JLabel("Select GCode File to View: ") {
+                {
+                    setForeground(Color.WHITE);
+                }
+            });
+
+            for (NGCDocument docs : part.getAllNgcDocuments()) {
+                add(new SheetHandlerJCheckBoxNGCDoc(docs.getGcodeFile().getName(), docs, part) {
+                    {
+                        addItemListener(Screen.this);
+                        if(part.getNgcDocuments().stream().anyMatch(e -> e.equals(docs))) {
+                            setSelected(true);
+                        }
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+
+    private class CutSelect extends JPanel {
         private ButtonGroup buttons;
 
-        private cutSelect() {
+        private CutSelect() {
             setLayout(new GridLayout(0, 1));
-            add(returnToHomeMenu);
+            add(returnToHomeMenu.clone());
             add(new JLabel("Select Active Cut:") {
                 {
                     setForeground(Color.WHITE);
@@ -818,7 +954,8 @@ public class Screen extends JPanel
                     continue;
                 }
                 buttons.add(
-                        new FileJRadioButton(cutFile.getName().substring(0, cutFile.getName().lastIndexOf(".cut"))) {
+                        new FileJRadioButton(cutFile.getName().substring(0, cutFile.getName().lastIndexOf(".cut")),
+                                CUT_SELECT) {
                             {
                                 addActionListener(Screen.this);
                                 if (cutFile.getName().equals(selectedSheet.getActiveCutFile().getName())) {
@@ -844,7 +981,48 @@ public class Screen extends JPanel
         }
     }
 
+    private class ReturnToHomeJButton extends JButton implements Cloneable {
+        public ReturnToHomeJButton(String text) {
+            super(text);
+        }
+
+        @Override
+        public ReturnToHomeJButton clone() {
+            return new ReturnToHomeJButton(this.getText()) {
+                {
+                    setBounds(this.getBounds());
+                    addActionListener(Screen.this);
+                }
+            };
+        }
+    }
+
     public enum SheetMenuState {
-        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, EMIT_SELECT, ADD_ITEM, ADD_HOLE
+        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, GCODE_SELECT_PART, EMIT_SELECT, ADD_ITEM, ADD_HOLE
+    }
+
+    class SheetHandlerJButtonCut extends SheetHandlerJButton<Cut> {
+        public SheetHandlerJButtonCut(String text, Cut genericThing) {
+            super(text, genericThing);
+        }
+    }
+
+    class SheetHandlerJButtonPart extends SheetHandlerJButton<Part> {
+        public SheetHandlerJButtonPart(String text, Part genericThing) {
+            super(text, genericThing);
+        }
+    }
+
+    class SheetHandlerJCheckBoxNGCDoc extends SheetHandlerJCheckBox<NGCDocument> {
+        private Part part;
+
+        public SheetHandlerJCheckBoxNGCDoc(String text, NGCDocument doc, Part part) {
+            super(text, doc);
+            this.part = part;
+        }
+
+        public Part getPart() {
+            return part;
+        }
     }
 }
