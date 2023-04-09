@@ -42,6 +42,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener {
@@ -97,6 +98,8 @@ public class Screen extends JPanel
     private ArrayList<JPanel> menuPanels = new ArrayList<>();
     private JPanel editMenu;
     private JPanel cutPanel;
+    private JPanel emitPanel;
+    private JButton[] suffixes;
 
     public Screen() {
         setLayout(null);
@@ -304,6 +307,9 @@ public class Screen extends JPanel
 
     public void switchMenuStates(SheetMenuState newState){
         menuState = newState;
+        if(newState == SheetMenuState.EMIT_SELECT) {
+
+        }
         repaint();
     }
 
@@ -483,7 +489,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == reScan) {
 
         } else if (e.getSource() == emit) {
-
+            switchMenuStates(SheetMenuState.EMIT_SELECT);
         } else if (e.getSource() == save) {
 
         } else if (e.getSource() == addCut) {
@@ -761,11 +767,6 @@ public class Screen extends JPanel
         }
 
         @Override
-        public Dimension getPreferredSize() {
-            return new Dimension(300, 800);
-        }
-
-        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (selectedSheet != null) {
@@ -785,6 +786,42 @@ public class Screen extends JPanel
         @Override
         public void paintComponent(Graphics g){
             super.paintComponent(g);
+        }
+    }
+
+
+    private class EmitSelect extends JPanel {
+
+        public EmitSelect() {
+            setBounds(0, 0, 300, 800);
+
+            HashSet<String> suffixStrings = new HashSet<>();
+            for(Part part : selectedSheet.getActiveCut()) {
+                for(String suffix : part.getSuffixes()) {
+                    suffixStrings.add(suffix);
+                }
+            }
+
+            suffixes = new JButton[suffixStrings.size()];
+            for(int i = 0; i < suffixes.length; i++) {
+                suffixes[i] = new JButton((String)(suffixStrings.toArray()[i]));
+                suffixes[i].setBounds(50, 50 + 100 * i, 200, 50);
+                add(suffixes[i]);
+                suffixes[i].addActionListener(Screen.this);
+            }
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(300, 800);
         }
     }
 

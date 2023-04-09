@@ -3,18 +3,14 @@ package SheetHandler;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
-import java.awt.geom.Path2D;
-import java.awt.geom.Area;
 import java.awt.Stroke;
 import java.awt.BasicStroke;
-import java.awt.geom.PathIterator;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
@@ -25,7 +21,7 @@ public class Part {
     private NGCDocument ngcDoc;
     private File partFile;
     private boolean selected = false;
-    private Shape outline;
+    private ArrayList<NGCDocument> ngcDocs = new ArrayList<>();
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if (partFile == null) {
@@ -48,19 +44,21 @@ public class Part {
                     if (file.getName().lastIndexOf(".") != -1 && file.getName()
                             .substring(file.getName().lastIndexOf(".") + 1, file.getName().length()).equals("ngc")) {
                         partFile = file;
-                        break;
+                        
+                        for(NGCDocument doc : Parser.parsedDocuments){
+                            if(doc.getFile().equals(partFile)){
+                                ngcDoc = doc;
+                            }
+                        }
+                        if(ngcDoc == null){
+                            ngcDoc = Parser.parse(partFile);
+                        }
+
+                        ngcDocs.add(ngcDoc);
                     }
                 }
                 if (partFile == null) {
                     throw new FileNotFoundException("No NGC File found in: " + parent.getPath());
-                }
-                for(NGCDocument doc : Parser.parsedDocuments){
-                    if(doc.getFile().equals(partFile)){
-                        ngcDoc = doc;
-                    }
-                }
-                if(ngcDoc == null){
-                    ngcDoc = Parser.parse(partFile);
                 }
             } catch (FileNotFoundException e) {
                 System.out.println("File : " + partFile.getAbsolutePath() + " Not Found");
@@ -73,8 +71,6 @@ public class Part {
         sheetX = xLoc;
         sheetY = yLoc;
         rotation = rot;
-
-        generateOutline();
     }
 
     public boolean contains(Point2D point){
@@ -163,28 +159,52 @@ public class Part {
 
     @Override
     public boolean equals(Object obj){
-        if (((Part)obj).getSelected() == true){
+        if (((Part)obj).getSelected()){
             return true;
         }
         return false;
     }
 
-    public void generateOutline() {
-        //outline = new Area(ngcDoc.getCurrentPath2D());
-        Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0);
-        //Area strokeShape = new Area(stroke.createStrokedShape(outline));
+    public String[] getSuffixes() {
+        if(this instanceof Hole) {
+            return new String[]{"holes"};
+        }
+        String[] suffixes = new String[ngcDocs.size()];
+        for(int i = 0; i < suffixes.length; i++) {
+            String fileName = ngcDocs.get(i).getFile().getName();
+            int lastIndexOf_ = fileName.lastIndexOf('_');
+            suffixes[i] = fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.'));
+        }
+        return suffixes;
+    }
 
-        RelativePath2D temp = ngcDoc.getCurrentPath2D();
-        for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
-            if(calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())){
-                temp = path;
+    public void setSelectedGCode(String suffix) {
+        for(NGCDocument ngcDocument : ngcDocs) {
+            String fileName = ngcDocument.getFile().getName();
+            int lastIndexOf_ = fileName.lastIndexOf('_');
+            if(suffix.equals(fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.')))) {
+                ngcDoc = ngcDocument;
+                break;
             }
         }
-
-        outline = stroke.createStrokedShape(temp);
     }
 
-    private double calcArea(Rectangle2D rect){
-        return rect.getWidth()*rect.getHeight();
-    }
+    // public void generateOutline() {
+    //     //outline = new Area(ngcDoc.getCurrentPath2D());
+    //     Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0);
+    //     //Area strokeShape = new Area(stroke.createStrokedShape(outline));
+
+    //     RelativePath2D temp = ngcDoc.getCurrentPath2D();
+    //     for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
+    //         if(calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())){
+    //             temp = path;
+    //         }
+    //     }
+
+    //     outline = stroke.createStrokedShape(temp);
+    // }
+
+    // private double calcArea(Rectangle2D rect){
+    //     return rect.getWidth()*rect.getHeight();
+    // }
 }

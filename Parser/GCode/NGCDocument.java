@@ -3,7 +3,6 @@ package Parser.GCode;
 import Display.Screen;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +22,7 @@ public class NGCDocument {
     private double lastJ = 0;
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates;
-    private String gCodeFile;
+    private String gCodeString;
 
     public NGCDocument() {
         this(null);
@@ -88,9 +87,9 @@ public class NGCDocument {
 
     public NGCDocument(File file) {
         this.file = file;
-        if(file != null) {
+        if (file != null) {
             try {
-                gCodeFile = String.join("\n",Files.readAllLines(file.toPath()));
+                gCodeString = String.join("\n", Files.readAllLines(file.toPath()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -146,8 +145,8 @@ public class NGCDocument {
             attributes.put("G", previousAttributes.get("G"));
         }
 
-        //if it's a movement, ignore it if machine coords
-        if(usingMachineCoordinates() && attributes.get("G") >= 0 && attributes.get("G") <= 3) {
+        // if it's a movement, ignore it if machine coords
+        if (usingMachineCoordinates() && attributes.get("G") >= 0 && attributes.get("G") <= 3) {
             setUsingMachineCoordinates(false);
             return;
         }
@@ -171,13 +170,13 @@ public class NGCDocument {
             case 0 -> {
                 if (getRelativity()) {
                     if (attributes.get("Z") + getCurrentPointr().getZ() > 0) {
-                         newPath2D();
+                        newPath2D();
                     }
                     getCurrentPath2D().moveToRelative(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZRelative(attributes.get("Z"));
                 } else {
                     if (attributes.get("Z") > 0) {
-                         newPath2D();
+                        newPath2D();
                     }
                     getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZ(attributes.get("Z"));
@@ -252,7 +251,7 @@ public class NGCDocument {
                 if (attributes.get("G") == 90) {
                     // absolute distance mode
                     setIsRelative(false);
-                } else if(attributes.get("G") == 90.1) {
+                } else if (attributes.get("G") == 90.1) {
                     // absolute arc mode
                     setIsRelativeArc(false);
                 } else {
@@ -263,7 +262,7 @@ public class NGCDocument {
                 if (attributes.get("G") == 91) {
                     // incremental distance mode
                     setIsRelative(true);
-                } else if(attributes.get("G") == 91.1) {
+                } else if (attributes.get("G") == 91.1) {
                     setIsRelativeArc(true);
                 } else {
                     throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
@@ -296,5 +295,31 @@ public class NGCDocument {
         return toolOffset;
     }
 
-    
+    public void addToString(String lineToAdd) {
+        gCodeString += "\n" + lineToAdd;
+    }
+
+    public String getGCodeString() {
+        return gCodeString;
+    }
+
+    public String getGCodeHeader() {
+        int endIndex = gCodeString.indexOf("G53");
+        while (gCodeString.charAt(endIndex) != '\n') {
+            endIndex++;
+        }
+        return gCodeString.substring(0, endIndex);
+    }
+
+    public String getGCodeBody() {
+        int endIndex = gCodeString.indexOf("G53");
+        while (gCodeString.charAt(endIndex) != '\n') {
+            endIndex++;
+        }
+        return gCodeString.substring(endIndex, gCodeString.lastIndexOf("G53"));
+    }
+
+    public String getGCodeFooter() {
+        return gCodeString.substring(gCodeString.lastIndexOf("G53"));
+    }
 }
