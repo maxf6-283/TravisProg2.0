@@ -5,7 +5,10 @@ import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.awt.Color;
 
@@ -191,5 +194,88 @@ public class Sheet {
 
     public File getSheetFile() {
         return sheetFile;
+    }
+
+    /**
+     * Emits the gCode from the active cut into the given file
+     * 
+     * @param gCodeFile - the file to put the GCode into.
+     * @param string
+     */
+    public void emitGCode(File gCodeFile, String suffix) {
+        
+        // specific mechanics: sandwich each part between a translation to and from
+        // their position
+         
+        // additionally, for each header that's the same aside from comments, merge it
+        // and put it at the start
+
+        //and same for footers except put them at the end
+        try {
+            gCodeFile.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(gCodeFile));
+            String header = "";
+            String footer = "";
+            for (Part part : activeCut) {
+                //ignore parts without the requisite suffix
+                if(!part.setSelectedGCode(suffix)) {
+                    continue;
+                }
+                //if the footer changes, write out the old one and remember the new one
+                String newFooter = removeGCodeSpecialness(part.getNgcDocument().getGCodeFooter());
+                if(!newFooter.equals(footer)) {
+                    writer.write(footer);
+                    footer = newFooter;
+                }
+                
+                //if the header changes, write it out
+                String newHeader = removeGCodeSpecialness(part.getNgcDocument().getGCodeHeader());
+                if (!header.equals(newHeader)) {
+                    header = newHeader;
+                    writer.write(newHeader);
+                }
+
+                //the actual fun stuff
+                writer.write(gCodeTranslateTo(part));
+                writer.write(part.getNgcDocument().getGCodeBody());
+                writer.write(gCodeTranslateFrom(part));
+            }
+
+            //write the last footer
+            writer.write(footer);
+
+            writer.flush();
+            System.out.println("This code is running!");
+            writer.close();
+
+        } catch (IOException e) {
+            System.err.println("Could not emit GCode into file");
+
+            e.printStackTrace();
+        }
+    }
+
+    private String gCodeTranslateTo(Part part) {
+        double x = part.getX();
+        double y = part.getY();
+        double rot = part.getRot();
+
+        return String.format("\nG10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, rot);
+    }
+
+    private String gCodeTranslateFrom(Part part) {
+        double x = -part.getX();
+        double y = -part.getY();
+        double rot = -part.getRot();
+
+        return String.format("\nG10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, rot);
+    }
+
+    private String removeGCodeSpecialness(String gCode) {
+        return gCode.replaceAll("\\(.*\\)", "");
+    }
+
+    public Cut getActiveCut() {
+        return activeCut;
     }
 }

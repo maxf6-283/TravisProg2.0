@@ -69,13 +69,13 @@ public class SheetParser {
                 byteCounter++;
             }
             total += byteCounter;
-            if (Screen.DebugMode == true) {
+            if (Screen.DebugMode) {
                 System.out.printf("Parsing %s: %d bytes detected.%n", cutFile.getName(), byteCounter);
             }
             // x, y, rot are in sets of 64 bits
             byte[] nextNumber = new byte[8];
             while (byteCounter < total) {
-                if (Screen.DebugMode == true) {
+                if (Screen.DebugMode) {
                     System.out.println(
                             "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
                 } else {
@@ -83,7 +83,7 @@ public class SheetParser {
                 }
                 byteCounter += 8;
                 double partX = toDouble(nextNumber);
-                if (Screen.DebugMode == true) {
+                if (Screen.DebugMode) {
                     System.out.printf("Part %d's x is %f%n", byteCounter, partX);
                     System.out.println(
                             "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
@@ -92,7 +92,7 @@ public class SheetParser {
                 }
                 byteCounter += 8;
                 double partY = toDouble(nextNumber);
-                if (Screen.DebugMode == true) {
+                if (Screen.DebugMode) {
                     System.out.printf("Part %d's y is %f%n", byteCounter, partY);
                     System.out.println(
                             "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
@@ -101,7 +101,7 @@ public class SheetParser {
                 }
                 byteCounter += 8;
                 double partRot = toDouble(nextNumber);
-                if (Screen.DebugMode == true) {
+                if (Screen.DebugMode) {
                     System.out.printf("Part %d's r is %f%n", byteCounter, partRot);
                 }
                 // its in little endian and I hate it
@@ -109,7 +109,7 @@ public class SheetParser {
                 if (reader.read() == 1) {
                     // is a hole
                     cut.parts.add(new Hole(cut.getHoleFile(), partX, partY, partRot));
-                    if (Screen.DebugMode == true) {
+                    if (Screen.DebugMode) {
                         System.out.println("Adding a hole");
                     }
                 } else {
@@ -119,7 +119,7 @@ public class SheetParser {
                     if (fileNameLength == -1) {
                         break;// end of file
                     }
-                    if (Screen.DebugMode == true) {
+                    if (Screen.DebugMode) {
                         System.out.println("File name length: " + fileNameLength);
                     }
                     String partFileName = "";

@@ -68,7 +68,7 @@ public class RelativePath2D extends Path2D.Double {
             endY += startY;
         }
 
-        if (Screen.DebugMode == true) {
+        if (Screen.DebugMode) {
             System.out.printf("Arguments: x1: %f, y1: %f, x2: %f, y2: %f%n", x1, y1, x2, y2);
             System.out.printf("Arcing from %f, %f to %f, %f around %f, %f%n", startX, startY, endX, endY, centerX,
                     centerY);
@@ -90,7 +90,7 @@ public class RelativePath2D extends Path2D.Double {
         double radius = Math.sqrt((startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
         double radius2 = Math.sqrt((endX - centerX) * (endX - centerX) + (endY - centerY) * (endY - centerY));
 
-        if (Screen.DebugMode == true) {
+        if (Screen.DebugMode) {
             System.out.printf("Radius is %f, starting angle is %f, ending angle is %f%n", radius, startingAngle,
                     endingAngle);
         }

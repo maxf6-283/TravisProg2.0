@@ -4,6 +4,7 @@ import static Display.Screen.SheetMenuState.*;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -52,6 +53,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class Screen extends JPanel
@@ -110,6 +113,8 @@ public class Screen extends JPanel
     private JPanel editMenu;
     private JPanel cutPanel;
     private JPanel gcodeCutPanel;
+    private EmitSelect emitPanel;
+    private JButton[] suffixes;
     private JPanel gcodePartPanel;
     private ReturnToHomeJButton returnToHomeMenu;
 
@@ -311,6 +316,9 @@ public class Screen extends JPanel
                     }
                     case GCODE_SELECT -> gcodeCutPanel.setVisible(true);
                     case GCODE_SELECT_PART -> gcodePartPanel.setVisible(true);
+                    case EMIT_SELECT -> {
+                        emitPanel.setVisible(true);
+                    }
                     default -> throw new IllegalStateException("State Not Possible: " + menuState);
                 }
             }
@@ -322,6 +330,9 @@ public class Screen extends JPanel
 
     public void switchMenuStates(SheetMenuState newState) {
         menuState = newState;
+        if (newState == SheetMenuState.EMIT_SELECT) {
+
+        }
         repaint();
     }
 
@@ -501,7 +512,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == reScan) {
 
         } else if (e.getSource() == emit) {
-
+            switchMenuStates(SheetMenuState.EMIT_SELECT);
         } else if (e.getSource() == save) {
 
         } else if (e.getSource() == addCut) {
@@ -543,6 +554,17 @@ public class Screen extends JPanel
             gcodePartPanel.setBounds(editMenu.getBounds());
             add(gcodePartPanel);
             menuPanels.add(gcodePartPanel);
+        } else if(e.getSource() == emitPanel.returnToMain) {
+            switchMenuStates(HOME);
+        } else {
+            for (JButton button : suffixes) {
+                if (e.getSource() == button) {
+                    File outputFolder = new File("./output/" + java.time.LocalDate.now().toString().replaceAll("-", ""));
+                    outputFolder.mkdir();
+                    File outputFile = new File(outputFolder, emitPanel.gCodeName.getText() + ".ngc");
+                    selectedSheet.emitGCode(outputFile, button.getText());
+                }
+            }
         }
         repaint();
     }
@@ -638,6 +660,11 @@ public class Screen extends JPanel
                 add(cutPanel);
                 cutPanel.setBounds(editMenu.getBounds());
                 menuPanels.add(cutPanel);
+
+                emitPanel = new EmitSelect();
+                add(emitPanel);
+                emitPanel.setBounds(editMenu.getBounds());
+                menuPanels.add(emitPanel);
 
                 menuPanels.stream().forEach(e -> e.setVisible(false));
             }
@@ -830,11 +857,6 @@ public class Screen extends JPanel
         }
 
         @Override
-        public Dimension getPreferredSize() {
-            return new Dimension(300, 800);
-        }
-
-        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (selectedSheet != null) {
@@ -994,6 +1016,59 @@ public class Screen extends JPanel
                     addActionListener(Screen.this);
                 }
             };
+        }
+    }
+
+    private class EmitSelect extends JPanel {
+        public JTextField gCodeName;
+        public JLabel gCodeNameLabel;
+        public JButton returnToMain;
+
+        public EmitSelect() {
+            setLayout(null);
+
+            HashSet<String> suffixStrings = new HashSet<>();
+            for (Part part : selectedSheet.getActiveCut()) {
+                for (String suffix : part.getSuffixes()) {
+                    suffixStrings.add(suffix);
+                }
+            }
+
+            suffixes = new JButton[suffixStrings.size()];
+            for (int i = 0; i < suffixes.length; i++) {
+                suffixes[i] = new JButton((String) (suffixStrings.toArray()[i]));
+                suffixes[i].setBounds(50, 150 + 50 * i, 200, 25);
+                add(suffixes[i]);
+                suffixes[i].addActionListener(Screen.this);
+                if (i == suffixes.length - 1) {
+                    returnToMain = new JButton("Done emitting gCode");
+                    returnToMain.setBounds(50, 150 + 50 * (i + 1), 200, 50);
+                    add(returnToMain);
+                    returnToMain.addActionListener(Screen.this);
+                }
+            }
+
+            gCodeName = new JTextField(selectedSheet.getActiveCut().getCutFile().getName().substring(0, selectedSheet.getActiveCut().getCutFile().getName().lastIndexOf('.')));
+            gCodeName.setBounds(50, 50, 200, 25);
+            add(gCodeName);
+
+            gCodeNameLabel = new JLabel("gCode emission name:");
+            gCodeNameLabel.setBounds(50, 25, 200, 25);
+            gCodeNameLabel.setForeground(Color.WHITE);
+            add(gCodeNameLabel);
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(300, 800);
         }
     }
 

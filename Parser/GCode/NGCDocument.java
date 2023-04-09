@@ -3,7 +3,6 @@ package Parser.GCode;
 import Display.Screen;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +22,7 @@ public class NGCDocument {
     private double lastJ = 0;
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates;
-    private String gCodeFile;
+    private String gCodeString;
 
     public NGCDocument() {
         this(null);
@@ -90,7 +89,7 @@ public class NGCDocument {
         this.gcodeFile = file;
         if (file != null) {
             try {
-                gCodeFile = String.join("\n", Files.readAllLines(file.toPath()));
+                gCodeString = String.join("\n", Files.readAllLines(file.toPath()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -277,7 +276,7 @@ public class NGCDocument {
             }
 
         }
-        if (Screen.DebugMode == true) {
+        if (Screen.DebugMode) {
             System.out.println(attributes);
         }
 
@@ -294,5 +293,33 @@ public class NGCDocument {
 
     public double getToolOffset() {
         return toolOffset;
+    }
+
+    public void addToString(String lineToAdd) {
+        gCodeString += "\n" + lineToAdd;
+    }
+
+    public String getGCodeString() {
+        return gCodeString;
+    }
+
+    public String getGCodeHeader() {
+        int endIndex = gCodeString.indexOf("G53");
+        while (gCodeString.charAt(endIndex) != '\n') {
+            endIndex++;
+        }
+        return gCodeString.substring(0, endIndex + 1);
+    }
+
+    public String getGCodeBody() {
+        int endIndex = gCodeString.indexOf("G53");
+        while (gCodeString.charAt(endIndex) != '\n') {
+            endIndex++;
+        }
+        return gCodeString.substring(endIndex + 1, gCodeString.lastIndexOf("G53"));
+    }
+
+    public String getGCodeFooter() {
+        return gCodeString.substring(gCodeString.lastIndexOf("G53"));
     }
 }

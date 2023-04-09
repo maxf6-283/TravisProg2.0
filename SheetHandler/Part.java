@@ -196,8 +196,8 @@ public class Part {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (((Part) obj).getSelected() == true) {
+    public boolean equals(Object obj){
+        if (((Part)obj).getSelected()){
             return true;
         }
         return false;
@@ -221,7 +221,22 @@ public class Part {
         outline = stroke.createStrokedShape(temp);
     }*/
 
-    private double calcArea(Rectangle2D rect) {
-        return rect.getWidth() * rect.getHeight();
-    }
+    // public void generateOutline() {
+    //     //outline = new Area(ngcDoc.getCurrentPath2D());
+    //     Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0);
+    //     //Area strokeShape = new Area(stroke.createStrokedShape(outline));
+
+    //     RelativePath2D temp = ngcDoc.getCurrentPath2D();
+    //     for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
+    //         if(calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())){
+    //             temp = path;
+    //         }
+    //     }
+
+    //     outline = stroke.createStrokedShape(temp);
+    // }
+
+    // private double calcArea(Rectangle2D rect){
+    //     return rect.getWidth()*rect.getHeight();
+    // }
 }
