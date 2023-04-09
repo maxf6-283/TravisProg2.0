@@ -8,12 +8,12 @@ import Parser.Sheet.SheetParser;
 import java.awt.Graphics;
 import java.io.File;
 
-public class Cut implements Iterable<Part>{
+public class Cut implements Iterable<Part> {
     public ArrayList<Part> parts;
     private File cutFile;
     private File holeFile;
 
-    public File getHoleFile(){
+    public File getHoleFile() {
         return holeFile;
     }
 
@@ -49,7 +49,7 @@ public class Cut implements Iterable<Part>{
         return it;
     }
 
-    public File cutFile() {
+    public File getCutFile() {
         return cutFile;
     }
 
@@ -57,7 +57,7 @@ public class Cut implements Iterable<Part>{
      * Draw the parts and holes in the cut
      */
     public void draw(Graphics g) {
-        for(Part part : parts) {
+        for (Part part : parts) {
             part.draw(g);
         }
     }

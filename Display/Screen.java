@@ -1,6 +1,9 @@
 package Display;
 
+import static Display.Screen.SheetMenuState.*;
+
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
@@ -13,6 +16,7 @@ import SheetHandler.SheetThickness;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -20,11 +24,13 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 
 import java.awt.BasicStroke;
+import java.awt.Button;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
@@ -43,6 +49,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collections;
 
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener {
@@ -94,12 +102,13 @@ public class Screen extends JPanel
     private Part selectedPart = null;
     private Point2D.Double measurePoint1;
     private Point2D.Double measurePoint2;
-    private SheetMenuState menuState = SheetMenuState.NULL;
+    private SheetMenuState menuState = NULL;
     private ArrayList<JPanel> menuPanels = new ArrayList<>();
     private JPanel editMenu;
     private JPanel cutPanel;
     private JPanel emitPanel;
     private JButton[] suffixes;
+    private JButton returnToHomeMenu;
 
     public Screen() {
         setLayout(null);
@@ -147,11 +156,8 @@ public class Screen extends JPanel
         add(editMenu);
         menuPanels.add(editMenu);
 
-        cutPanel = new cutSelect();
-        add(cutPanel);
-        menuPanels.add(cutPanel);
-
-        menuPanels.stream().forEach(e -> e.setVisible(false));
+        returnToHomeMenu = new JButton("Return to Home");
+        returnToHomeMenu.addActionListener(this);
 
         try {
             img = ImageIO.read(new File("Display\\971 large logo.png"));
@@ -162,7 +168,7 @@ public class Screen extends JPanel
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                editMenu.setBounds(0, 0, 400, e.getComponent().getHeight());
+                menuPanels.stream().forEach(j -> j.setBounds(0, 0, 400, e.getComponent().getHeight()));
             }
         });
 
@@ -250,12 +256,13 @@ public class Screen extends JPanel
         g.fillRect(0, 0, getWidth(), getHeight());
         // set all menu JPanels not visible
         menuPanels.stream().forEach(e -> e.setVisible(false));
-        measure.setForeground(menuState == SheetMenuState.MEASURE ? Color.LIGHT_GRAY : null);
+        measure.setForeground(menuState == MEASURE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
                 g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
             }
             case SHEET_EDIT -> {
+
                 Graphics2D g2d = (Graphics2D) g;
                 AffineTransform prevTransform = g2d.getTransform();
                 g2d.scale(zoom, zoom);
@@ -296,6 +303,9 @@ public class Screen extends JPanel
                 }
                 switch (menuState) {
                     case HOME, MEASURE -> editMenu.setVisible(true);
+                    case CUT_SELECT -> {
+                        cutPanel.setVisible(true);
+                    }
                     default -> throw new IllegalStateException("State Not Possible: " + menuState);
                 }
             }
@@ -305,7 +315,7 @@ public class Screen extends JPanel
         }
     }
 
-    public void switchMenuStates(SheetMenuState newState){
+    public void switchMenuStates(SheetMenuState newState) {
         menuState = newState;
         if(newState == SheetMenuState.EMIT_SELECT) {
 
@@ -320,7 +330,7 @@ public class Screen extends JPanel
     @Override
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1 && state == State.SHEET_EDIT) {
-            if (menuState == SheetMenuState.MEASURE) {
+            if (menuState == MEASURE) {
                 if (measurePoint1 == null) {
                     measurePoint1 = (Point2D.Double) screenToSheet(new Point2D.Double(e.getX(), e.getY()));
                 } else if (measurePoint2 == null) {
@@ -497,16 +507,22 @@ public class Screen extends JPanel
         } else if (e.getSource() == changeGCodeView) {
 
         } else if (e.getSource() == measure) {
-            if (menuState == SheetMenuState.MEASURE) {
-                switchMenuStates(SheetMenuState.HOME);
-            } else if (menuState == SheetMenuState.HOME){
-                switchMenuStates(SheetMenuState.MEASURE);
+            if (menuState == MEASURE) {
+                switchMenuStates(HOME);
             } else {
-                throw new IllegalStateException();
+                switchMenuStates(MEASURE);
             }
-            measure.setSelected(menuState == SheetMenuState.MEASURE);
+            measure.setSelected(menuState == MEASURE);
         } else if (e.getSource() == changeCut) {
-
+            if (menuState == CUT_SELECT) {
+                switchMenuStates(HOME);
+            } else {
+                switchMenuStates(CUT_SELECT);
+            }
+        } else if (e.getSource() == returnToHomeMenu) {
+            switchMenuStates(HOME);
+        } else if (e.getSource() instanceof FileJRadioButton) {
+            selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
         }
         repaint();
     }
@@ -570,7 +586,7 @@ public class Screen extends JPanel
         switch (newState) {
             case SHEET_SELECT -> {
                 state = State.SHEET_SELECT;
-                switchMenuStates(SheetMenuState.NULL);
+                switchMenuStates(NULL);
                 selectSheet.setVisible(true);
                 addSheet.setVisible(true);
                 sheetList.setVisible(true);
@@ -580,7 +596,7 @@ public class Screen extends JPanel
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
-                switchMenuStates(SheetMenuState.HOME);
+                switchMenuStates(HOME);
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
@@ -592,10 +608,17 @@ public class Screen extends JPanel
                 xCorner /= zoom;
                 yCorner /= zoom;
                 newSheetPrompt.setVisible(false);
+
+                cutPanel = new cutSelect();
+                add(cutPanel);
+                cutPanel.setBounds(editMenu.getBounds());
+                menuPanels.add(cutPanel);
+
+                menuPanels.stream().forEach(e -> e.setVisible(false));
             }
             case SHEET_ADD -> {
                 state = State.SHEET_ADD;
-                switchMenuStates(SheetMenuState.NULL);
+                switchMenuStates(NULL);
                 returnToHome.setVisible(false);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
@@ -779,13 +802,46 @@ public class Screen extends JPanel
     }
 
     private class cutSelect extends JPanel {
-        private cutSelect() {
+        private ButtonGroup buttons;
 
+        private cutSelect() {
+            setLayout(new GridLayout(0, 1));
+            add(returnToHomeMenu);
+            add(new JLabel("Select Active Cut:") {
+                {
+                    setForeground(Color.WHITE);
+                }
+            });
+
+            buttons = new ButtonGroup();
+            for (File cutFile : selectedSheet.getParentFile().listFiles()) {
+                if (!cutFile.getName().endsWith(".cut")) {
+                    continue;
+                }
+                buttons.add(
+                        new FileJRadioButton(cutFile.getName().substring(0, cutFile.getName().lastIndexOf(".cut"))) {
+                            {
+                                addActionListener(Screen.this);
+                                if (cutFile.getName().equals(selectedSheet.getActiveCutFile().getName())) {
+                                    setSelected(true);
+                                }
+                                setFile(cutFile);
+                            }
+                        });
+            }
+            Collections.list(buttons.getElements()).stream().forEach(e -> this.add(e));
         }
 
         @Override
-        public void paintComponent(Graphics g){
+        public Dimension getPreferredSize() {
+            return new Dimension(300, 800);
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
             super.paintComponent(g);
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
         }
     }
 

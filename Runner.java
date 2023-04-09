@@ -21,7 +21,7 @@ public class Runner {
         try {
             BufferedImage img = ImageIO.read(new File("Display/971 Icon.png"));
             frame.setIconImage(img);
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.err.println("No icon image found");
         }
 

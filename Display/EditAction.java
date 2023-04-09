@@ -83,10 +83,10 @@ public class EditAction {
     }
 
     public boolean doesSomething() {
-        if(type != Type.MOVE_PART) {
+        if (type != Type.MOVE_PART) {
             return true;
         }
-        if(xTo == xFrom && yTo == yFrom && rotTo == rotFrom) {
+        if (xTo == xFrom && yTo == yFrom && rotTo == rotFrom) {
             return false;
         } else {
             return true;
