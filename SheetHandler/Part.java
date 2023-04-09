@@ -183,15 +183,20 @@ public class Part {
         return suffixes;
     }
 
-    public void setSelectedGCode(String suffix) {
+    public boolean setSelectedGCode(String suffix) {
+        if(this instanceof Hole) {
+            return suffix.equals("holes");
+        }
         for(NGCDocument ngcDocument : ngcDocs) {
             String fileName = ngcDocument.getFile().getName();
             int lastIndexOf_ = fileName.lastIndexOf('_');
             if(suffix.equals(fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.')))) {
                 ngcDoc = ngcDocument;
-                break;
+                return true;
             }
         }
+
+        return false;
     }
 
     // public void generateOutline() {

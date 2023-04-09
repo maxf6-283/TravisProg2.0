@@ -308,7 +308,7 @@ public class NGCDocument {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        return gCodeString.substring(0, endIndex);
+        return gCodeString.substring(0, endIndex + 1);
     }
 
     public String getGCodeBody() {
@@ -316,7 +316,7 @@ public class NGCDocument {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        return gCodeString.substring(endIndex, gCodeString.lastIndexOf("G53"));
+        return gCodeString.substring(endIndex + 1, gCodeString.lastIndexOf("G53"));
     }
 
     public String getGCodeFooter() {

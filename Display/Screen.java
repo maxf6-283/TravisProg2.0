@@ -306,6 +306,9 @@ public class Screen extends JPanel
                     case CUT_SELECT -> {
                         cutPanel.setVisible(true);
                     }
+                    case EMIT_SELECT -> {
+                        emitPanel.setVisible(true);
+                    }
                     default -> throw new IllegalStateException("State Not Possible: " + menuState);
                 }
             }
@@ -523,6 +526,13 @@ public class Screen extends JPanel
             switchMenuStates(HOME);
         } else if (e.getSource() instanceof FileJRadioButton) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
+        } else {
+            for(JButton button : suffixes) {
+                if(e.getSource() == button) {
+                    File outputFile = new File("./output/TestFolder/testOutput.ngc");
+                    selectedSheet.emitGCode(outputFile, button.getText());
+                }
+            }
         }
         repaint();
     }
@@ -613,6 +623,11 @@ public class Screen extends JPanel
                 add(cutPanel);
                 cutPanel.setBounds(editMenu.getBounds());
                 menuPanels.add(cutPanel);
+
+                emitPanel = new EmitSelect();
+                add(emitPanel);
+                emitPanel.setBounds(editMenu.getBounds());
+                menuPanels.add(emitPanel);
 
                 menuPanels.stream().forEach(e -> e.setVisible(false));
             }
@@ -849,6 +864,7 @@ public class Screen extends JPanel
     private class EmitSelect extends JPanel {
 
         public EmitSelect() {
+            setLayout(null);
             setBounds(0, 0, 300, 800);
 
             HashSet<String> suffixStrings = new HashSet<>();
@@ -861,7 +877,7 @@ public class Screen extends JPanel
             suffixes = new JButton[suffixStrings.size()];
             for(int i = 0; i < suffixes.length; i++) {
                 suffixes[i] = new JButton((String)(suffixStrings.toArray()[i]));
-                suffixes[i].setBounds(50, 50 + 100 * i, 200, 50);
+                suffixes[i].setBounds(50, 150 + 50 * i, 200, 25);
                 add(suffixes[i]);
                 suffixes[i].addActionListener(Screen.this);
             }
