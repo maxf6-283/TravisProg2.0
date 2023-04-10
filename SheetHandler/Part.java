@@ -22,6 +22,7 @@ public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
     private ArrayList<NGCDocument> activeNgcDocs = new ArrayList<>();
     private ArrayList<NGCDocument> allNGCDocs = new ArrayList<>();
+    private NGCDocument emitNGCDoc;
     private File partFile;
     private boolean selected = false;
     //private Shape outline;
@@ -85,6 +86,39 @@ public class Part {
 
     public ArrayList<NGCDocument> getAllNgcDocuments() {
         return allNGCDocs;
+    }
+
+    public boolean setSelectedGCode(String suffix) {
+        if(this instanceof Hole) {
+            return suffix.equals("holes");
+        }
+        for(NGCDocument ngcDocument : allNGCDocs) {
+            String fileName = ngcDocument.getGcodeFile().getName();
+            int lastIndexOf_ = fileName.lastIndexOf('_');
+            if(suffix.equals(fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.')))) {
+                emitNGCDoc = ngcDocument;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public NGCDocument getNgcDocument() {
+        return emitNGCDoc;
+    }
+
+    public String[] getSuffixes() {
+        if(this instanceof Hole) {
+            return new String[]{"holes"};
+        }
+        String[] suffixes = new String[allNGCDocs.size()];
+        for(int i = 0; i < suffixes.length; i++) {
+            String fileName = allNGCDocs.get(i).getGcodeFile().getName();
+            int lastIndexOf_ = fileName.lastIndexOf('_');
+            suffixes[i] = fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.'));
+        }
+        return suffixes;
     }
 
     public void addActiveGcode(NGCDocument doc) {

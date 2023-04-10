@@ -12,19 +12,21 @@ public class Parser {
     public static BufferedWriter out = new BufferedWriter(new OutputStreamWriter(System.out));
     public static ArrayList<NGCDocument> parsedDocuments = new ArrayList<>();
 
-    public static void main(String[] args) {
-        NGCDocument doc = new NGCDocument();
-        long time = -System.nanoTime();
-        try {
-            doc = parse(new File("TestFiles/butterfly!!!!_1565.ngc"));
-            out.flush();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        doc.getCurrentPath2D();
-        System.out.println();
-        System.out.println((System.nanoTime() + time) / 1000.0 / 1000.0 / 1000.0);
-    }
+    /*
+     * public static void main(String[] args) {
+     * NGCDocument doc = new NGCDocument();
+     * long time = -System.nanoTime();
+     * try {
+     * doc = parse(new File("TestFiles/butterfly!!!!_1565.ngc"));
+     * out.flush();
+     * } catch (Exception e) {
+     * e.printStackTrace();
+     * }
+     * doc.getCurrentPath2D();
+     * System.out.println();
+     * System.out.println((System.nanoTime() + time) / 1000.0 / 1000.0 / 1000.0);
+     * }
+     */
 
     /**
      * 
