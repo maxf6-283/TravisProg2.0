@@ -656,15 +656,15 @@ public class Screen extends JPanel
                 gcodeCutPanel.setBounds(editMenu.getBounds());
                 menuPanels.add(gcodeCutPanel);
 
-                cutPanel = new CutSelect();
-                add(cutPanel);
-                cutPanel.setBounds(editMenu.getBounds());
-                menuPanels.add(cutPanel);
-
                 emitPanel = new EmitSelect();
                 add(emitPanel);
                 emitPanel.setBounds(editMenu.getBounds());
                 menuPanels.add(emitPanel);
+
+                cutPanel = new CutSelect();
+                add(cutPanel);
+                cutPanel.setBounds(editMenu.getBounds());
+                menuPanels.add(cutPanel);
 
                 menuPanels.stream().forEach(e -> e.setVisible(false));
             }

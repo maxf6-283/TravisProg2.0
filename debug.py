@@ -10,7 +10,6 @@ for i in iter(output.splitlines()):
                 number += x
 
 output = subprocess.getoutput("jstack "+number)
-print(output)
 
 f = open("debug.log", "w")
 f.write("\n\n\n\n\n")
