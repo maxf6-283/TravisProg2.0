@@ -22,7 +22,6 @@ import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -52,14 +51,19 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Arrays;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.Collections;
 
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener,
         ItemListener {
+    public static Screen screen;
     public static final boolean DebugMode = false;
     private JList<File> sheetList;
     private JScrollPane sheetScroll;
@@ -117,8 +121,23 @@ public class Screen extends JPanel
     private JButton[] suffixes;
     private JPanel gcodePartPanel;
     private ReturnToHomeJButton returnToHomeMenu;
+    public static Logger logger;
+
+    static {
+        logger = Logger.getLogger("MyLog");
+        FileHandler fh;
+        try {
+            fh = new FileHandler("logger.log");
+            logger.addHandler(fh);
+            fh.setFormatter(new SimpleFormatter());
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        logger.setUseParentHandlers(DebugMode);
+    }
 
     public Screen() {
+        screen = this;
         setLayout(null);
         state = State.SHEET_SELECT;
 
@@ -132,6 +151,15 @@ public class Screen extends JPanel
                 }
             });
         }
+
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                new ErrorDialog(e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                System.exit(-1);
+            }
+        });
 
         sheetList = new JList<File>(sheetFileList);
         sheetScroll = new JScrollPane(sheetList);
@@ -541,6 +569,12 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof FileJRadioButton
                 && ((FileJRadioButton) e.getSource()).getType().equals(CUT_SELECT)) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
+            if(emitPanel == null) {
+                emitPanel = new EmitSelect();
+                add(emitPanel);
+                emitPanel.setBounds(editMenu.getBounds());
+                menuPanels.add(emitPanel);
+            }
         } else if (e.getSource() instanceof SheetHandlerJButtonCut) {
             gcodePartPanel = new PartSelectGcode(((SheetHandlerJButtonCut) e.getSource()).getgenericThing());
             add(gcodePartPanel);
@@ -656,10 +690,12 @@ public class Screen extends JPanel
                 gcodeCutPanel.setBounds(editMenu.getBounds());
                 menuPanels.add(gcodeCutPanel);
 
-                emitPanel = new EmitSelect();
-                add(emitPanel);
-                emitPanel.setBounds(editMenu.getBounds());
-                menuPanels.add(emitPanel);
+                if (selectedSheet.getActiveCut() != null) {
+                    emitPanel = new EmitSelect();
+                    add(emitPanel);
+                    emitPanel.setBounds(editMenu.getBounds());
+                    menuPanels.add(emitPanel);
+                }
 
                 cutPanel = new CutSelect();
                 add(cutPanel);
