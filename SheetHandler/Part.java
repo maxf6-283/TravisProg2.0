@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -32,7 +33,7 @@ public class Part {
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if (partFile == null) {
-            // throw new NullPointerException("Part File cannot be null!");
+            throw new NullPointerException("Part File cannot be null!");
         } else {
             this.partFile = partFile;
             try {
@@ -45,7 +46,7 @@ public class Part {
                 ArrayList<File> ngcFiles = new ArrayList<>();
                 File parent = partFile;
                 if (files == null) {
-                    throw new NullPointerException("Folder: " + parent.getName() + " Not Found");
+                    new ErrorDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found");
                 }
                 for (File file : files) {
                     if (file.getName().lastIndexOf(".") != -1 && file.getName()
@@ -54,7 +55,7 @@ public class Part {
                     }
                 }
                 if (ngcFiles.size() <= 0) {
-                    throw new FileNotFoundException("No NGC File found in: " + parent.getPath());
+                    new ErrorDialog(new FileNotFoundException(), "No NGC File found in: " + parent.getPath());
                 }
                 ArrayList<File> newFiles = new ArrayList<>();
                 for (File file : ngcFiles) {
@@ -77,11 +78,9 @@ public class Part {
                 }
                 activeNgcDocs.add(allNGCDocs.get(0));
             } catch (FileNotFoundException e) {
-                System.out.println("File : " + partFile.getAbsolutePath() + " Not Found");
-                e.printStackTrace();
-            } catch (IOException e) {
-                System.out.println("Could not write to System.out!");
-                e.printStackTrace();
+                new ErrorDialog(e, "File : " + partFile.getAbsolutePath() + " Not Found");
+            } catch (ConcurrentModificationException e) {
+                new ErrorDialog(e);
             }
         }
         sheetX = xLoc;

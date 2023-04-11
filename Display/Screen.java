@@ -126,7 +126,7 @@ public class Screen extends JPanel
         logger = Logger.getLogger("MyLog");
         FileHandler fh;
         try {
-            fh = new FileHandler("logger.log");
+            fh = new FileHandler("logger.log", true);
             logger.addHandler(fh);
             fh.setFormatter(new SimpleFormatter());
         } catch (SecurityException | IOException e) {
@@ -155,7 +155,6 @@ public class Screen extends JPanel
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 new ErrorDialog(e);
-                System.exit(-1);
             }
         });
 
@@ -296,7 +295,6 @@ public class Screen extends JPanel
                 g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
             }
             case SHEET_EDIT -> {
-
                 Graphics2D g2d = (Graphics2D) g;
                 AffineTransform prevTransform = g2d.getTransform();
                 g2d.scale(zoom, zoom);
@@ -335,17 +333,22 @@ public class Screen extends JPanel
                                 (int) (screenPoint1.getY() / 2 + screenPoint2.getY() / 2 - 10));
                     }
                 }
-                switch (menuState) {
-                    case HOME, MEASURE -> editMenu.setVisible(true);
-                    case CUT_SELECT -> {
-                        cutPanel.setVisible(true);
+                try {
+                    switch (menuState) {
+                        case HOME, MEASURE -> editMenu.setVisible(true);
+                        case CUT_SELECT -> {
+                            cutPanel.setVisible(true);
+                        }
+                        case GCODE_SELECT -> gcodeCutPanel.setVisible(true);
+                        case GCODE_SELECT_PART -> gcodePartPanel.setVisible(true);
+                        case EMIT_SELECT -> {
+                            emitPanel.setVisible(true);
+                        }
+                        default -> throw new IllegalStateException("State Not Possible: " + menuState);
                     }
-                    case GCODE_SELECT -> gcodeCutPanel.setVisible(true);
-                    case GCODE_SELECT_PART -> gcodePartPanel.setVisible(true);
-                    case EMIT_SELECT -> {
-                        emitPanel.setVisible(true);
-                    }
-                    default -> throw new IllegalStateException("State Not Possible: " + menuState);
+                } catch (NullPointerException e) {
+                    menuState = HOME;
+                    new WarningDialog(e, "No Active Cut");
                 }
             }
             case SHEET_ADD -> {

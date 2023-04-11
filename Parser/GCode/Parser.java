@@ -6,14 +6,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import Display.ErrorDialog;
 
 public class Parser implements Callable<NGCDocument> {
     public static BufferedWriter out = new BufferedWriter(new OutputStreamWriter(System.out));
-    public static ArrayList<NGCDocument> parsedDocuments = new ArrayList<>();
+    public static List<NGCDocument> parsedDocuments = new CopyOnWriteArrayList<>();
 
     /*
      * public static void main(String[] args) {
@@ -37,7 +39,7 @@ public class Parser implements Callable<NGCDocument> {
      * @return
      * @throws IOException NGC file not found, try another or use a dxf
      */
-    public static NGCDocument parse(File fileInput) throws IOException, FileNotFoundException {
+    public static NGCDocument parse(File fileInput) throws FileNotFoundException {
         int lineNum = 1;
         Scanner input;
         fileInput = new File(fileInput.getPath());
