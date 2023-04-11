@@ -5,7 +5,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.Stroke;
 import java.awt.BasicStroke;
 import java.io.File;
@@ -13,7 +12,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import Display.ErrorDialog;
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
 import Parser.GCode.RelativePath2D;
@@ -25,6 +27,7 @@ public class Part {
     private NGCDocument emitNGCDoc;
     private File partFile;
     private boolean selected = false;
+    private ArrayList<Future<NGCDocument>> futures = new ArrayList<>();
     //private Shape outline;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
@@ -65,8 +68,12 @@ public class Part {
                         newFiles.add(file);
                     }
                 }
-                for (File file : newFiles) {
-                    allNGCDocs.add(Parser.parse(file));
+                for (int i = 0; i < newFiles.size(); i++) {
+                    if (i == newFiles.size()-1) {
+                        allNGCDocs.add(Parser.parse(newFiles.get(i)));
+                    } else {
+                        futures.add(Sheet.executor.submit(new Parser(newFiles.get(i))));
+                    }
                 }
                 activeNgcDocs.add(allNGCDocs.get(0));
             } catch (FileNotFoundException e) {
@@ -84,7 +91,28 @@ public class Part {
         //generateOutline();
     }
 
+    /**
+     * @return true if all futures have returned
+     */
+    private boolean checkFutures() {
+        ArrayList<Future<NGCDocument>> toRemove = new ArrayList<>();
+        for(Future<NGCDocument> future : futures) {
+            if(future.isDone()) {
+                System.out.println("null");
+                try {
+                    allNGCDocs.add(future.get());
+                } catch (InterruptedException | ExecutionException e) {
+                    new ErrorDialog(e);
+                }
+                toRemove.add(future);
+            }
+        }
+        futures.removeAll(toRemove);
+        return futures.size() == 0;
+    }
+
     public ArrayList<NGCDocument> getAllNgcDocuments() {
+        checkFutures();
         return allNGCDocs;
     }
 
@@ -92,6 +120,7 @@ public class Part {
         if(this instanceof Hole) {
             return suffix.equals("holes");
         }
+        checkFutures();
         for(NGCDocument ngcDocument : allNGCDocs) {
             String fileName = ngcDocument.getGcodeFile().getName();
             int lastIndexOf_ = fileName.lastIndexOf('_');
@@ -112,6 +141,7 @@ public class Part {
         if(this instanceof Hole) {
             return new String[]{"holes"};
         }
+        checkFutures();
         String[] suffixes = new String[allNGCDocs.size()];
         for(int i = 0; i < suffixes.length; i++) {
             String fileName = allNGCDocs.get(i).getGcodeFile().getName();
@@ -122,6 +152,7 @@ public class Part {
     }
 
     public void addActiveGcode(NGCDocument doc) {
+        checkFutures();
         if (!allNGCDocs.stream().anyMatch(e -> e.equals(doc))) {
             throw new IllegalArgumentException("GCode doc dothe not appataine to this part");
         }
@@ -129,6 +160,7 @@ public class Part {
     }
 
     public void removeActiveGcode(NGCDocument doc) {
+        checkFutures();
         if (!activeNgcDocs.stream().anyMatch(e -> e.equals(doc))) {
             throw new IllegalArgumentException("GCode doc dothe not appataine to this part");
         }

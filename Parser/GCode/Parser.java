@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 
-public class Parser {
+import Display.ErrorDialog;
+
+public class Parser implements Callable<NGCDocument> {
     public static BufferedWriter out = new BufferedWriter(new OutputStreamWriter(System.out));
     public static ArrayList<NGCDocument> parsedDocuments = new ArrayList<>();
 
@@ -57,5 +60,22 @@ public class Parser {
         input.close();
         parsedDocuments.add(doc);
         return doc;
+    }
+
+    private File file;
+
+    public Parser(File file) {
+        this.file = file;
+    }
+
+    @Override
+    public NGCDocument call() {
+        NGCDocument output = null;
+        try {
+            output = parse(file);
+        } catch (IOException e) {
+            new ErrorDialog(e);
+        }
+        return output;
     }
 }

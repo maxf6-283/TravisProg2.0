@@ -22,7 +22,7 @@ public class NGCDocument {
     private double lastJ = 0;
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates;
-    private String gCodeString;
+    private StringBuilder gCodeStringBuilder;
 
     public NGCDocument() {
         this(null);
@@ -89,7 +89,7 @@ public class NGCDocument {
         this.gcodeFile = file;
         if (file != null) {
             try {
-                gCodeString = String.join("\n", Files.readAllLines(file.toPath()));
+                gCodeStringBuilder = new StringBuilder(String.join("\n", Files.readAllLines(file.toPath())));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -296,14 +296,15 @@ public class NGCDocument {
     }
 
     public void addToString(String lineToAdd) {
-        gCodeString += "\n" + lineToAdd;
+        gCodeStringBuilder.append("\n" + lineToAdd);
     }
 
     public String getGCodeString() {
-        return gCodeString;
+        return gCodeStringBuilder.toString();
     }
 
     public String getGCodeHeader() {
+        String gCodeString = gCodeStringBuilder.toString();
         int endIndex = gCodeString.indexOf("G53");
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
@@ -312,6 +313,7 @@ public class NGCDocument {
     }
 
     public String getGCodeBody() {
+        String gCodeString = gCodeStringBuilder.toString();
         int endIndex = gCodeString.indexOf("G53");
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
@@ -320,6 +322,7 @@ public class NGCDocument {
     }
 
     public String getGCodeFooter() {
+        String gCodeString = gCodeStringBuilder.toString();
         return gCodeString.substring(gCodeString.lastIndexOf("G53"));
     }
 }

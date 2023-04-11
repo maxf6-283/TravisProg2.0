@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.awt.Color;
 
 import Parser.Sheet.SheetParser;
@@ -19,6 +21,7 @@ public class Sheet {
     private Cut activeCut;
     private double width, height; // in inches
     private File sheetFile, holeFile, activeCutFile, parentFile;
+    public static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
 
     /**
      * Declares a new sheet from a file
@@ -26,6 +29,7 @@ public class Sheet {
      * @param sheetFile - the .sheet file to get the information from
      */
     public Sheet(File sheetFile) {
+        long time = System.nanoTime();
         this.sheetFile = sheetFile;
         cuts = new ArrayList<>();
 
@@ -48,6 +52,7 @@ public class Sheet {
                 activeCut = newCut;
             }
         }
+        System.out.println(System.nanoTime()-time);
     }
 
     public File getParentFile() {
