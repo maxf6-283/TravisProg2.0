@@ -55,7 +55,6 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.logging.FileHandler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.Collections;
@@ -156,7 +155,6 @@ public class Screen extends JPanel
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 new ErrorDialog(e);
-                logger.log(Level.SEVERE, e.getMessage(), e);
                 System.exit(-1);
             }
         });
