@@ -29,7 +29,6 @@ public class Sheet {
      * @param sheetFile - the .sheet file to get the information from
      */
     public Sheet(File sheetFile) {
-        long time = System.nanoTime();
         this.sheetFile = sheetFile;
         cuts = new ArrayList<>();
 
@@ -39,6 +38,9 @@ public class Sheet {
         height = Double.parseDouble(decodedFile.get("h"));
         holeFile = new File(decodedFile.get("hole_file"));
         activeCutFile = new File(decodedFile.get("active"));
+        if (!activeCutFile.exists()) {
+            activeCutFile = null;
+        }
 
         // time to get the parts
         parentFile = sheetFile.getParentFile();
@@ -48,11 +50,10 @@ public class Sheet {
             }
             Cut newCut = new Cut(cutFile, holeFile);
             cuts.add(newCut);
-            if (cutFile.getName().equals(activeCutFile.getName())) {
+            if (activeCutFile != null && cutFile.getName().equals(activeCutFile.getName())) {
                 activeCut = newCut;
             }
         }
-        System.out.println(System.nanoTime()-time);
     }
 
     public File getParentFile() {
@@ -208,45 +209,45 @@ public class Sheet {
      * @param string
      */
     public void emitGCode(File gCodeFile, String suffix) {
-        
+
         // specific mechanics: sandwich each part between a translation to and from
         // their position
-         
+
         // additionally, for each header that's the same aside from comments, merge it
         // and put it at the start
 
-        //and same for footers except put them at the end
+        // and same for footers except put them at the end
         try {
             gCodeFile.createNewFile();
             BufferedWriter writer = new BufferedWriter(new FileWriter(gCodeFile));
             String header = "";
             String footer = "";
             for (Part part : activeCut) {
-                //ignore parts without the requisite suffix
-                if(!part.setSelectedGCode(suffix)) {
+                // ignore parts without the requisite suffix
+                if (!part.setSelectedGCode(suffix)) {
                     continue;
                 }
-                //if the footer changes, write out the old one and remember the new one
+                // if the footer changes, write out the old one and remember the new one
                 String newFooter = removeGCodeSpecialness(part.getNgcDocument().getGCodeFooter());
-                if(!newFooter.equals(footer)) {
+                if (!newFooter.equals(footer)) {
                     writer.write(footer);
                     footer = newFooter;
                 }
-                
-                //if the header changes, write it out
+
+                // if the header changes, write it out
                 String newHeader = removeGCodeSpecialness(part.getNgcDocument().getGCodeHeader());
                 if (!header.equals(newHeader)) {
                     header = newHeader;
                     writer.write(newHeader);
                 }
 
-                //the actual fun stuff
+                // the actual fun stuff
                 writer.write(gCodeTranslateTo(part));
                 writer.write(part.getNgcDocument().getGCodeBody());
                 writer.write(gCodeTranslateFrom(part));
             }
 
-            //write the last footer
+            // write the last footer
             writer.write(footer);
 
             writer.flush();

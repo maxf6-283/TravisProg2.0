@@ -889,7 +889,9 @@ public class Screen extends JPanel
 
             if (selectedSheet != null) {
                 sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
-                cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
+                if (selectedSheet.getActiveCutFile() != null) {
+                    cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
+                }
             }
         }
 
@@ -898,8 +900,9 @@ public class Screen extends JPanel
             super.paintComponent(g);
             if (selectedSheet != null) {
                 sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
-                cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
-            }
+                if (selectedSheet.getActiveCutFile() != null) {
+                    cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
+                }            }
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
@@ -1017,7 +1020,7 @@ public class Screen extends JPanel
                                 CUT_SELECT) {
                             {
                                 addActionListener(Screen.this);
-                                if (cutFile.getName().equals(selectedSheet.getActiveCutFile().getName())) {
+                                if (selectedSheet.getActiveCutFile() != null && cutFile.getName().equals(selectedSheet.getActiveCutFile().getName())) {
                                     setSelected(true);
                                 }
                                 setFile(cutFile);
