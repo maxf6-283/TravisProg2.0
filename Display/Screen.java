@@ -573,12 +573,10 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof FileJRadioButton
                 && ((FileJRadioButton) e.getSource()).getType().equals(CUT_SELECT)) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
-            if (emitPanel == null) {
-                emitPanel = new EmitSelect();
-                add(emitPanel);
-                emitPanel.setBounds(editMenu.getBounds());
-                menuPanels.add(emitPanel);
-            }
+            emitPanel = new EmitSelect();
+            add(emitPanel);
+            emitPanel.setBounds(editMenu.getBounds());
+            menuPanels.add(emitPanel);
         } else if (e.getSource() instanceof SheetHandlerJButtonCut) {
             gcodePartPanel = new PartSelectGcode(((SheetHandlerJButtonCut) e.getSource()).getgenericThing());
             add(gcodePartPanel);
@@ -588,12 +586,13 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof SheetHandlerJButtonPart) {
             remove(gcodePartPanel);
             menuPanels.remove(gcodePartPanel);
-            gcodePartPanel = new GCodeSelectGcode(((SheetHandlerJButtonPart) e.getSource()).getgenericThing(), ((PartSelectGcode)gcodePartPanel).getCut());
+            gcodePartPanel = new GCodeSelectGcode(((SheetHandlerJButtonPart) e.getSource()).getgenericThing(),
+                    ((PartSelectGcode) gcodePartPanel).getCut());
             gcodePartPanel.setBounds(editMenu.getBounds());
             add(gcodePartPanel);
             menuPanels.add(gcodePartPanel);
         } else if (e.getSource() instanceof ReturnOnceJButton && menuState == GCODE_SELECT_PART) {
-            ((Returnable)gcodePartPanel).returnTo();
+            ((Returnable) gcodePartPanel).returnTo();
         } else {
             for (JButton button : suffixes) {
                 if (e.getSource() == button) {
@@ -1026,10 +1025,10 @@ public class Screen extends JPanel
         }
     }
 
-    private void returnToTemp() {   
+    private void returnToTemp() {
         remove(gcodePartPanel);
         menuPanels.remove(gcodePartPanel);
-        gcodePartPanel = new PartSelectGcode(((GCodeSelectGcode)gcodePartPanel).getCut());
+        gcodePartPanel = new PartSelectGcode(((GCodeSelectGcode) gcodePartPanel).getCut());
         gcodePartPanel.setBounds(editMenu.getBounds());
         add(gcodePartPanel);
         menuPanels.add(gcodePartPanel);
