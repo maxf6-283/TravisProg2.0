@@ -245,8 +245,7 @@ public class Sheet {
 
                 // the actual fun stuff
                 writer.write(gCodeTranslateTo(part));
-                writer.write(part.getNgcDocument().getGCodeBody());
-                writer.write(gCodeTranslateFrom(part));
+                writer.write(part.getNgcDocument().getGCodeBody().replaceAll("G54", "G59.3"));
             }
 
             // write the last footer
@@ -270,14 +269,6 @@ public class Sheet {
         double rot = part.getRot();
 
         return String.format("G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, rot);
-    }
-
-    private String gCodeTranslateFrom(Part part) {
-        double x = -part.getX();
-        double y = -part.getY();
-        double rot = -part.getRot();
-
-        return String.format("\nG10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, rot);
     }
 
     private String removeGCodeSpecialness(String gCode) {
