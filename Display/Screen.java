@@ -1016,15 +1016,23 @@ public class Screen extends JPanel
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
+        public Cut getCut() {
+            return cut;
+        }
+
         @Override
         public void returnTo() {
-            remove(gcodePartPanel);
-            menuPanels.remove(gcodePartPanel);
-            gcodePartPanel = new PartSelectGcode(cut);
-            gcodePartPanel.setBounds(editMenu.getBounds());
-            add(gcodePartPanel);
-            menuPanels.add(gcodePartPanel);
+            returnToTemp();
         }
+    }
+
+    private void returnToTemp() {   
+        remove(gcodePartPanel);
+        menuPanels.remove(gcodePartPanel);
+        gcodePartPanel = new PartSelectGcode(((GCodeSelectGcode)gcodePartPanel).getCut());
+        gcodePartPanel.setBounds(editMenu.getBounds());
+        add(gcodePartPanel);
+        menuPanels.add(gcodePartPanel);
     }
 
     private class CutSelect extends JPanel {
