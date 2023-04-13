@@ -142,7 +142,7 @@ public class Screen extends JPanel
         state = State.SHEET_SELECT;
 
         sheetFileList = new DefaultListModel<>();
-        sheetsParent = new File("./TestSheets");
+        sheetsParent = new File("./sheets");
         for (int i = 0; i < sheetsParent.listFiles().length; i++) {
             sheetFileList.addElement(new File(sheetsParent.listFiles()[i].getAbsolutePath()) {
                 @Override
