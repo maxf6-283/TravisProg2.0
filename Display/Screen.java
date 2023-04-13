@@ -279,6 +279,10 @@ public class Screen extends JPanel
         getActionMap().put("undo", undo);
         getActionMap().put("redo", redo);
         getActionMap().put("delete", deleteSelected);
+
+        menuPanels.stream().forEach(e -> {
+            e.setVisible(false);
+         });
     }
 
     @Override
@@ -292,7 +296,6 @@ public class Screen extends JPanel
         g.setColor(new Color(33, 30, 31));
         g.fillRect(0, 0, getWidth(), getHeight());
         // set all menu JPanels not visible
-        menuPanels.stream().forEach(e -> e.setVisible(false));
         measure.setForeground(menuState == MEASURE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
@@ -346,7 +349,8 @@ public class Screen extends JPanel
                         case GCODE_SELECT -> gcodeCutPanel.setVisible(true);
                         case GCODE_SELECT_PART -> gcodePartPanel.setVisible(true);
                         case EMIT_SELECT -> {
-                            emitPanel.setVisible(true);
+                            if(!emitPanel.isVisible())
+                                emitPanel.setVisible(true);
                         }
                         default -> throw new IllegalStateException("State Not Possible: " + menuState);
                     }
@@ -362,9 +366,9 @@ public class Screen extends JPanel
 
     public void switchMenuStates(SheetMenuState newState) {
         menuState = newState;
-        if (newState == SheetMenuState.EMIT_SELECT) {
-
-        }
+        menuPanels.stream().forEach(e -> {
+            e.setVisible(false);
+         });
         repaint();
     }
 
@@ -657,12 +661,14 @@ public class Screen extends JPanel
     }
 
     /**
-     * Switch between program states (note: intended for graphical use only; all
-     * technical parts are done separately)
-     * 
+     * Switch between program states
      * @param newState - the state to swtich to
      */
     private void switchStates(State newState) {
+        menuPanels.stream().forEach(e -> {
+           e.setVisible(false);
+        });
+
         switch (newState) {
             case SHEET_SELECT -> {
                 state = State.SHEET_SELECT;
