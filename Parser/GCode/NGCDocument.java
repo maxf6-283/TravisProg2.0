@@ -87,13 +87,7 @@ public class NGCDocument {
 
     public NGCDocument(File file) {
         this.gcodeFile = file;
-        if (file != null) {
-            try {
-                gCodeStringBuilder = new StringBuilder(String.join("\n", Files.readAllLines(file.toPath())));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        gCodeStringBuilder = new StringBuilder();
         geometry = new ArrayList<>();
         geometry.add(new RelativePath2D());
     }
@@ -304,7 +298,7 @@ public class NGCDocument {
     }
 
     public String getGCodeHeader() {
-        String gCodeString = gCodeStringBuilder.toString();
+        String gCodeString = getGCodeString();
         int endIndex = gCodeString.indexOf("G53");
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
@@ -314,7 +308,7 @@ public class NGCDocument {
     }
 
     public String getGCodeBody() {
-        String gCodeString = gCodeStringBuilder.toString();
+        String gCodeString = getGCodeString();
         int endIndex = gCodeString.indexOf("G53");
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
@@ -324,7 +318,7 @@ public class NGCDocument {
     }
 
     public String getGCodeFooter() {
-        String gCodeString = gCodeStringBuilder.toString();
+        String gCodeString = getGCodeString();
         String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"), gCodeString.lastIndexOf('%'));
         return "(START FOOTER)\n" + footer + "(END FOOTER)\n";
     }

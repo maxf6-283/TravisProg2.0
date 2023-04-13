@@ -39,6 +39,8 @@ public class Parser implements Callable<NGCDocument> {
      * @throws IOException NGC file not found, try another or use a dxf
      */
     public static NGCDocument parse(File fileInput) throws FileNotFoundException {
+        
+        System.out.println("Parsing file: " + fileInput.getName());
         int lineNum = 1;
         Scanner input;
         fileInput = new File(fileInput.getPath());
@@ -47,6 +49,9 @@ public class Parser implements Callable<NGCDocument> {
         while (input.hasNextLine()) {
             String line = input.nextLine();
             doc.addToString(line);
+            if(line.contains("%")) {
+                System.out.println("%");
+            }
             lineNum++;
             // out.write(line + "\n");
             if (line.contains("(")) {
