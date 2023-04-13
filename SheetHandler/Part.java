@@ -117,6 +117,7 @@ public class Part {
 
     public boolean setSelectedGCode(String suffix) {
         if(this instanceof Hole) {
+            emitNGCDoc = allNGCDocs.get(0);
             return suffix.equals("holes");
         }
         checkFutures();

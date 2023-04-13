@@ -309,7 +309,8 @@ public class NGCDocument {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        return gCodeString.substring(0, endIndex + 1);
+        String header = gCodeString.substring(gCodeString.indexOf('%')+1, endIndex + 1);
+        return "(START HEADER)\n" + header + "(END HEADER)\n";
     }
 
     public String getGCodeBody() {
@@ -318,11 +319,13 @@ public class NGCDocument {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        return gCodeString.substring(endIndex + 1, gCodeString.lastIndexOf("G53"));
+        String body = gCodeString.substring(endIndex + 1, gCodeString.lastIndexOf("G53"));
+        return "(START BODY)\n" + body + "(END BODY)\n";
     }
 
     public String getGCodeFooter() {
         String gCodeString = gCodeStringBuilder.toString();
-        return gCodeString.substring(gCodeString.lastIndexOf("G53"));
+        String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"), gCodeString.lastIndexOf('%'));
+        return "(START FOOTER)\n" + footer + "(END FOOTER)\n";
     }
 }
