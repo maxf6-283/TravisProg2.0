@@ -97,7 +97,6 @@ public class Part {
         ArrayList<Future<NGCDocument>> toRemove = new ArrayList<>();
         for(Future<NGCDocument> future : futures) {
             if(future.isDone()) {
-                System.out.println("null");
                 try {
                     allNGCDocs.add(future.get());
                 } catch (InterruptedException | ExecutionException e) {

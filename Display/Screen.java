@@ -120,6 +120,7 @@ public class Screen extends JPanel
     private JButton[] suffixes;
     private JPanel gcodePartPanel;
     private ReturnToHomeJButton returnToHomeMenu;
+    private ReturnOnceJButton returnOnce;
     public static Logger logger;
 
     static {
@@ -141,7 +142,7 @@ public class Screen extends JPanel
         state = State.SHEET_SELECT;
 
         sheetFileList = new DefaultListModel<>();
-        sheetsParent = new File("./TestSheets");
+        sheetsParent = new File("./sheets");
         for (int i = 0; i < sheetsParent.listFiles().length; i++) {
             sheetFileList.addElement(new File(sheetsParent.listFiles()[i].getAbsolutePath()) {
                 @Override
@@ -191,6 +192,9 @@ public class Screen extends JPanel
 
         returnToHomeMenu = new ReturnToHomeJButton("Return to Home");
         returnToHomeMenu.addActionListener(this);
+
+        returnOnce = new ReturnOnceJButton("Return");
+        returnOnce.addActionListener(this);
 
         try {
             img = ImageIO.read(new File("Display\\971 large logo.png"));
@@ -347,8 +351,7 @@ public class Screen extends JPanel
                         default -> throw new IllegalStateException("State Not Possible: " + menuState);
                     }
                 } catch (NullPointerException e) {
-                    menuState = HOME;
-                    new WarningDialog(e, "No Active Cut");
+                    new WarningDialog(e, "No Active Cut", () -> switchMenuStates(HOME));
                 }
             }
             case SHEET_ADD -> {
@@ -570,7 +573,7 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof FileJRadioButton
                 && ((FileJRadioButton) e.getSource()).getType().equals(CUT_SELECT)) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
-            if(emitPanel == null) {
+            if (emitPanel == null) {
                 emitPanel = new EmitSelect();
                 add(emitPanel);
                 emitPanel.setBounds(editMenu.getBounds());
@@ -585,16 +588,17 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof SheetHandlerJButtonPart) {
             remove(gcodePartPanel);
             menuPanels.remove(gcodePartPanel);
-            gcodePartPanel = new GCodeSelectGcode(((SheetHandlerJButtonPart)e.getSource()).getgenericThing());
+            gcodePartPanel = new GCodeSelectGcode(((SheetHandlerJButtonPart) e.getSource()).getgenericThing(), ((PartSelectGcode)gcodePartPanel).getCut());
             gcodePartPanel.setBounds(editMenu.getBounds());
             add(gcodePartPanel);
             menuPanels.add(gcodePartPanel);
-        } else if(e.getSource() == emitPanel.returnToMain) {
-            switchMenuStates(HOME);
+        } else if (e.getSource() instanceof ReturnOnceJButton && menuState == GCODE_SELECT_PART) {
+            ((Returnable)gcodePartPanel).returnTo();
         } else {
             for (JButton button : suffixes) {
                 if (e.getSource() == button) {
-                    File outputFolder = new File("./output/" + java.time.LocalDate.now().toString().replaceAll("-", ""));
+                    File outputFolder = new File(
+                            "./output/" + java.time.LocalDate.now().toString().replaceAll("-", ""));
                     outputFolder.mkdir();
                     File outputFile = new File(outputFolder, emitPanel.gCodeName.getText() + ".ngc");
                     selectedSheet.emitGCode(outputFile, button.getText());
@@ -902,7 +906,8 @@ public class Screen extends JPanel
                 sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
                 if (selectedSheet.getActiveCutFile() != null) {
                     cutName.setText("Current Cut: " + selectedSheet.getActiveCutFile().getName());
-                }            }
+                }
+            }
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
@@ -935,13 +940,14 @@ public class Screen extends JPanel
         }
     }
 
-    private class PartSelectGcode extends JPanel {
+    private class PartSelectGcode extends JPanel implements Returnable {
         private Cut cut;
 
         private PartSelectGcode(Cut cut) {
             this.cut = cut;
             setLayout(new GridLayout(0, 1));
             add(returnToHomeMenu.clone());
+            add(returnOnce.clone());
             add(new JLabel("Select Part to Change: ") {
                 {
                     setForeground(Color.WHITE);
@@ -960,18 +966,31 @@ public class Screen extends JPanel
             }
         }
 
+        private Cut getCut() {
+            return cut;
+        }
+
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
+
+        @Override
+        public void returnTo() {
+            switchMenuStates(GCODE_SELECT);
+        }
     }
 
-    private class GCodeSelectGcode extends JPanel {
-        private GCodeSelectGcode(Part part) {
+    private class GCodeSelectGcode extends JPanel implements Returnable {
+        private Cut cut;
+
+        private GCodeSelectGcode(Part part, Cut cut) {
+            this.cut = cut;
             setLayout(new GridLayout(0, 1));
             add(returnToHomeMenu.clone());
+            add(returnOnce.clone());
             add(new JLabel("Select GCode File to View: ") {
                 {
                     setForeground(Color.WHITE);
@@ -982,7 +1001,7 @@ public class Screen extends JPanel
                 add(new SheetHandlerJCheckBoxNGCDoc(docs.getGcodeFile().getName(), docs, part) {
                     {
                         addItemListener(Screen.this);
-                        if(part.getNgcDocuments().stream().anyMatch(e -> e.equals(docs))) {
+                        if (part.getNgcDocuments().stream().anyMatch(e -> e.equals(docs))) {
                             setSelected(true);
                         }
                     }
@@ -996,6 +1015,24 @@ public class Screen extends JPanel
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
+
+        public Cut getCut() {
+            return cut;
+        }
+
+        @Override
+        public void returnTo() {
+            returnToTemp();
+        }
+    }
+
+    private void returnToTemp() {   
+        remove(gcodePartPanel);
+        menuPanels.remove(gcodePartPanel);
+        gcodePartPanel = new PartSelectGcode(((GCodeSelectGcode)gcodePartPanel).getCut());
+        gcodePartPanel.setBounds(editMenu.getBounds());
+        add(gcodePartPanel);
+        menuPanels.add(gcodePartPanel);
     }
 
     private class CutSelect extends JPanel {
@@ -1020,7 +1057,8 @@ public class Screen extends JPanel
                                 CUT_SELECT) {
                             {
                                 addActionListener(Screen.this);
-                                if (selectedSheet.getActiveCutFile() != null && cutFile.getName().equals(selectedSheet.getActiveCutFile().getName())) {
+                                if (selectedSheet.getActiveCutFile() != null
+                                        && cutFile.getName().equals(selectedSheet.getActiveCutFile().getName())) {
                                     setSelected(true);
                                 }
                                 setFile(cutFile);
@@ -1059,10 +1097,25 @@ public class Screen extends JPanel
         }
     }
 
+    private class ReturnOnceJButton extends JButton implements Cloneable {
+        public ReturnOnceJButton(String text) {
+            super(text);
+        }
+
+        @Override
+        public ReturnOnceJButton clone() {
+            return new ReturnOnceJButton(this.getText()) {
+                {
+                    setBounds(this.getBounds());
+                    addActionListener(Screen.this);
+                }
+            };
+        }
+    }
+
     private class EmitSelect extends JPanel {
         public JTextField gCodeName;
         public JLabel gCodeNameLabel;
-        public JButton returnToMain;
 
         public EmitSelect() {
             setLayout(null);
@@ -1081,14 +1134,15 @@ public class Screen extends JPanel
                 add(suffixes[i]);
                 suffixes[i].addActionListener(Screen.this);
                 if (i == suffixes.length - 1) {
-                    returnToMain = new JButton("Done emitting gCode");
+                    JButton returnToMain = new ReturnToHomeJButton("Done emitting gCode");
                     returnToMain.setBounds(50, 150 + 50 * (i + 1), 200, 50);
                     add(returnToMain);
                     returnToMain.addActionListener(Screen.this);
                 }
             }
 
-            gCodeName = new JTextField(selectedSheet.getActiveCut().getCutFile().getName().substring(0, selectedSheet.getActiveCut().getCutFile().getName().lastIndexOf('.')));
+            gCodeName = new JTextField(selectedSheet.getActiveCut().getCutFile().getName().substring(0,
+                    selectedSheet.getActiveCut().getCutFile().getName().lastIndexOf('.')));
             gCodeName.setBounds(50, 50, 200, 25);
             add(gCodeName);
 

@@ -25,14 +25,6 @@ public class Runner {
             System.err.println("No icon image found");
         }
 
-        
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Screen.logger.finest("Program Closing");
-            }
-        }));
-
         frame.add(screen);
 
         frame.pack();
