@@ -222,6 +222,8 @@ public class Sheet {
             BufferedWriter writer = new BufferedWriter(new FileWriter(gCodeFile));
             String header = "";
             String footer = "";
+            //starting %
+            writer.write("%\n");
             for (Part part : activeCut) {
                 // ignore parts without the requisite suffix
                 if (!part.setSelectedGCode(suffix)) {
@@ -249,9 +251,10 @@ public class Sheet {
 
             // write the last footer
             writer.write(footer);
+            //ending %
+            writer.write("%");
 
             writer.flush();
-            System.out.println("This code is running!");
             writer.close();
 
         } catch (IOException e) {
@@ -266,7 +269,7 @@ public class Sheet {
         double y = part.getY();
         double rot = part.getRot();
 
-        return String.format("\nG10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, rot);
+        return String.format("G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, rot);
     }
 
     private String gCodeTranslateFrom(Part part) {
@@ -278,7 +281,8 @@ public class Sheet {
     }
 
     private String removeGCodeSpecialness(String gCode) {
-        return gCode.replaceAll("\\(.*\\)", "");
+        String newGCode = gCode.replaceAll("\\(.*\\)", "").trim() + "\n";
+        return gCode.substring(0, gCode.indexOf(')') + 2) + newGCode + gCode.substring(gCode.lastIndexOf('('));
     }
 
     public Cut getActiveCut() {
