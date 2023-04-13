@@ -9,7 +9,6 @@ import java.awt.Stroke;
 import java.awt.BasicStroke;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;

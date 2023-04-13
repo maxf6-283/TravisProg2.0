@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.awt.geom.Point2D;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 
 public class NGCDocument {
     private File gcodeFile;
