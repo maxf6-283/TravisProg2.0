@@ -140,6 +140,14 @@ public class Sheet {
     }
 
     /**
+     * Adds a hole to the active cut at the specified position
+     */
+    public void addHole(double x, double y) {
+        Hole hole = new Hole(holeFile, x, y, 0);
+        addHole(hole);
+    }
+
+    /**
      * Adds a cut to the list and sets it as active
      */
     public void addCut(Cut cut) {
