@@ -97,6 +97,7 @@ public class Screen extends JPanel
     private AbstractAction undo;
     private AbstractAction redo;
     private AbstractAction deleteSelected;
+    private AbstractAction saveSheet;
     private JButton addHole;
     private JButton addItem;
     private JButton del;
@@ -271,14 +272,26 @@ public class Screen extends JPanel
             }
         };
 
+        saveSheet = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(selectedSheet != null) {
+                    selectedSheet.saveToFile();
+                }
+            }
+        };
+
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Z"), "undo");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Y"), "redo");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("DELETE"), "delete");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("BACK_SPACE"), "delete");
+        
 
         getActionMap().put("undo", undo);
         getActionMap().put("redo", redo);
         getActionMap().put("delete", deleteSelected);
+
 
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
@@ -550,7 +563,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == emit) {
             switchMenuStates(SheetMenuState.EMIT_SELECT);
         } else if (e.getSource() == save) {
-            selectedSheet.saveToFile();
+            saveSheet.actionPerformed(e);
         } else if (e.getSource() == addCut) {
 
         } else if (e.getSource() == changeGCodeView) {
