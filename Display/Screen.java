@@ -550,7 +550,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == emit) {
             switchMenuStates(SheetMenuState.EMIT_SELECT);
         } else if (e.getSource() == save) {
-
+            selectedSheet.saveToFile();
         } else if (e.getSource() == addCut) {
 
         } else if (e.getSource() == changeGCodeView) {

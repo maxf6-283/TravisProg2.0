@@ -158,7 +158,7 @@ public class SheetParser {
     }
 
     public static void saveSheetInfo(File sheetFile, HashMap<String, String> sheetInfo) {
-        String information = sheetInfo.toString().replace(" ", "");
+        String information = sheetInfo.toString().replace("=", ":").replace(", ", ",");
         try {
             FileWriter writer = new FileWriter(sheetFile);
             writer.write(information);
@@ -190,7 +190,6 @@ public class SheetParser {
 
                 String filePath = part.partFile().getPath();
                 writer.write(filePath.length() % 256);
-                writer.write(filePath.length() >> 8);
 
                 for (int i = 0; i < filePath.length(); i++) {
                     writer.write(filePath.charAt(i));
