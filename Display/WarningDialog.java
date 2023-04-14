@@ -10,7 +10,7 @@ public class WarningDialog extends JOptionPane {
 
     public WarningDialog(Throwable throwable, String text, Returnable returnTo) {
         returnTo.returnTo();
-        Screen.logger.log(Level.WARNING, text + "\n" +throwable.getMessage(), throwable);
+        Screen.logger.log(Level.WARNING, text + "\n" + throwable.getMessage(), throwable);
         showMessageDialog(Screen.screen, text,
                 "Warning: "
                         + throwable.getClass().getName().substring(throwable.getClass().getName().lastIndexOf('.') + 1),
@@ -21,15 +21,11 @@ public class WarningDialog extends JOptionPane {
         Screen.screen.repaint();
     }
 
-    public static class YesOrNo {
-        /**
-         * @param text
-         * @param title
-         * @return an integer indicating the option selected by the user
-         * Use constants {@code YES_OPTION} and {@code CANCEL_OPTION}
-         */
-        public int createYesOrNoWarningDialog(String text, String title) {
-            return showConfirmDialog(Screen.screen, text, title, OK_CANCEL_OPTION, WARNING_MESSAGE);
-        }
+    public WarningDialog() {
+        super();
+    }
+
+    public int createYesOrNoWarningDialog(String text, String title) {
+        return showConfirmDialog(Screen.screen, text, title, OK_CANCEL_OPTION, WARNING_MESSAGE);
     }
 }
