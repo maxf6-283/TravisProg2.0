@@ -89,6 +89,58 @@ public class Part {
         //generateOutline();
     }
 
+    public void reload() {
+        try {
+            allNGCDocs.clear();
+            activeNgcDocs.clear();
+            emitNGCDoc = null;
+            File[] files = new File[0];
+            if (this instanceof Hole) {
+                files = new File[] { partFile };
+            } else {
+                files = partFile.listFiles();
+            }
+            ArrayList<File> ngcFiles = new ArrayList<>();
+            File parent = partFile;
+            if (files == null) {
+                new ErrorDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found");
+            }
+            for (File file : files) {
+                if (file.getName().lastIndexOf(".") != -1 && file.getName()
+                        .substring(file.getName().lastIndexOf(".") + 1, file.getName().length()).equals("ngc")) {
+                    ngcFiles.add(file);
+                }
+            }
+            if (ngcFiles.size() <= 0) {
+                new ErrorDialog(new FileNotFoundException(), "No NGC File found in: " + parent.getPath());
+            }
+            ArrayList<File> newFiles = new ArrayList<>();
+            for (File file : ngcFiles) {
+                end: {
+                    for (NGCDocument doc : Parser.parsedDocuments) {
+                        if (doc.getGcodeFile().equals(file)) {
+                            allNGCDocs.add(doc);
+                            break end;
+                        }
+                    }
+                    newFiles.add(file);
+                }
+            }
+            for (int i = 0; i < newFiles.size(); i++) {
+                if (i == newFiles.size()-1) {
+                    allNGCDocs.add(Parser.parse(newFiles.get(i)));
+                } else {
+                    futures.add(Sheet.executor.submit(new Parser(newFiles.get(i))));
+                }
+            }
+            activeNgcDocs.add(allNGCDocs.get(0));
+        } catch (FileNotFoundException e) {
+            new ErrorDialog(e, "File : " + partFile.getAbsolutePath() + " Not Found");
+        } catch (ConcurrentModificationException e) {
+            new ErrorDialog(e);
+        }
+    }
+
     /**
      * @return true if all futures have returned
      */

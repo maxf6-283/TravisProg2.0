@@ -301,9 +301,10 @@ public class Screen extends JPanel
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("BACK_SPACE"), "delete");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("A"), "placement mode on");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released A"), "placement mode off");
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control CONTROL"), "rotation mode on");
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released CONTROL"), "rotation mode off");
-        
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control CONTROL"),
+                "rotation mode on");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released CONTROL"),
+                "rotation mode off");
 
         getActionMap().put("undo", undo);
         getActionMap().put("redo", redo);
@@ -460,17 +461,17 @@ public class Screen extends JPanel
                     measurePoint1 = null;
                     measurePoint2 = null;
                 }
-            } else if(menuState == ADD_HOLE && aHeld) {
+            } else if (menuState == ADD_HOLE && aHeld) {
                 Point2D.Double holePoint = actualScreenToSheet(e.getPoint());
 
                 Hole hole = selectedSheet.addHole(holePoint.getX(), holePoint.getY());
-                
+
                 undoList.add(new EditAction(hole, true));
-            } else if(menuState == ADD_ITEM && aHeld) {
+            } else if (menuState == ADD_ITEM && aHeld) {
                 Point2D.Double partPoint = actualScreenToSheet(e.getPoint());
-                
+
                 Part part = selectedSheet.addPart(itemSelectMenu.partFileToPlace, partPoint.getX(), partPoint.getY());
-                
+
                 undoList.add(new EditAction(part, true));
             } else {
                 if (selectSheet != null) {
@@ -624,9 +625,9 @@ public class Screen extends JPanel
         } else if (e.getSource() == returnToHome) {
             switchStates(State.SHEET_SELECT);
         } else if (e.getSource() == addHole) {
-            if(menuState == HOME) {
+            if (menuState == HOME) {
                 switchMenuStates(ADD_HOLE);
-            } else if(menuState == ADD_HOLE) {
+            } else if (menuState == ADD_HOLE) {
                 switchMenuStates(HOME);
             }
             addHole.setSelected(menuState == ADD_HOLE);
@@ -635,7 +636,11 @@ public class Screen extends JPanel
         } else if (e.getSource() == del) {
             deleteSelected.actionPerformed(e);
         } else if (e.getSource() == reScan) {
-
+            for (Cut cut : selectedSheet.getCuts()) {
+                for (Part part : cut.parts) {
+                    part.reload();
+                }
+            }
         } else if (e.getSource() == emit) {
             switchMenuStates(EMIT_SELECT);
         } else if (e.getSource() == save) {
@@ -643,7 +648,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == addCut) {
             switchMenuStates(ADD_CUT);
         } else if (e.getSource() == newCutButton) {
-            File temp = new File(selectedSheet.getParentFile().getPath()+"\\"+newCutField.getText()+".cut");
+            File temp = new File(selectedSheet.getParentFile().getPath() + "\\" + newCutField.getText() + ".cut");
             selectedSheet.addCut(new Cut(temp, selectedSheet.getHolesFile()));
             selectedSheet.changeActiveCutFile(temp);
             switchMenuStates(HOME);
@@ -692,8 +697,8 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof ReturnOnceJButton && menuState == GCODE_SELECT_PART) {
             ((Returnable) gcodePartPanel).returnTo();
         } else if (itemSelectMenu.fileButtons.contains(e.getSource())) {
-            itemSelectMenu.selectFile(((ItemSelectMenu.FileJButton)e.getSource()).file());
-        }else {
+            itemSelectMenu.selectFile(((ItemSelectMenu.FileJButton) e.getSource()).file());
+        } else {
             for (JButton button : suffixes) {
                 if (e.getSource() == button) {
                     File outputFolder = new File(
@@ -838,7 +843,7 @@ public class Screen extends JPanel
         out.setLocation(out.getX() - xCorner * zoom, out.getY() - yCorner * zoom);
         out.setLocation(out.getX() / zoom, out.getY() / zoom);
 
-        out.setLocation(out.getX() + selectedSheet.getWidth(), selectedSheet.getHeight()-out.getY());
+        out.setLocation(out.getX() + selectedSheet.getWidth(), selectedSheet.getHeight() - out.getY());
         return out;
 
     }
@@ -1327,24 +1332,25 @@ public class Screen extends JPanel
         }
 
         /**
-         * Goes to the subbordinate list or sets the selected file if it's not a directory
+         * Goes to the subbordinate list or sets the selected file if it's not a
+         * directory
          */
         public void selectFile(File file) {
             fileButtons.stream().forEach(e -> {
                 remove(e);
-                if(e instanceof JButton) {
-                    ((JButton)e).removeActionListener(Screen.this);
+                if (e instanceof JButton) {
+                    ((JButton) e).removeActionListener(Screen.this);
                 }
             });
             fileButtons.clear();
-            if(!file.getName().equals("parts_library")) {
+            if (!file.getName().equals("parts_library")) {
                 FileJButton button = new FileJButton(file.getParentFile(), "..");
                 fileButtons.add(button);
                 add(button);
                 button.addActionListener(Screen.this);
             }
-            for(File subFile : file.listFiles()) {
-                if(subFile.isDirectory()) {
+            for (File subFile : file.listFiles()) {
+                if (subFile.isDirectory()) {
                     FileJButton button = new FileJButton(subFile);
                     fileButtons.add(button);
                     add(button);
@@ -1364,7 +1370,7 @@ public class Screen extends JPanel
             return;
         }
 
-        class FileJButton extends JButton{
+        class FileJButton extends JButton {
             private File file;
 
             public FileJButton(File file) {
