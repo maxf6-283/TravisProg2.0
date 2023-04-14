@@ -259,8 +259,7 @@ public class Part {
         return activeNgcDocs;
     }
 
-    @Override
-    public boolean equals(Object obj){
+    public boolean equivalent(Object obj){
         if (((Part)obj).getSelected()){
             return true;
         }

@@ -464,8 +464,6 @@ public class Screen extends JPanel
                 Point2D.Double holePoint = actualScreenToSheet(e.getPoint());
 
                 Hole hole = selectedSheet.addHole(holePoint.getX(), holePoint.getY());
-
-                System.out.println();
                 
                 undoList.add(new EditAction(hole, true));
             } else if(menuState == ADD_ITEM && aHeld) {
@@ -483,7 +481,7 @@ public class Screen extends JPanel
                         rotatingPart = true;
                         rotationPoint = grabLocation;
                     } else if (partBeingDragged != null) {
-                        if (selectedPart != null && !selectedPart.equals(partBeingDragged)) {
+                        if (selectedPart != null && !selectedPart.equivalent(partBeingDragged)) {
                             selectedPart.setSelected(false);
                         }
                         partBeingDragged.setSelected(true);
