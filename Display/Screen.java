@@ -43,8 +43,6 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
@@ -60,8 +58,7 @@ import java.util.logging.SimpleFormatter;
 import java.util.Collections;
 
 public class Screen extends JPanel
-        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, KeyListener,
-        ItemListener {
+        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, ItemListener {
     public static Screen screen;
     public static final boolean DebugMode = false;
     private JList<File> sheetList;
@@ -114,9 +111,10 @@ public class Screen extends JPanel
     private Point2D.Double measurePoint2;
     private SheetMenuState menuState = NULL;
     private ArrayList<JPanel> menuPanels = new ArrayList<>();
-    private JPanel editMenu;
+    private SheetEditMenu editMenu;
     private JPanel cutPanel;
     private JPanel gcodeCutPanel;
+    private ItemSelectMenu itemSelectMenu;
     private EmitSelect emitPanel;
     private JButton[] suffixes;
     private JPanel gcodePartPanel;
@@ -126,6 +124,7 @@ public class Screen extends JPanel
     public static Logger logger;
     private JTextField newCutField;
     private JButton newCutButton;
+    private boolean aHeld;
 
     static {
         logger = Logger.getLogger("MyLog");
@@ -206,6 +205,12 @@ public class Screen extends JPanel
         returnOnce = new ReturnOnceJButton("Return");
         returnOnce.addActionListener(this);
 
+        itemSelectMenu = new ItemSelectMenu();
+        add(itemSelectMenu);
+        itemSelectMenu.setVisible(false);
+        itemSelectMenu.setBounds(editMenu.getBounds());
+        menuPanels.add(itemSelectMenu);
+
         try {
             img = ImageIO.read(new File("Display\\971 large logo.png"));
         } catch (IOException e) {
@@ -222,7 +227,6 @@ public class Screen extends JPanel
         addMouseListener(this);
         addMouseMotionListener(this);
         addMouseWheelListener(this);
-        addKeyListener(this);
 
         setFocusable(true);
         requestFocus();
@@ -295,10 +299,44 @@ public class Screen extends JPanel
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("DELETE"), "delete");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("BACK_SPACE"), "delete");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("A"), "placement mode on");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released A"), "placement mode off");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control CONTROL"), "rotation mode on");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released CONTROL"), "rotation mode off");
+        
 
         getActionMap().put("undo", undo);
         getActionMap().put("redo", redo);
         getActionMap().put("delete", deleteSelected);
+        getActionMap().put("placement mode on", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                aHeld = true;
+            }
+        });
+
+        getActionMap().put("placement mode off", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                aHeld = false;
+            }
+        });
+
+        getActionMap().put("rotation mode on", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ctrlPressed = true;
+            }
+        });
+
+        getActionMap().put("rotation mode off", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ctrlPressed = false;
+                rotatingPart = false;
+                rotationPoint = null;
+            }
+        });
 
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
@@ -340,7 +378,7 @@ public class Screen extends JPanel
                     g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() + 5, (int) rPnt.getX() + 5,
                             (int) rPnt.getY() - 5);
                 }
-                if (menuState == SheetMenuState.MEASURE) {
+                if (menuState == MEASURE) {
                     g2d.setColor(Color.YELLOW);
                     g2d.setStroke(new BasicStroke(2));
                     Point2D screenPoint1 = null;
@@ -363,7 +401,10 @@ public class Screen extends JPanel
                 }
                 try {
                     switch (menuState) {
-                        case HOME, MEASURE -> editMenu.setVisible(true);
+                        case HOME, MEASURE -> {
+                            editMenu.setVisible(true);
+                            editMenu.hideAMessage();
+                        }
                         case CUT_SELECT -> {
                             cutPanel.setVisible(true);
                         }
@@ -378,6 +419,10 @@ public class Screen extends JPanel
                         }
                         case ADD_HOLE -> {
                             editMenu.setVisible(true);
+                            editMenu.showAMessage();
+                        }
+                        case ADD_ITEM -> {
+                            itemSelectMenu.setVisible(true);
                         }
                         default -> throw new IllegalStateException("State Not Possible: " + menuState);
                     }
@@ -415,10 +460,14 @@ public class Screen extends JPanel
                     measurePoint1 = null;
                     measurePoint2 = null;
                 }
-            } else if(menuState == ADD_HOLE) {
+            } else if(menuState == ADD_HOLE && aHeld) {
                 Point2D.Double holePoint = actualScreenToSheet(e.getPoint());
                 
                 selectedSheet.addHole(holePoint.getX(), holePoint.getY());
+            } else if(menuState == ADD_ITEM && aHeld) {
+                Point2D.Double partPoint = actualScreenToSheet(e.getPoint());
+                
+                selectedSheet.addPart(itemSelectMenu.partFileToPlace, partPoint.getX(), partPoint.getY());
             } else {
                 if (selectSheet != null) {
                     Point2D grabLocation = screenToSheet(e.getPoint());
@@ -578,7 +627,7 @@ public class Screen extends JPanel
             }
             addHole.setSelected(menuState == ADD_HOLE);
         } else if (e.getSource() == addItem) {
-
+            switchMenuStates(ADD_ITEM);
         } else if (e.getSource() == del) {
             deleteSelected.actionPerformed(e);
         } else if (e.getSource() == reScan) {
@@ -638,7 +687,9 @@ public class Screen extends JPanel
             menuPanels.add(gcodePartPanel);
         } else if (e.getSource() instanceof ReturnOnceJButton && menuState == GCODE_SELECT_PART) {
             ((Returnable) gcodePartPanel).returnTo();
-        } else {
+        } else if (itemSelectMenu.fileButtons.contains(e.getSource())) {
+            itemSelectMenu.selectFile(((ItemSelectMenu.FileJButton)e.getSource()).file());
+        }else {
             for (JButton button : suffixes) {
                 if (e.getSource() == button) {
                     File outputFolder = new File(
@@ -796,27 +847,6 @@ public class Screen extends JPanel
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == 17) {
-            ctrlPressed = true;
-        }
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == 17) {
-            ctrlPressed = false;
-            rotatingPart = false;
-            rotationPoint = null;
-            repaint();
-        }
-    }
-
-    @Override
     public void itemStateChanged(ItemEvent e) {
         Object source = e.getItemSelectable();
         if (source instanceof SheetHandlerJCheckBoxNGCDoc) {
@@ -832,6 +862,8 @@ public class Screen extends JPanel
     }
 
     private class SheetEditMenu extends JPanel {
+        private JLabel buffer;
+
         public SheetEditMenu() {
             setLayout(new GridBagLayout());
             setBounds(0, 0, 300, 800);
@@ -942,11 +974,13 @@ public class Screen extends JPanel
             changeCut.addActionListener(Screen.this);
 
             // bottom buffer
+            buffer = new JLabel();
+            buffer.setForeground(Color.WHITE);
             c.gridwidth = 3;
             c.gridx = 0;
             c.gridy = 7;
             c.weighty = 1;
-            add(new JLabel(), c);
+            add(buffer, c);
 
             if (selectedSheet != null) {
                 sheetName.setText("Editing Sheet: " + selectedSheet.getSheetFile().getName());
@@ -967,6 +1001,14 @@ public class Screen extends JPanel
             }
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        public void showAMessage() {
+            buffer.setText("Hold a to add holes");
+        }
+
+        public void hideAMessage() {
+            buffer.setText("");
         }
     }
 
@@ -1250,6 +1292,90 @@ public class Screen extends JPanel
 
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+
+    class ItemSelectMenu extends JPanel {
+        public ArrayList<JComponent> fileButtons;
+        public File partFileToPlace;
+
+        public ItemSelectMenu() {
+            setLayout(new GridLayout(0, 1, 10, 10));
+
+            add(returnToHomeMenu.clone());
+
+            fileButtons = new ArrayList<>();
+
+            selectFile(new File("./parts_library"));
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(300, 800);
+        }
+
+        /**
+         * Goes to the subbordinate list or sets the selected file if it's not a directory
+         */
+        public void selectFile(File file) {
+            fileButtons.stream().forEach(e -> {
+                remove(e);
+                if(e instanceof JButton) {
+                    ((JButton)e).removeActionListener(Screen.this);
+                }
+            });
+            fileButtons.clear();
+            if(!file.getName().equals("parts_library")) {
+                FileJButton button = new FileJButton(file.getParentFile(), "..");
+                fileButtons.add(button);
+                add(button);
+                button.addActionListener(Screen.this);
+            }
+            for(File subFile : file.listFiles()) {
+                if(subFile.isDirectory()) {
+                    FileJButton button = new FileJButton(subFile);
+                    fileButtons.add(button);
+                    add(button);
+                    button.addActionListener(Screen.this);
+                } else {
+                    partFileToPlace = file;
+                    JLabel holdA = new JLabel("Hold a and click to add parts");
+                    add(holdA);
+                    holdA.setForeground(Color.WHITE);
+                    fileButtons.add(holdA);
+                    validate();
+                    return;
+                }
+            }
+            partFileToPlace = null;
+            validate();
+            return;
+        }
+
+        class FileJButton extends JButton{
+            private File file;
+
+            public FileJButton(File file) {
+                super(file.getName());
+                this.file = file;
+            }
+
+            public FileJButton(File file, String name) {
+                super(name);
+                this.file = file;
+            }
+
+            public File file() {
+                return file;
+            }
         }
     }
 

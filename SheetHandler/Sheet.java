@@ -4,7 +4,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -126,6 +125,14 @@ public class Sheet {
     }
 
     /**
+     * Creates a new part and adds it to the active cut
+     */
+    public void addPart(File partFileToPlace, double x, double y) {
+        Part part = new Part(partFileToPlace, x, y, 0);
+        addPart(part);
+    }
+
+    /**
      * Adds a hole to the active cut
      */
     public void addHole(Hole hole) {
@@ -133,7 +140,7 @@ public class Sheet {
     }
 
     /**
-     * Adds a hole to the active cut at the specified position
+     * Adds a new hole to the active cut at the specified position
      */
     public void addHole(double x, double y) {
         Hole hole = new Hole(holeFile, x, y, 0);
