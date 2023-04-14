@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.zip.DataFormatException;
 
 import Display.ErrorDialog;
 import Display.Screen;
@@ -17,7 +18,6 @@ import java.io.FileWriter;
 import java.io.IOError;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.instrument.IllegalClassFormatException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -62,7 +62,7 @@ public class SheetParser {
         try {
             FileInputStream reader = new FileInputStream(cutFile);
             if(cutFile.length() <= 0) {
-                new ErrorDialog(new IOError(new IllegalClassFormatException("Blank Cut File is Bad.\nPlease Delete this file and rerun")));
+                new ErrorDialog(new IOError(new DataFormatException("Blank Cut File is Bad.\nPlease Delete this file and rerun")));
             }
             // get number of bytes
             int byteCounter = 0;
