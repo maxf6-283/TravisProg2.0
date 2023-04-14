@@ -38,9 +38,6 @@ public class Sheet {
         height = Double.parseDouble(decodedFile.get("h"));
         holeFile = new File(decodedFile.get("hole_file"));
         activeCutFile = new File(decodedFile.get("active"));
-        if (!activeCutFile.exists()) {
-            activeCutFile = null;
-        }
 
         // time to get the parts
         parentFile = sheetFile.getParentFile();
@@ -93,7 +90,7 @@ public class Sheet {
             HashMap<String, String> sheetInfo = new HashMap<>();
             sheetInfo.put("w", "" + width);
             sheetInfo.put("h", "" + height);
-            sheetInfo.put("hole_file", thickness.holesFile.getPath());
+            sheetInfo.put("hole_file", thickness.holesFile.getPath().replace("\\", "/"));
             SheetParser.saveSheetInfo(sheetFile, sheetInfo);
         } catch (Exception e) {
             System.err.println("Could not create sheet file\n\n");
@@ -177,8 +174,8 @@ public class Sheet {
         HashMap<String, String> sheetInfo = new HashMap<>();
         sheetInfo.put("w", "" + (width));
         sheetInfo.put("h", "" + (height));
-        sheetInfo.put("hole_file", holeFile.getPath());
-        sheetInfo.put("active", activeCutFile.getPath());
+        sheetInfo.put("hole_file", holeFile.getPath().replace("\\", "/"));
+        sheetInfo.put("active", activeCutFile.getPath().replace("\\", "/"));
 
         // save sheet info
         SheetParser.saveSheetInfo(sheetFile, sheetInfo);
