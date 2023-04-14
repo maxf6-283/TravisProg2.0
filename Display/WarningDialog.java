@@ -20,4 +20,16 @@ public class WarningDialog extends JOptionPane {
         setVisible(false);
         Screen.screen.repaint();
     }
+
+    public static class YesOrNo {
+        /**
+         * @param text
+         * @param title
+         * @return an integer indicating the option selected by the user
+         * Use constants {@code YES_OPTION} and {@code CANCEL_OPTION}
+         */
+        public int createYesOrNoWarningDialog(String text, String title) {
+            return showConfirmDialog(Screen.screen, text, title, OK_CANCEL_OPTION, WARNING_MESSAGE);
+        }
+    }
 }
