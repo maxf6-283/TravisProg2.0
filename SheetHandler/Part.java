@@ -144,7 +144,7 @@ public class Part {
         for(int i = 0; i < suffixes.length; i++) {
             String fileName = allNGCDocs.get(i).getGcodeFile().getName();
             int lastIndexOf_ = fileName.lastIndexOf('_');
-            suffixes[i] = fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.'));
+            suffixes[i] = fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_+1, fileName.lastIndexOf('.'));
         }
         return suffixes;
     }
