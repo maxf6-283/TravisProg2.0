@@ -35,7 +35,6 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.ActionEvent;
@@ -318,6 +317,7 @@ public class Screen extends JPanel
         g.fillRect(0, 0, getWidth(), getHeight());
         // set all menu JPanels not visible
         measure.setForeground(menuState == MEASURE ? Color.LIGHT_GRAY : null);
+        addHole.setForeground(menuState == ADD_HOLE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
                 g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
@@ -376,6 +376,9 @@ public class Screen extends JPanel
                         case ADD_CUT -> {
                             newcutPanel.setVisible(true);
                         }
+                        case ADD_HOLE -> {
+                            editMenu.setVisible(true);
+                        }
                         default -> throw new IllegalStateException("State Not Possible: " + menuState);
                     }
                 } catch (NullPointerException e) {
@@ -412,6 +415,10 @@ public class Screen extends JPanel
                     measurePoint1 = null;
                     measurePoint2 = null;
                 }
+            } else if(menuState == ADD_HOLE) {
+                Point2D.Double holePoint = actualScreenToSheet(e.getPoint());
+                
+                selectedSheet.addHole(holePoint.getX(), holePoint.getY());
             } else {
                 if (selectSheet != null) {
                     Point2D grabLocation = screenToSheet(e.getPoint());
@@ -564,7 +571,12 @@ public class Screen extends JPanel
         } else if (e.getSource() == returnToHome) {
             switchStates(State.SHEET_SELECT);
         } else if (e.getSource() == addHole) {
-
+            if(menuState == HOME) {
+                switchMenuStates(ADD_HOLE);
+            } else if(menuState == ADD_HOLE) {
+                switchMenuStates(HOME);
+            }
+            addHole.setSelected(menuState == ADD_HOLE);
         } else if (e.getSource() == addItem) {
 
         } else if (e.getSource() == del) {
@@ -762,6 +774,16 @@ public class Screen extends JPanel
         Point2D out = new Point2D.Double(in.getX(), in.getY());
         out.setLocation(out.getX() - xCorner * zoom, out.getY() - yCorner * zoom);
         out.setLocation(out.getX() / zoom, out.getY() / zoom);
+        return out;
+
+    }
+
+    private Point2D.Double actualScreenToSheet(Point2D in) {
+        Point2D.Double out = new Point2D.Double(in.getX(), in.getY());
+        out.setLocation(out.getX() - xCorner * zoom, out.getY() - yCorner * zoom);
+        out.setLocation(out.getX() / zoom, out.getY() / zoom);
+
+        out.setLocation(out.getX() + selectedSheet.getWidth(), selectedSheet.getHeight()-out.getY());
         return out;
 
     }

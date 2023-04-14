@@ -1,5 +1,6 @@
 package Parser.Sheet;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -57,12 +58,12 @@ public class SheetParser {
     public static void parseCutFile(File cutFile, Cut cut) {
         try {
             FileInputStream reader = new FileInputStream(cutFile);
-            long byteCounter = 0;
-            // get something or other to do with something
+            // get number of bytes
+            int byteCounter = 0;
             int total = 0;
             int shift = 0;
             int num = 0;
-            while (byteCounter <= 0 || (num & 0x80) != 0) {
+            while (byteCounter <= 0 || (num & 0x80) == 0x80) {
                 num = reader.read();
                 total += (num & 0x7F) << shift;
                 shift += 7;
@@ -158,7 +159,18 @@ public class SheetParser {
     }
 
     public static void saveSheetInfo(File sheetFile, HashMap<String, String> sheetInfo) {
-        String information = sheetInfo.toString().replace("=", ":").replace(", ", ",");
+        String information = "{";
+        for(String key : sheetInfo.keySet()) {
+            information += "\"" + key + "\":";
+            if(sheetInfo.get(key).matches("[-0123456789.]+")) {
+                information += sheetInfo.get(key);
+            } else {
+                information += "\"" + sheetInfo.get(key) + "\"";
+            }
+
+            information += ",";
+        }
+        information = information.substring(0, information.length() - 1) + "}";
         try {
             FileWriter writer = new FileWriter(sheetFile);
             writer.write(information);
@@ -170,32 +182,48 @@ public class SheetParser {
     }
 
     public static void saveCutInfo(Cut cut) {
+        ArrayList<Byte> bytes = new ArrayList<>();
+        
+        for (Part part : cut.parts) {
+            for(byte b : toByteArray(part.getX())) {
+                bytes.add(b);
+            }
+            for(byte b : toByteArray(part.getY())) {
+                bytes.add(b);
+            }
+            for(byte b : toByteArray(part.getRot())) {
+                bytes.add(b);
+            }
+            if (part instanceof Hole) {
+                bytes.add((byte)1);// for holes
+                continue;
+            }
+            bytes.add((byte)0);
+            
+            String filePath = part.partFile().getPath();
+            bytes.add((byte)filePath.length());
+
+            for (int i = 0; i < filePath.length(); i++) {
+                bytes.add((byte)filePath.charAt(i));
+            }
+        }
+
+        //do a wonky thing
+        long numBytes = bytes.size();
+        int pos = 0;
+        while (numBytes != 0) {
+            bytes.add(pos, (byte)((numBytes % 128) | (numBytes/128 != 0 ? 0x80 : 0)));
+            numBytes /= 128;
+            pos++;
+        }
+        
         FileOutputStream writer;
         try {
             writer = new FileOutputStream(cut.getCutFile());
-            // TODO: figure out what the first byte indicates
-            writer.write(255);
-            writer.write(cut.parts.size());
-
-            // write the parts
-            for (Part part : cut.parts) {
-                writer.write(toByteArray(part.getX()));
-                writer.write(toByteArray(part.getY()));
-                writer.write(toByteArray(part.getRot()));
-                if (part instanceof Hole) {
-                    writer.write(1);// for holes
-                    continue;
-                }
-                writer.write(0);
-
-                String filePath = part.partFile().getPath();
-                writer.write(filePath.length() % 256);
-
-                for (int i = 0; i < filePath.length(); i++) {
-                    writer.write(filePath.charAt(i));
-                }
+            
+            for(byte b : bytes) {
+                writer.write(b);
             }
-
             writer.close();
 
         } catch (IOException e) {
