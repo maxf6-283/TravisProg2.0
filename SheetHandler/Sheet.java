@@ -127,9 +127,10 @@ public class Sheet {
     /**
      * Creates a new part and adds it to the active cut
      */
-    public void addPart(File partFileToPlace, double x, double y) {
+    public Part addPart(File partFileToPlace, double x, double y) {
         Part part = new Part(partFileToPlace, x, y, 0);
         addPart(part);
+        return part;
     }
 
     /**
@@ -142,9 +143,10 @@ public class Sheet {
     /**
      * Adds a new hole to the active cut at the specified position
      */
-    public void addHole(double x, double y) {
+    public Hole addHole(double x, double y) {
         Hole hole = new Hole(holeFile, x, y, 0);
         addHole(hole);
+        return hole;
     }
 
     /**

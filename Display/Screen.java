@@ -462,12 +462,18 @@ public class Screen extends JPanel
                 }
             } else if(menuState == ADD_HOLE && aHeld) {
                 Point2D.Double holePoint = actualScreenToSheet(e.getPoint());
+
+                Hole hole = selectedSheet.addHole(holePoint.getX(), holePoint.getY());
+
+                System.out.println();
                 
-                selectedSheet.addHole(holePoint.getX(), holePoint.getY());
+                undoList.add(new EditAction(hole, true));
             } else if(menuState == ADD_ITEM && aHeld) {
                 Point2D.Double partPoint = actualScreenToSheet(e.getPoint());
                 
-                selectedSheet.addPart(itemSelectMenu.partFileToPlace, partPoint.getX(), partPoint.getY());
+                Part part = selectedSheet.addPart(itemSelectMenu.partFileToPlace, partPoint.getX(), partPoint.getY());
+                
+                undoList.add(new EditAction(part, true));
             } else {
                 if (selectSheet != null) {
                     Point2D grabLocation = screenToSheet(e.getPoint());
