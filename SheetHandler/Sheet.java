@@ -73,10 +73,6 @@ public class Sheet {
             return;
         }
 
-        if (!Arrays.stream(parentFile.listFiles()).anyMatch(newCut::equals)) {
-            throw new IllegalArgumentException("Cut file is not available!, Internal Error");
-        }
-
         activeCut = cuts.stream().filter(e -> e.getCutFile().equals(newCut)).findFirst().get();
         activeCutFile = activeCut.getCutFile();
     }
