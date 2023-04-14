@@ -64,6 +64,10 @@ public class Sheet {
         return cuts;
     }
 
+    public File getHolesFile() {
+        return holeFile;
+    }
+
     public void changeActiveCutFile(File newCut) {
         if (newCut == null || newCut == activeCutFile) {
             return;

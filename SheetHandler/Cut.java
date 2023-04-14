@@ -3,10 +3,12 @@ package SheetHandler;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import Display.ErrorDialog;
 import Parser.Sheet.SheetParser;
 
 import java.awt.Graphics;
 import java.io.File;
+import java.io.IOException;
 
 public class Cut implements Iterable<Part> {
     public ArrayList<Part> parts;
@@ -22,6 +24,17 @@ public class Cut implements Iterable<Part> {
         this.cutFile = cutFile;
 
         parts = new ArrayList<>();
+
+        if (!cutFile.exists()) {
+            try {
+                if (!cutFile.createNewFile()) {
+                    new ErrorDialog(new IOException("This Cut file already exists"));
+                }
+            } catch (IOException e) {
+                new ErrorDialog(e);
+            }
+            return;
+        }
 
         SheetParser.parseCutFile(cutFile, this);
     }

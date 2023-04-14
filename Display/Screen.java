@@ -35,6 +35,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.ActionEvent;
@@ -120,9 +121,12 @@ public class Screen extends JPanel
     private EmitSelect emitPanel;
     private JButton[] suffixes;
     private JPanel gcodePartPanel;
+    private JPanel newcutPanel;
     private ReturnToHomeJButton returnToHomeMenu;
     private ReturnOnceJButton returnOnce;
     public static Logger logger;
+    private JTextField newCutField;
+    private JButton newCutButton;
 
     static {
         logger = Logger.getLogger("MyLog");
@@ -190,6 +194,12 @@ public class Screen extends JPanel
         editMenu = new SheetEditMenu();
         add(editMenu);
         menuPanels.add(editMenu);
+
+        newcutPanel = new NewCutMenu();
+        add(newcutPanel);
+        newcutPanel.setVisible(false);
+        newcutPanel.setBounds(editMenu.getBounds());
+        menuPanels.add(newcutPanel);
 
         returnToHomeMenu = new ReturnToHomeJButton("Return to Home");
         returnToHomeMenu.addActionListener(this);
@@ -275,7 +285,7 @@ public class Screen extends JPanel
         saveSheet = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(selectedSheet != null) {
+                if (selectedSheet != null) {
                     selectedSheet.saveToFile();
                 }
             }
@@ -286,16 +296,14 @@ public class Screen extends JPanel
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("DELETE"), "delete");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("BACK_SPACE"), "delete");
-        
 
         getActionMap().put("undo", undo);
         getActionMap().put("redo", redo);
         getActionMap().put("delete", deleteSelected);
 
-
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
-         });
+        });
     }
 
     @Override
@@ -362,8 +370,11 @@ public class Screen extends JPanel
                         case GCODE_SELECT -> gcodeCutPanel.setVisible(true);
                         case GCODE_SELECT_PART -> gcodePartPanel.setVisible(true);
                         case EMIT_SELECT -> {
-                            if(!emitPanel.isVisible())
+                            if (!emitPanel.isVisible())
                                 emitPanel.setVisible(true);
+                        }
+                        case ADD_CUT -> {
+                            newcutPanel.setVisible(true);
                         }
                         default -> throw new IllegalStateException("State Not Possible: " + menuState);
                     }
@@ -381,7 +392,7 @@ public class Screen extends JPanel
         menuState = newState;
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
-         });
+        });
         repaint();
     }
 
@@ -561,11 +572,16 @@ public class Screen extends JPanel
         } else if (e.getSource() == reScan) {
 
         } else if (e.getSource() == emit) {
-            switchMenuStates(SheetMenuState.EMIT_SELECT);
+            switchMenuStates(EMIT_SELECT);
         } else if (e.getSource() == save) {
             saveSheet.actionPerformed(e);
         } else if (e.getSource() == addCut) {
-
+            switchMenuStates(ADD_CUT);
+        } else if (e.getSource() == newCutButton) {
+            File temp = new File(selectedSheet.getParentFile().getPath()+"\\"+newCutField.getText()+".cut");
+            selectedSheet.addCut(new Cut(temp, selectedSheet.getHolesFile()));
+            selectedSheet.changeActiveCutFile(temp);
+            switchMenuStates(HOME);
         } else if (e.getSource() == changeGCodeView) {
             if (menuState == GCODE_SELECT) {
                 switchMenuStates(HOME);
@@ -675,11 +691,12 @@ public class Screen extends JPanel
 
     /**
      * Switch between program states
+     * 
      * @param newState - the state to swtich to
      */
     private void switchStates(State newState) {
         menuPanels.stream().forEach(e -> {
-           e.setVisible(false);
+            e.setVisible(false);
         });
 
         switch (newState) {
@@ -1184,8 +1201,38 @@ public class Screen extends JPanel
         }
     }
 
+    class NewCutMenu extends JPanel {
+        public NewCutMenu() {
+            setLayout(null);
+
+            add(new JLabel("Adding new sheet cut. Enter filename:") {
+                {
+                    setBounds(10, 0, editMenu.getWidth(), 50);
+                    setForeground(Color.WHITE);
+                }
+            });
+
+            newCutField = new JTextField();
+            newCutField.setBounds(10, 60, 200, 50);
+            add(newCutField);
+
+            newCutButton = new JButton("Add Sheet Cut");
+            newCutButton.setBounds(10, 120, 200, 50);
+            newCutButton.addActionListener(Screen.this);
+            add(newCutButton);
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+
     public enum SheetMenuState {
-        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, GCODE_SELECT_PART, EMIT_SELECT, ADD_ITEM, ADD_HOLE
+        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, GCODE_SELECT_PART, EMIT_SELECT, ADD_ITEM, ADD_HOLE, ADD_CUT
     }
 
     class SheetHandlerJButtonCut extends SheetHandlerJButton<Cut> {
