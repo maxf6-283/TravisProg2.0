@@ -42,6 +42,10 @@ public class NGCDocument {
         currentAxisPlane = GCode;
     }
 
+    public void setToolOffset(Double num) {
+        toolOffset = num;
+    }
+
     public void setCurrentPoint(Point3D point) {
         currentPoint = point;
     }
