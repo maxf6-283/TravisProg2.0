@@ -442,6 +442,13 @@ public class Screen extends JPanel
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
         });
+        if(selectedSheet.getActiveCut() != null) {
+            emitPanel = new EmitSelect();
+            add(emitPanel);
+            emitPanel.setBounds(editMenu.getBounds());
+            emitPanel.setVisible(false);
+            menuPanels.add(emitPanel);
+        }
         repaint();
     }
 
@@ -676,10 +683,6 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof FileJRadioButton
                 && ((FileJRadioButton) e.getSource()).getType().equals(CUT_SELECT)) {
             selectedSheet.changeActiveCutFile(((FileJRadioButton) e.getSource()).getFile());
-            emitPanel = new EmitSelect();
-            add(emitPanel);
-            emitPanel.setBounds(editMenu.getBounds());
-            menuPanels.add(emitPanel);
         } else if (e.getSource() instanceof SheetHandlerJButtonCut) {
             gcodePartPanel = new PartSelectGcode(((SheetHandlerJButtonCut) e.getSource()).getgenericThing());
             add(gcodePartPanel);
