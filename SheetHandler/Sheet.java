@@ -282,7 +282,7 @@ public class Sheet {
         double y = part.getY();
         double rot = part.getRot();
 
-        return String.format("G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, rot);
+        return String.format("G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, Math.toDegrees(rot));
     }
 
     private String removeGCodeSpecialness(String gCode) {
