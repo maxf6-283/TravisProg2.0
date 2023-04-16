@@ -183,8 +183,11 @@ public class Sheet {
         HashMap<String, String> sheetInfo = new HashMap<>();
         sheetInfo.put("w", "" + (width));
         sheetInfo.put("h", "" + (height));
-        sheetInfo.put("hole_file", holeFile.getPath().replace("\\", "/"));
-        sheetInfo.put("active", activeCutFile.getPath().replace("\\", "/"));
+        String path;
+        path = holeFile.getPath().replace("\\", "/");
+        sheetInfo.put("hole_file", path.substring(path.indexOf('.')));
+        path = activeCutFile.getPath().replace("\\", "/");
+        sheetInfo.put("active", path.substring(path.indexOf('.')));
 
         // save sheet info
         SheetParser.saveSheetInfo(sheetFile, sheetInfo);

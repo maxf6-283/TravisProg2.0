@@ -9,7 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 public class Runner {
-    public static void main(String[] args) {
+    public static void main(String[] args) {     
         try {
             // Set System L&F
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
