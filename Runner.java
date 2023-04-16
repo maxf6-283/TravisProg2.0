@@ -17,7 +17,7 @@ public class Runner {
             System.out.println("Thee should  not  changeth  the  behold  and  feeleth");
         }
         Screen screen = new Screen();
-        JFrame frame = new JFrame("JustinAndMaxProg");
+        JFrame frame = new JFrame("Marissa and Claire and Nick Prog");
         try {
             BufferedImage img = ImageIO.read(new File("Display/971 Icon.png"));
             frame.setIconImage(img);

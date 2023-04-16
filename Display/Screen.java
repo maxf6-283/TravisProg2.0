@@ -212,7 +212,7 @@ public class Screen extends JPanel
         menuPanels.add(itemSelectMenu);
 
         try {
-            img = ImageIO.read(new File("Display\\971 large logo.png"));
+            img = ImageIO.read(new File("Display\\IMG_7780(1).jpg"));
         } catch (IOException e) {
             System.err.println("Logo not Found");
         }
@@ -359,7 +359,7 @@ public class Screen extends JPanel
         addHole.setForeground(menuState == ADD_HOLE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
-                g.drawImage(img, (getWidth() - 800) / 2, (getHeight() - 800) / 2, null);
+                g.drawImage(img, 300, 100, null);
             }
             case SHEET_EDIT -> {
                 Graphics2D g2d = (Graphics2D) g;
