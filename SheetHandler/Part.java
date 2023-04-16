@@ -173,7 +173,7 @@ public class Part {
         checkFutures();
         for(NGCDocument ngcDocument : allNGCDocs) {
             String fileName = ngcDocument.getGcodeFile().getName();
-            int lastIndexOf_ = fileName.lastIndexOf('_');
+            int lastIndexOf_ = fileName.lastIndexOf('_')+1;
             if(suffix.equals(fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.')))) {
                 emitNGCDoc = ngcDocument;
                 return true;
