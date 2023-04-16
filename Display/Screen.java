@@ -88,7 +88,7 @@ public class Screen extends JPanel
     private double partGrabbedInitialX;
     private double partGrabbedInitialY;
     private NewSheetPrompt newSheetPrompt;
-    private BufferedImage img;
+    private ArrayList<BufferedImage> imgs = new ArrayList<>();
     private ArrayList<EditAction> undoList;
     private ArrayList<EditAction> redoList;
     private AbstractAction undo;
@@ -112,6 +112,7 @@ public class Screen extends JPanel
     private SheetMenuState menuState = NULL;
     private ArrayList<JPanel> menuPanels = new ArrayList<>();
     private SheetEditMenu editMenu;
+    private boolean specialDetect = false;
     private JPanel cutPanel;
     private JPanel gcodeCutPanel;
     private ItemSelectMenu itemSelectMenu;
@@ -125,6 +126,7 @@ public class Screen extends JPanel
     private JTextField newCutField;
     private JButton newCutButton;
     private boolean aHeld;
+    private JButton theButton = new JButton();
 
     static {
         logger = Logger.getLogger("MyLog");
@@ -199,6 +201,13 @@ public class Screen extends JPanel
         newcutPanel.setBounds(editMenu.getBounds());
         menuPanels.add(newcutPanel);
 
+        theButton.setBounds(0, 0, 5, 5);
+        add(theButton);
+        theButton.setOpaque(false);
+        theButton.setContentAreaFilled(false);
+        theButton.setBorderPainted(false);
+        theButton.addActionListener(this);
+
         returnToHomeMenu = new ReturnToHomeJButton("Return to Home");
         returnToHomeMenu.addActionListener(this);
 
@@ -212,7 +221,11 @@ public class Screen extends JPanel
         menuPanels.add(itemSelectMenu);
 
         try {
-            img = ImageIO.read(new File("Display\\IMG_7780(1).jpg"));
+            for (File file : new File("Display").listFiles()) {
+                if (file.getName().substring(file.getName().lastIndexOf('.')+1).equals("jav")) {
+                    imgs.add(ImageIO.read(file));
+                }
+            }
         } catch (IOException e) {
             System.err.println("Logo not Found");
         }
@@ -359,7 +372,7 @@ public class Screen extends JPanel
         addHole.setForeground(menuState == ADD_HOLE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
-                g.drawImage(img, 300, 100, null);
+                // g.drawImage(img, 300, 100, null);
             }
             case SHEET_EDIT -> {
                 Graphics2D g2d = (Graphics2D) g;
@@ -442,7 +455,7 @@ public class Screen extends JPanel
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
         });
-        if(selectedSheet.getActiveCut() != null) {
+        if (selectedSheet.getActiveCut() != null) {
             emitPanel = new EmitSelect();
             add(emitPanel);
             emitPanel.setBounds(editMenu.getBounds());
@@ -648,6 +661,9 @@ public class Screen extends JPanel
                     part.reload();
                 }
             }
+        } else if (e.getSource() == theButton) {
+            removeAll();
+            specialDetect = true;
         } else if (e.getSource() == emit) {
             switchMenuStates(EMIT_SELECT);
         } else if (e.getSource() == save) {
@@ -713,6 +729,20 @@ public class Screen extends JPanel
             }
         }
         repaint();
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        if (specialDetect == true) {
+            super.paint(g);
+            Graphics2D g2d = (Graphics2D)g;
+            g2d.scale(0.5, 0.5);
+            for (int i = 0; i < imgs.size(); i++) {
+                g2d.drawImage(imgs.get(i), 0+i%2*800, 0+i/2*800, null);
+            }
+        } else {
+            super.paint(g);
+        }
     }
 
     @Override
