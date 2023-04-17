@@ -222,7 +222,7 @@ public class Screen extends JPanel
 
         try {
             for (File file : new File("Display").listFiles()) {
-                if (file.getName().substring(file.getName().lastIndexOf('.')+1).equals("jav")) {
+                if (file.getName().substring(file.getName().lastIndexOf('.') + 1).equals("jav")) {
                     imgs.add(ImageIO.read(file));
                 }
             }
@@ -734,11 +734,11 @@ public class Screen extends JPanel
     @Override
     public void paint(Graphics g) {
         if (specialDetect == true) {
-            super.paint(g);
-            Graphics2D g2d = (Graphics2D)g;
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g;
             g2d.scale(0.5, 0.5);
             for (int i = 0; i < imgs.size(); i++) {
-                g2d.drawImage(imgs.get(i), 0+i%2*800, 0+i/2*800, null);
+                g2d.drawImage(imgs.get(i), 0 + i % 2 * 800, 0 + i / 2 * 800, null);
             }
         } else {
             super.paint(g);
@@ -1448,6 +1448,16 @@ public class Screen extends JPanel
 
         public Part getPart() {
             return part;
+        }
+    }
+
+    public void animate() {
+        for (;;) {
+            try {
+                Thread.sleep(16);
+            } catch (InterruptedException e) {
+            }
+            repaint();
         }
     }
 }

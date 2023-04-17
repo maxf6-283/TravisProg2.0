@@ -165,6 +165,10 @@ public class Part {
         return allNGCDocs;
     }
 
+    public void nullify() {
+        emitNGCDoc = null;
+    }
+
     public boolean setSelectedGCode(String suffix) {
         if(this instanceof Hole) {
             emitNGCDoc = allNGCDocs.get(0);

@@ -11,6 +11,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import Display.WarningDialog;
+
 import java.awt.Color;
 
 import Parser.Sheet.SheetParser;
@@ -241,9 +244,11 @@ public class Sheet {
             String footer = "";
             //starting %
             writer.write("%\n");
+            activeCut.stream().forEach(Part::nullify);
             for (Part part : activeCut) {
                 // ignore parts without the requisite suffix
                 if (!part.setSelectedGCode(suffix)) {
+                    new WarningDialog(new Throwable("Some parts do not have a gcode file with this endmill size"),() -> {});
                     continue;
                 }
                 // if the footer changes, write out the old one and remember the new one

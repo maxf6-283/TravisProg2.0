@@ -2,6 +2,7 @@ package SheetHandler;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 import Parser.Sheet.SheetParser;
 
@@ -35,6 +36,10 @@ public class Cut implements Iterable<Part> {
         }
 
         SheetParser.parseCutFile(cutFile, this);
+    }
+
+    public Stream<Part> stream() {
+        return parts.stream();
     }
 
     @Override
