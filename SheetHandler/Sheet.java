@@ -6,6 +6,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -242,13 +243,19 @@ public class Sheet {
             BufferedWriter writer = new BufferedWriter(new FileWriter(gCodeFile));
             String header = "";
             String footer = "";
-            //starting %
+            // starting %
             writer.write("%\n");
             activeCut.stream().forEach(Part::nullify);
+            ArrayList<Part> notEmittedParts = new ArrayList<>();
             for (Part part : activeCut) {
                 // ignore parts without the requisite suffix
                 if (!part.setSelectedGCode(suffix)) {
-                    new WarningDialog(new Throwable("Some parts do not have a gcode file with this endmill size"),() -> {});
+                    if (!(suffix.equals("holes") || part instanceof Hole || notEmittedParts.stream().anyMatch(p -> p.partFile().getName().equals(part.partFile().getName())))) {
+                        new WarningDialog(new FileNotFoundException(),
+                                part.partFile().getName() + " does not have a gcode file with this endmill size",
+                                null);
+                        notEmittedParts.add(part);
+                    }
                     continue;
                 }
                 // if the footer changes, write out the old one and remember the new one
@@ -272,7 +279,7 @@ public class Sheet {
 
             // write the last footer
             writer.write(footer);
-            //ending %
+            // ending %
             writer.write("%");
 
             writer.flush();

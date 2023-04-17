@@ -9,7 +9,9 @@ public class WarningDialog extends JOptionPane {
     }
 
     public WarningDialog(Throwable throwable, String text, Returnable returnTo) {
-        returnTo.returnTo();
+        if(returnTo != null) {
+            returnTo.returnTo();
+        }
         Screen.logger.log(Level.WARNING, text + "\n" + throwable.getMessage(), throwable);
         showMessageDialog(Screen.screen, text,
                 "Warning: "
