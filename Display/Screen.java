@@ -1454,7 +1454,7 @@ public class Screen extends JPanel
     public void animate() {
         for (;;) {
             try {
-                Thread.sleep(16);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
             }
             repaint();
