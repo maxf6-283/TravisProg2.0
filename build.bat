@@ -1,6 +1,6 @@
 @echo off    
 for /R %%f in (*.class) do del %%f
-javac Runner.java
+javac -O Runner.java
 if  errorlevel 1 goto ERROR
 java Runner
 exit /b 0
