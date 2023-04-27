@@ -226,7 +226,7 @@ public class Screen extends JPanel
                     imgs.add(ImageIO.read(file));
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             System.err.println("Logo not Found");
         }
 
@@ -438,11 +438,12 @@ public class Screen extends JPanel
                         case ADD_ITEM -> {
                             itemSelectMenu.setVisible(true);
                         }
-                        default -> throw new IllegalStateException("State Not Possible: " + menuState);
+                        default -> {}
                     }
                 } catch (NullPointerException e) {
                     new WarningDialog(e, "No Active Cut", () -> switchMenuStates(HOME));
                 }
+                menuPanels.stream().filter(e -> !e.isValid()).forEach(e -> e.validate());
             }
             case SHEET_ADD -> {
 
@@ -1423,7 +1424,7 @@ public class Screen extends JPanel
     }
 
     public enum SheetMenuState {
-        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, GCODE_SELECT_PART, EMIT_SELECT, ADD_ITEM, ADD_HOLE, ADD_CUT
+        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, GCODE_SELECT_PART, EMIT_SELECT, ADD_ITEM, ADD_HOLE, ADD_CUT;
     }
 
     class SheetHandlerJButtonCut extends SheetHandlerJButton<Cut> {
@@ -1448,16 +1449,6 @@ public class Screen extends JPanel
 
         public Part getPart() {
             return part;
-        }
-    }
-
-    public void animate() {
-        for (;;) {
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-            }
-            repaint();
         }
     }
 }
