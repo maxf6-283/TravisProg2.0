@@ -113,13 +113,14 @@ public class SheetParser {
                 }
                 // its in little endian and I hate it
                 byteCounter++;
-                if (reader.read() == 1) {
+                int type = reader.read();
+                if (type == 1) {
                     // is a hole
                     cut.parts.add(new Hole(cut.getHoleFile(), partX, partY, partRot));
                     if (Screen.DebugMode) {
                         System.out.println("Adding a hole");
                     }
-                } else {
+                } else if(type == 0) {
                     // is a part(reader.read()==0)
                     int fileNameLength = reader.read();
                     byteCounter++;
@@ -136,26 +137,10 @@ public class SheetParser {
                     }
                     File partFile = new File(partFileName);
                     cut.parts.add(new Part(partFile, partX, partY, partRot));
+                } else {
+                    new ErrorDialog(new IOError(new DataFormatException("Cut file " + cutFile.getName() + " contains a non-standard part type.")));
                 }
             }
-
-            /*
-             * @Deprecated
-             * outdated info
-             * // hole time
-             * // holes follow the pattern "double x, double y, empty double, byte with a 1
-             * in
-             * // it"
-             * // I don't know why and I hate it
-             * while (reader.available() != 0) {
-             * reader.readNBytes(nextNumber, 0, 8);
-             * double holeX = toDouble(nextNumber);
-             * reader.readNBytes(nextNumber, 0, 8);
-             * double holeY = toDouble(nextNumber);
-             * cut.parts.add(new Hole(holeX, holeY));
-             * reader.readNBytes(9);
-             * }
-             */
             reader.close();
 
         } catch (Exception e) {

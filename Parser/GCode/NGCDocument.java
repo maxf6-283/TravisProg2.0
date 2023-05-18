@@ -21,6 +21,7 @@ public class NGCDocument {
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates;
     private StringBuilder gCodeStringBuilder;
+    private boolean inchesMode = true;;
 
     public NGCDocument() {
         this(null);
@@ -141,6 +142,25 @@ public class NGCDocument {
             attributes.put("G", previousAttributes.get("G"));
         }
 
+        //if not in inches, modify distance values
+        if(!inchesMode) {
+            if(attributes.containsKey("X")) {
+                attributes.put("X", attributes.get("X") / 25.4);
+            }
+            if(attributes.containsKey("Y")) {
+                attributes.put("Y", attributes.get("Y") / 25.4);
+            }
+            if(attributes.containsKey("I")) {
+                attributes.put("I", attributes.get("I") / 25.4);
+            }
+            if(attributes.containsKey("J")) {
+                attributes.put("J", attributes.get("J") / 25.4);
+            }
+            if(attributes.containsKey("Z")) {
+                attributes.put("Z", attributes.get("Z") / 25.4);
+            }
+        }
+
         // if it's a movement, ignore it if machine coords
         if (usingMachineCoordinates() && attributes.get("G") >= 0 && attributes.get("G") <= 3) {
             setUsingMachineCoordinates(false);
@@ -155,7 +175,7 @@ public class NGCDocument {
         if (!attributes.containsKey("Z")) {
             attributes.put("Z", getRelativity() ? 0 : previousAttributes.getOrDefault("Z", 0.0));
         }
-        // Note: I and J are only modal on some router contollers
+        // Note: I and J are only modal on some router contollers. This code is likely not necessary
         if (!attributes.containsKey("I")) {
             attributes.put("I", getRelativityArc() ? 0 : previousAttributes.getOrDefault("Y", 0.0));
         }
@@ -223,10 +243,11 @@ public class NGCDocument {
                 setCurrentAxisPlane((int) attributes.get("G").doubleValue());// sets axis planes
             }
             case 20 -> {
-                // do Nothing(inches mode)
+                inchesMode = true;
             }
             case 21 -> {
                 // TODO automatically fix
+                inchesMode = false;
                 throw new IllegalGCodeError(
                         "Metric Units not allowed in the world of imperial allens and wrenches");
             }
@@ -242,6 +263,15 @@ public class NGCDocument {
             }
             case 64 -> {
                 // do Nothing(Path Blending??!!??)
+            }
+            case 80 -> {
+                //turn off canned cycle, does nothing???
+            }
+            case 81, 82, 83 -> {
+                //canned cycles
+                //just make a dot i give up
+                getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
+                getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
             }
             case 90 -> {
                 if (attributes.get("G") == 90) {
@@ -266,6 +296,9 @@ public class NGCDocument {
             }
             case 94 -> {
                 // do Nothing(Feed rate change)
+            }
+            case 98, 99 -> {
+                //idk
             }
             default -> {
                 throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
