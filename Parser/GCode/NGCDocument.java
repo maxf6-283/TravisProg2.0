@@ -177,10 +177,10 @@ public class NGCDocument {
         }
         // Note: I and J are only modal on some router contollers. This code is likely not necessary
         if (!attributes.containsKey("I")) {
-            attributes.put("I", getRelativityArc() ? 0 : previousAttributes.getOrDefault("Y", 0.0));
+            attributes.put("I", getRelativityArc() ? 0 : previousAttributes.getOrDefault("I", 0.0));
         }
         if (!attributes.containsKey("J")) {
-            attributes.put("J", getRelativityArc() ? 0 : previousAttributes.getOrDefault("Z", 0.0));
+            attributes.put("J", getRelativityArc() ? 0 : previousAttributes.getOrDefault("J", 0.0));
         }
         switch ((int) attributes.get("G").doubleValue()) {
             case 0 -> {
