@@ -16,6 +16,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import Display.ErrorDialog;
+import Display.Returnable;
+import Display.WarningDialog;
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
 import Parser.GCode.RelativePath2D;
@@ -28,6 +30,7 @@ public class Part {
     private File partFile;
     private boolean selected = false;
     private ArrayList<Future<NGCDocument>> futures = new ArrayList<>();
+    private boolean exist = true;
     //private Shape outline;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
@@ -45,7 +48,14 @@ public class Part {
                 ArrayList<File> ngcFiles = new ArrayList<>();
                 File parent = partFile;
                 if (files == null) {
-                    new ErrorDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found");
+                    new WarningDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found", new Returnable() {
+                        @Override
+                        public void returnTo() {
+                            
+                        }
+                    });
+                    exist = false;
+                    return;
                 }
                 for (File file : files) {
                     if (file.getName().lastIndexOf(".") != -1 && file.getName()
@@ -87,6 +97,10 @@ public class Part {
         rotation = rot;
 
         //generateOutline();
+    }
+
+    public boolean exists() {
+        return exist;
     }
 
     public void reload() {

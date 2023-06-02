@@ -133,7 +133,8 @@ public class Sheet {
      */
     public Part addPart(File partFileToPlace, double x, double y) {
         Part part = new Part(partFileToPlace, x, y, 0);
-        addPart(part);
+        if(part != null)
+            addPart(part);
         return part;
     }
 

@@ -136,7 +136,9 @@ public class SheetParser {
                         byteCounter++;
                     }
                     File partFile = new File(partFileName);
-                    cut.parts.add(new Part(partFile, partX, partY, partRot));
+                    Part tempPart = new Part(partFile, partX, partY, partRot);
+                    if(tempPart != null)
+                        cut.parts.add(tempPart);
                 } else {
                     new ErrorDialog(new IOError(new DataFormatException("Cut file " + cutFile.getName() + " contains a non-standard part type.")));
                 }
