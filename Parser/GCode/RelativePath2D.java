@@ -20,6 +20,8 @@ public class RelativePath2D extends Path2D.Double {
 
     private double z;
     private double xP, yP;
+    private boolean offsetLeft = false;
+    private boolean offsetRight = false;
 
     public void setZ(double z) {
         this.z = z;
@@ -192,6 +194,24 @@ public class RelativePath2D extends Path2D.Double {
         curveTo(x1 + xP, y1 + yP, x2 + xP, y2 + yP, x3 + xP, y3 + yP);
         setRelative(x3, y3);
     }
+
+    public void offsetRight() {
+        if(!offsetLeft) {
+            offsetRight = true;
+        } else {
+            throw new IllegalArgumentException("cannot offset in two directions at once");
+        }
+    }
+
+    
+    public void offsetLeft() {
+        if(!offsetRight) {
+            offsetLeft = true;
+        } else {
+            throw new IllegalArgumentException("cannot offset in two directions at once");
+        }
+    }
+
 }
 
 class Point3D extends Point2D.Double {
@@ -222,4 +242,6 @@ class Point3D extends Point2D.Double {
     public String toString() {
         return "Point3D[" + x + ", " + y + ", " + z + "]";
     }
+
+    
 }
