@@ -193,7 +193,7 @@ public class SheetParser {
             }
             bytes.add((byte)0);
             
-            String filePath = part.partFile().getPath();
+            String filePath = part.partFile().getPath().replace('\\', '/');
             bytes.add((byte)filePath.length());
 
             for (int i = 0; i < filePath.length(); i++) {
