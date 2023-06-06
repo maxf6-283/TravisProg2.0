@@ -190,9 +190,9 @@ public class Sheet {
         sheetInfo.put("h", "" + (height));
         String path;
         path = holeFile.getPath().replace("\\", "/");
-        sheetInfo.put("hole_file", path.substring(path.indexOf('.')));
+        sheetInfo.put("hole_file", path);
         path = activeCutFile.getPath().replace("\\", "/");
-        sheetInfo.put("active", path.substring(path.indexOf('.')));
+        sheetInfo.put("active", path.substring(path.indexOf("./")));
 
         // save sheet info
         SheetParser.saveSheetInfo(sheetFile, sheetInfo);

@@ -48,12 +48,7 @@ public class Part {
                 ArrayList<File> ngcFiles = new ArrayList<>();
                 File parent = partFile;
                 if (files == null) {
-                    new WarningDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found", new Returnable() {
-                        @Override
-                        public void returnTo() {
-                            
-                        }
-                    });
+                    new WarningDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found", null);
                     exist = false;
                     return;
                 }

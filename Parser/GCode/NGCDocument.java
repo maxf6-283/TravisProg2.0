@@ -8,10 +8,10 @@ import java.io.File;
 
 public class NGCDocument {
     private File gcodeFile;
-    private ArrayList<RelativePath2D> geometry;
+    private ArrayList<RelativePath2D> originalGeometry;
     private Point3D currentPoint;
     private int SpindleSpeed;
-    private double toolOffset = 0.1575;// TODO finsih thishoibqwob4eiurboewqb
+    private double toolOffset = 0.1575;
     private double implicitGCodeHolder;
     private boolean isRelativeArc;
     private boolean isRelative = false;
@@ -21,10 +21,16 @@ public class NGCDocument {
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates;
     private StringBuilder gCodeStringBuilder;
-    private boolean inchesMode = true;;
+    private boolean usingCutterComp = false;// TODO make sure to set true when G41 or G42 is called
+    private boolean inchesMode = true;
+    private HashMap<Double, ArrayList<RelativePath2D>> offsetGeometry = new HashMap<>();
 
     public NGCDocument() {
         this(null);
+    }
+
+    public void setUsingCutterComp() {
+        usingCutterComp = true;
     }
 
     public int getCurrentAxisPlane() {
@@ -64,7 +70,7 @@ public class NGCDocument {
     }
 
     public boolean contains(Point2D point) {
-        for (RelativePath2D path : geometry) {
+        for (RelativePath2D path : originalGeometry) {
             if (path.contains(point)) {
                 return true;
             }
@@ -91,20 +97,39 @@ public class NGCDocument {
     public NGCDocument(File file) {
         this.gcodeFile = file;
         gCodeStringBuilder = new StringBuilder();
-        geometry = new ArrayList<>();
-        geometry.add(new RelativePath2D());
+        originalGeometry = new ArrayList<>();
+        originalGeometry.add(new RelativePath2D());
     }
 
     public ArrayList<RelativePath2D> getRelativePath2Ds() {
-        return geometry;
+        if (usingCutterComp) {
+            ArrayList<RelativePath2D> path = offsetGeometry.get(toolOffset);
+            if (path == null) {
+                path = getOffsetInstance();
+                offsetGeometry.put(toolOffset, path);
+            }
+            return path;
+        } else {
+            return getOffsetInstance();
+        }
     }
 
-    public RelativePath2D getCurrentPath2D() {
-        return geometry.get(geometry.size() - 1);
+    private ArrayList<RelativePath2D> getOffsetInstance() {
+        ArrayList<RelativePath2D> output = new ArrayList<>();
+
+        for(RelativePath2D path : originalGeometry) {
+            output.add(path.getOffsetInstance(toolOffset));
+        }
+
+        return output;
     }
 
-    public void newPath2D() {
-        geometry.add(new RelativePath2D());
+    private RelativePath2D getCurrentPath2D() {
+        return originalGeometry.get(originalGeometry.size() - 1);
+    }
+
+    private void newPath2D() {
+        originalGeometry.add(new RelativePath2D());
     }
 
     public void setGcodeFile(File file) {
@@ -142,21 +167,21 @@ public class NGCDocument {
             attributes.put("G", previousAttributes.get("G"));
         }
 
-        //if not in inches, modify distance values
-        if(!inchesMode) {
-            if(attributes.containsKey("X")) {
+        // if not in inches, modify distance values
+        if (!inchesMode) {
+            if (attributes.containsKey("X")) {
                 attributes.put("X", attributes.get("X") / 25.4);
             }
-            if(attributes.containsKey("Y")) {
+            if (attributes.containsKey("Y")) {
                 attributes.put("Y", attributes.get("Y") / 25.4);
             }
-            if(attributes.containsKey("I")) {
+            if (attributes.containsKey("I")) {
                 attributes.put("I", attributes.get("I") / 25.4);
             }
-            if(attributes.containsKey("J")) {
+            if (attributes.containsKey("J")) {
                 attributes.put("J", attributes.get("J") / 25.4);
             }
-            if(attributes.containsKey("Z")) {
+            if (attributes.containsKey("Z")) {
                 attributes.put("Z", attributes.get("Z") / 25.4);
             }
         }
@@ -175,7 +200,8 @@ public class NGCDocument {
         if (!attributes.containsKey("Z")) {
             attributes.put("Z", getRelativity() ? 0 : previousAttributes.getOrDefault("Z", 0.0));
         }
-        // Note: I and J are only modal on some router contollers. This code is likely not necessary
+        // Note: I and J are only modal on some router contollers. This code is likely
+        // not necessary
         if (!attributes.containsKey("I")) {
             attributes.put("I", getRelativityArc() ? 0 : previousAttributes.getOrDefault("I", 0.0));
         }
@@ -277,11 +303,11 @@ public class NGCDocument {
                 // do Nothing(Path Blending??!!??)
             }
             case 80 -> {
-                //turn off canned cycle, does nothing???
+                // turn off canned cycle, does nothing???
             }
             case 81, 82, 83 -> {
-                //canned cycles
-                //just make a dot i give up
+                // canned cycles
+                // just make a dot i give up
                 getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
                 getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
             }
@@ -310,7 +336,7 @@ public class NGCDocument {
                 // do Nothing(Feed rate change)
             }
             case 98, 99 -> {
-                //idk
+                // idk
             }
             default -> {
                 throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
@@ -350,7 +376,7 @@ public class NGCDocument {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        String header = gCodeString.substring(gCodeString.indexOf('%')+1, endIndex + 1);
+        String header = gCodeString.substring(gCodeString.indexOf('%') + 1, endIndex + 1);
         return "(START HEADER)\n" + header + "(END HEADER)\n";
     }
 

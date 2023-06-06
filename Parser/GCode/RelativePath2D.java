@@ -2,7 +2,10 @@ package Parser.GCode;
 
 import Display.Screen;
 import java.awt.geom.Path2D;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Defines a geometric path with relative coordinates and arcs possible
@@ -164,6 +167,7 @@ public class RelativePath2D extends Path2D.Double {
      * @param y2 the Y coordinate of the final end point relative to the previous
      *           point
      */
+    @Deprecated
     public void quadToRelative(double x1, double y1, double x2, double y2) {
         quadTo(x1 + xP, y1 + yP, x2 + xP, y2 + yP);
         setRelative(x2, y2);
@@ -190,28 +194,184 @@ public class RelativePath2D extends Path2D.Double {
      * @param y3 the Y coordinate of the final end point relative to the previous
      *           point
      */
+    @Deprecated
     public void curveToRelative(double x1, double y1, double x2, double y2, double x3, double y3) {
         curveTo(x1 + xP, y1 + yP, x2 + xP, y2 + yP, x3 + xP, y3 + yP);
         setRelative(x3, y3);
     }
 
     public void offsetRight() {
-        if(!offsetLeft) {
+        if (!offsetLeft) {
             offsetRight = true;
         } else {
             throw new IllegalArgumentException("cannot offset in two directions at once");
         }
     }
 
-    
     public void offsetLeft() {
-        if(!offsetRight) {
+        if (!offsetRight) {
             offsetLeft = true;
         } else {
             throw new IllegalArgumentException("cannot offset in two directions at once");
         }
     }
 
+    public RelativePath2D getOffsetInstance(double offset) {
+        // check if the path is only made of lines(only offset supported)
+        PathIterator holder = getPathIterator(null);
+        // stores the x,y pairs of the continous polygon
+        ArrayList<java.lang.Double[]> coords = new ArrayList<>();
+        ArrayList<Integer> type = new ArrayList<>();
+        // adds polygon points as well as checking that it is one
+        while (!holder.isDone()) {
+            double[] temp = new double[2];
+            // may need to change this to get rid of moveTos(assumption that they are part
+            // of the polygon)
+            if (holder.currentSegment(temp) != PathIterator.SEG_LINETO
+                    && holder.currentSegment(temp) != PathIterator.SEG_MOVETO
+                    && holder.currentSegment(temp) != PathIterator.SEG_CLOSE) {
+                throw new IllegalArgumentException("Path Iterator must only contain lines");
+            }
+            // TODO remove repeated points(maybe do in moveto/lineto too)
+            coords.add(getAsWrapper(temp));
+            type.add(holder.currentSegment(temp));
+            holder.next();
+        }
+
+        // not enough vertices
+        if (coords.size() < 3) {
+            return this;
+        }
+
+        // holds slope of the normal of each point(same order as coords)
+        ArrayList<java.lang.Double> slopeNorm = new ArrayList<>();
+
+        // double[] holds m and then b of parallel line(starts with edge of the first
+        // and second coords)
+        ArrayList<java.lang.Double[]> offsetLineEq = new ArrayList<>();
+
+        // finds all slopes of the normal line of the subgradient of each point
+        // also finds equation for each parallel line with specified offset
+        for (int i = 0; i < coords.size(); i++) {
+            if (i == 0) {
+                slopeNorm.add(getMidNormSlope(getAsPrimitive(coords.get(coords.size() - 1)),
+                        getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1))));
+                offsetLineEq.add(getAsWrapper(
+                        getOffsetLineInfo(getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1)), offset)));
+            } else if (i == coords.size() - 1) {
+                slopeNorm.add(getMidNormSlope(getAsPrimitive(coords.get(i - 1)), getAsPrimitive(coords.get(i)),
+                        getAsPrimitive(coords.get(0))));
+                offsetLineEq.add(getAsWrapper(
+                        getOffsetLineInfo(getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(0)), offset)));
+            } else {
+                slopeNorm.add(getMidNormSlope(getAsPrimitive(coords.get(i - 1)), getAsPrimitive(coords.get(i)),
+                        getAsPrimitive(coords.get(i + 1))));
+                offsetLineEq.add(getAsWrapper(
+                        getOffsetLineInfo(getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1)), offset)));
+            }
+
+        }
+
+        // TODO remove disappearing sides
+        for (int i = 0; i < coords.size(); i++) {
+
+        }
+
+        RelativePath2D output = new RelativePath2D();
+
+        // calculates new points and puts it into a new RelativePath2D
+        // TODO do calcs
+        for (int i = 0; i < coords.size(); i++) {
+            // normal slope stuff
+            double b_1 = -slopeNorm.get(i) * coords.get(i)[0] + coords.get(i)[1];
+
+            double x = (offsetLineEq.get(i)[1] - b_1) / (slopeNorm.get(i) - offsetLineEq.get(i)[0]);
+
+            double y = offsetLineEq.get(i)[0] * x + offsetLineEq.get(i)[1];
+
+            if (type.get(i) == PathIterator.SEG_MOVETO) {
+                output.moveTo(x, y);
+            } else if (type.get(i) == PathIterator.SEG_LINETO) {
+                output.lineTo(x, y);
+            } else {
+                System.out.println(type.get(i));
+            }
+        }
+        output.closePath();
+
+        return output;
+    }
+
+    private double[] getOffsetLineInfo(double[] p1, double[] p2, double offset) {
+        double[] output = new double[2];
+        output[0] = getSlope(p1, p2);
+        // angle of the line
+        double theta = Math.atan(output[0]);
+        // gets b of the line
+        output[1] = p1[1] - output[0] * p1[0];
+
+        // positive delta y(from p1 to p2) with positive slope = positive c(offset
+        // left), else negative c(for offset left)
+        // negative delta y(from p1 to p2) with negative slope = positive c(offset
+        // left), else negative c(for offset left)
+        // edge case for slope of zero
+        double deltaY = p2[1] - p1[1];
+        // adds offset to the b, compensated for line angle
+        if (deltaY * output[0] > 0) {
+            if (offsetLeft) {
+                output[1] += offset / Math.cos(theta);
+            } else {
+                output[1] -= offset / Math.cos(theta);
+            }
+        } else if (deltaY * output[0] < 0) { // offsetRight, c is negative
+            if (offsetLeft) {
+                output[1] -= offset / Math.cos(theta);
+            } else {
+                output[1] += offset / Math.cos(theta);
+            }
+        } else if (output[0] == 0) {// slope of zero(edge case)
+            // TODO finish
+        } else if (output[0] == java.lang.Double.POSITIVE_INFINITY || output[0] == java.lang.Double.NEGATIVE_INFINITY) {// vertical
+                                                                                                                        // line(edge
+                                                                                                                        // case)
+            // TODO finish
+        } else if (deltaY == 0) {
+            // do nothing?(same point i think)
+        } else {
+            throw new IllegalStateException(
+                    "slope = " + output[0] + ", deltaY = " + deltaY + ", does not work for some reason");
+        }
+
+        return output;
+    }
+
+    private java.lang.Double[] getAsWrapper(double[] arr) {
+        return Arrays.stream(arr).boxed().toArray(java.lang.Double[]::new);
+    }
+
+    private double[] getAsPrimitive(java.lang.Double[] arr) {
+        return Arrays.stream(arr).mapToDouble(java.lang.Double::doubleValue).toArray();
+    }
+
+    /**
+     * @param leftP
+     * @param midP
+     * @param rightP
+     * @return returns normal slope of the middle of the subgradient of the point
+     *         midP
+     */
+    private double getMidNormSlope(double[] leftP, double[] midP, double[] rightP) {
+        return -2 / (getSlope(leftP, midP) + getSlope(midP, rightP));
+    }
+
+    /**
+     * @param p1 first point
+     * @param p2 second point
+     * @return slope of the line that fits these two points
+     */
+    private double getSlope(double[] p1, double[] p2) {
+        return (p2[1] - p1[1]) / (p2[0] - p1[0]);
+    }
 }
 
 class Point3D extends Point2D.Double {
@@ -242,6 +402,4 @@ class Point3D extends Point2D.Double {
     public String toString() {
         return "Point3D[" + x + ", " + y + ", " + z + "]";
     }
-
-    
 }
