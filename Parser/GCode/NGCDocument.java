@@ -272,13 +272,25 @@ public class NGCDocument {
                 inchesMode = true;
             }
             case 21 -> {
-                // TODO automatically fix
                 inchesMode = false;
-                throw new IllegalGCodeError(
-                        "Metric Units not allowed in the world of imperial allens and wrenches");
+            }
+            case 41 -> {
+                //cutter comp left
+                if(attributes.get("G") == 41) {
+                    getCurrentPath2D().offsetLeft();
+                } else {
+                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
+                }
+            }
+            case 42 -> {
+                if(attributes.get("G") == 42) {
+                    getCurrentPath2D().offsetRight();
+                } else {
+                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
+                }
             }
             case 43 -> {
-                // calls which tool offset is used(TODO fix complexities)
+                // calls which tool length offset is used(TODO fix complexities)
             }
             case 53 -> {
                 // Move In Machine Coordinates - ignore next move command
