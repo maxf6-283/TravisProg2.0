@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -127,7 +129,9 @@ public class Settings {
     public void saveFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(settingsFile))) {
             writer.write("{\n");
-            for(String key : settingsMap.keySet()) {
+            ArrayList<String> iteratorList = new ArrayList<>(Settings.settings.keySet());
+            Collections.sort(iteratorList);
+            for(String key : iteratorList) {
                 writer.write("\t\""+key+"\": \""+settingsMap.get(key)+"\",\n");
             }
             writer.write("}");
