@@ -457,7 +457,7 @@ public class Screen extends JPanel
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
         });
-        if (selectedSheet.getActiveCut() != null) {
+        if (selectedSheet != null && selectedSheet.getActiveCut() != null) {
             emitPanel = new EmitSelect();
             add(emitPanel);
             emitPanel.setBounds(editMenu.getBounds());
