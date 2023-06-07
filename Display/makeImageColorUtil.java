@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 
-public class makeImageColor {
+public class makeImageColorUtil {
     public static void main(String[] args) {
         Color set = new Color(140, 140, 140, 255);
         try {
