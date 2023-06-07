@@ -14,6 +14,7 @@ import Parser.GCode.NGCDocument;
 import SheetHandler.Cut;
 import SheetHandler.Hole;
 import SheetHandler.Part;
+import SheetHandler.Settings;
 import SheetHandler.Sheet;
 import SheetHandler.SheetThickness;
 
@@ -60,7 +61,7 @@ import java.util.Collections;
 public class Screen extends JPanel
         implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, ItemListener {
     public static Screen screen;
-    public static final boolean DebugMode = false;
+    public static final boolean DebugMode = Boolean.parseBoolean(Settings.settings.get("DebugMode"));
     private JList<File> sheetList;
     private JScrollPane sheetScroll;
     private DefaultListModel<File> sheetFileList;
@@ -132,7 +133,7 @@ public class Screen extends JPanel
         logger = Logger.getLogger("MyLog");
         FileHandler fh;
         try {
-            fh = new FileHandler("logger.log", true);
+            fh = new FileHandler(Settings.settings.get("LoggerFile"), true);
             logger.addHandler(fh);
             fh.setFormatter(new SimpleFormatter());
         } catch (SecurityException | IOException e) {
@@ -147,7 +148,7 @@ public class Screen extends JPanel
         state = State.SHEET_SELECT;
 
         sheetFileList = new DefaultListModel<>();
-        sheetsParent = new File("./sheets");
+        sheetsParent = new File(Settings.settings.get("SheetParentFolder"));
         for (int i = 0; i < sheetsParent.listFiles().length; i++) {
             sheetFileList.addElement(new File(sheetsParent.listFiles()[i].getAbsolutePath()) {
                 @Override

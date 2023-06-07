@@ -1,4 +1,5 @@
 import Display.*;
+import SheetHandler.Settings;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -19,7 +20,7 @@ public class Runner {
         Screen screen = new Screen();
         JFrame frame = new JFrame("Marissa and Claire and Nick Prog");
         try {
-            BufferedImage img = ImageIO.read(new File("Display/971 Icon.png"));
+            BufferedImage img = ImageIO.read(new File(Settings.settings.get("IconImageFile")));
             frame.setIconImage(img);
         } catch (IOException e) {
             System.err.println("No icon image found");
