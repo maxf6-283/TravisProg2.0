@@ -37,7 +37,6 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.ActionEvent;
@@ -245,7 +244,7 @@ public class Screen extends JPanel
 
 
         add(toSettings);
-        toSettings.setBounds(1200 - 50, 0, 50, 50);
+        toSettings.setBounds(1200 - 52, 3, 50, 50);
         toSettings.setAction(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -254,7 +253,12 @@ public class Screen extends JPanel
         });
         try {
             BufferedImage img = ImageIO.read(new File(Settings.settings.get("SettingsIconImage")));
-            toSettings.setIcon(new ImageIcon(img));
+            BufferedImage img2 = ImageIO.read(new File(Settings.settings.get("SettingsIconImage2")));
+            toSettings.setIcon(new ImageIcon(img2));
+            toSettings.setRolloverIcon(new ImageIcon(img));
+            toSettings.setPressedIcon(new ImageIcon(img));
+            toSettings.setBackground(new Color(33, 30, 31));
+            toSettings.setBorderPainted(false);
         } catch (IOException e) {
             toSettings.setText("Settings");
             toSettings.setBounds(1200 - 200, 0, 200, 50);

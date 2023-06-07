@@ -22,7 +22,7 @@ import Display.Screen;
 public class Settings {
     public static Settings settings;
     private HashMap<String, String> settingsMap = new HashMap<>();
-    private static HashMap<String, String> defaultSettingsMap = new HashMap<>();
+    private static final HashMap<String, String> defaultSettingsMap = new HashMap<>();
 
     static {
         // put all default setting into hashmap
