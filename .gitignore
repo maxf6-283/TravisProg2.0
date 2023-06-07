@@ -4,3 +4,4 @@
 *.sheet
 *.ngc
 .vscode
+settings.json

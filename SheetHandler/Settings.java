@@ -37,6 +37,7 @@ public class Settings {
         defaultSettingsMap.put("LoggerFile", "logger.log");
         defaultSettingsMap.put("SheetParentFolder", "./sheets");
         defaultSettingsMap.put("IconImageFile", "Display/971 Icon.png");
+        defaultSettingsMap.put("SettingsIconImage", "Display/gear.jpg");
 
         settings = new Settings(new File("./settings.json"));
     }
@@ -59,11 +60,11 @@ public class Settings {
         return output;
     }
 
-    public Set<String> getKeys() {
+    public Set<String> keySet() {
         return settingsMap.keySet();
     }
 
-    public void set(String key, String value) {
+    public void put(String key, String value) {
         settingsMap.put(key, value);
     }
 

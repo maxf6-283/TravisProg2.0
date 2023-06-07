@@ -22,6 +22,7 @@ import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -36,6 +37,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.ActionEvent;
@@ -128,6 +130,10 @@ public class Screen extends JPanel
     private JButton newCutButton;
     private boolean aHeld;
     private JButton theButton = new JButton();
+    private SettingsPanel settingsPanel = new SettingsPanel();
+    private JButton returnToHomeFromSettings = new JButton();
+    private JButton toSettings = new JButton();
+    private JButton resetToDefault = new JButton();
 
     static {
         logger = Logger.getLogger("MyLog");
@@ -208,6 +214,51 @@ public class Screen extends JPanel
         theButton.setContentAreaFilled(false);
         theButton.setBorderPainted(false);
         theButton.addActionListener(this);
+
+        add(settingsPanel);
+        settingsPanel.setBounds(300, 100, 600, 600);
+        settingsPanel.setVisible(false);
+
+        add(returnToHomeFromSettings);
+        returnToHomeFromSettings.setAction(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                switchStates(State.SHEET_SELECT);
+            }
+        });
+        returnToHomeFromSettings.setText("Return");
+        returnToHomeFromSettings.setBounds(700, 0, 200, 100);
+        returnToHomeFromSettings.setVisible(false);
+
+        add(resetToDefault);
+        resetToDefault.setAction(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Settings.settings.resetToDefault();
+                settingsPanel.revalidate();
+                settingsPanel.setup();
+            }
+        });
+        resetToDefault.setText("Reset to Default");
+        resetToDefault.setBounds(300, 0, 400, 100);
+        resetToDefault.setVisible(false);
+
+
+        add(toSettings);
+        toSettings.setBounds(1200 - 50, 0, 50, 50);
+        toSettings.setAction(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                switchStates(State.SETTINGS);
+            }
+        });
+        try {
+            BufferedImage img = ImageIO.read(new File(Settings.settings.get("SettingsIconImage")));
+            toSettings.setIcon(new ImageIcon(img));
+        } catch (IOException e) {
+            toSettings.setText("Settings");
+            toSettings.setBounds(1200 - 200, 0, 200, 50);
+        }
 
         returnToHomeMenu = new ReturnToHomeJButton("Return to Home");
         returnToHomeMenu.addActionListener(this);
@@ -439,7 +490,8 @@ public class Screen extends JPanel
                         case ADD_ITEM -> {
                             itemSelectMenu.setVisible(true);
                         }
-                        default -> {}
+                        default -> {
+                        }
                     }
                 } catch (NullPointerException e) {
                     new WarningDialog(e, "No Active Cut", () -> switchMenuStates(HOME));
@@ -447,6 +499,9 @@ public class Screen extends JPanel
                 menuPanels.stream().filter(e -> !e.isValid()).forEach(e -> e.validate());
             }
             case SHEET_ADD -> {
+
+            }
+            case SETTINGS -> {
 
             }
         }
@@ -807,6 +862,21 @@ public class Screen extends JPanel
         });
 
         switch (newState) {
+            case SETTINGS -> {
+                state = State.SETTINGS;
+                switchMenuStates(NULL);
+                returnToHome.setVisible(false);
+                selectSheet.setVisible(false);
+                addSheet.setVisible(false);
+                sheetList.setVisible(false);
+                sheetScroll.setVisible(false);
+                newSheetPrompt.setVisible(false);
+                settingsPanel.setup();
+                settingsPanel.setVisible(true);
+                returnToHomeFromSettings.setVisible(true);
+                toSettings.setVisible(false);
+                resetToDefault.setVisible(true);
+            }
             case SHEET_SELECT -> {
                 state = State.SHEET_SELECT;
                 switchMenuStates(NULL);
@@ -816,15 +886,23 @@ public class Screen extends JPanel
                 sheetScroll.setVisible(true);
                 newSheetPrompt.setVisible(false);
                 returnToHome.setVisible(false);
+                settingsPanel.setVisible(false);
+                returnToHomeFromSettings.setVisible(false);
+                toSettings.setVisible(true);
+                resetToDefault.setVisible(false);
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
                 switchMenuStates(HOME);
+                settingsPanel.setVisible(false);
                 returnToHome.setVisible(true);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
                 sheetList.setVisible(false);
                 sheetScroll.setVisible(false);
+                returnToHomeFromSettings.setVisible(false);
+                toSettings.setVisible(false);
+                resetToDefault.setVisible(false);
                 zoom = 20;
                 xCorner = getWidth() / 2.0 + selectedSheet.getWidth() * 10.0;
                 yCorner = getHeight() / 2.0 - selectedSheet.getHeight() * 10.0;
@@ -854,7 +932,11 @@ public class Screen extends JPanel
             case SHEET_ADD -> {
                 state = State.SHEET_ADD;
                 switchMenuStates(NULL);
+                settingsPanel.setVisible(false);
+                returnToHomeFromSettings.setVisible(false);
                 returnToHome.setVisible(false);
+                toSettings.setVisible(false);
+                resetToDefault.setVisible(false);
                 selectSheet.setVisible(false);
                 addSheet.setVisible(false);
                 sheetList.setVisible(false);
