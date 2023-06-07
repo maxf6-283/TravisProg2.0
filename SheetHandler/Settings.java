@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Set;
 
 import Display.Screen;
 
@@ -47,20 +48,33 @@ public class Settings {
         readFile();
     }
 
-    public String get(String input) {
-        String output = settingsMap.get(input);
+    public String get(String key) {
+        String output = settingsMap.get(key);
         if (output == null) {
-            output = defaultSettingsMap.get(input);
+            output = defaultSettingsMap.get(key);
             if (output != null) {
-                settingsMap.put(input, output);
+                settingsMap.put(key, output);
             }
         }
         return output;
     }
 
+    public Set<String> getKeys() {
+        return settingsMap.keySet();
+    }
+
+    public void set(String key, String value) {
+        settingsMap.put(key, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void resetToDefault() {
+        settingsMap = (HashMap<String,String>) defaultSettingsMap.clone();
+    }
+
     /**
      * Reads the contents of the settings file. This is automatically called on
-     * instantiation, but not when calling <code>setFile</code>
+     * instantiation
      */
     @SuppressWarnings("unchecked")
     public void readFile() {
@@ -102,6 +116,7 @@ public class Settings {
             saveFile();
         } catch (IOException e) {
             Screen.logger.severe(e.getMessage());
+            e.printStackTrace();
             System.exit(-1);
         }
         if (Boolean.parseBoolean(settingsMap.get("DebugMode")))
@@ -116,24 +131,9 @@ public class Settings {
             }
             writer.write("}");
         } catch (IOException e) {
-
+            e.printStackTrace();
+            Screen.logger.severe(e.getMessage());
+            System.exit(-1);
         }
-    }
-
-    /**
-     * Changes the file being accessed by the Settings object, does not read the
-     * file.
-     * 
-     * @param file the file to switch to.
-     */
-    public void setFile(File file) {
-        settingsFile = file;
-    }
-
-    /**
-     * @return the file the Settings object currently is pointing to.
-     */
-    public File getFile() {
-        return settingsFile;
     }
 }
