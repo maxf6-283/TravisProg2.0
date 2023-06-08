@@ -39,7 +39,8 @@ public class Settings {
         defaultSettingsMap.put("LoggerFile", "logger.log");
         defaultSettingsMap.put("SheetParentFolder", "./sheets");
         defaultSettingsMap.put("IconImageFile", "Display/971 Icon.png");
-        defaultSettingsMap.put("SettingsIconImage", "Display/gear.jpg");
+        defaultSettingsMap.put("SettingsIconImage", "Display/gear.png");
+        defaultSettingsMap.put("SettingsIconImage2", "Display/gear2.png");
 
         settings = new Settings(new File("./settings.json"));
     }

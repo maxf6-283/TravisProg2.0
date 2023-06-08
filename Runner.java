@@ -1,35 +1,26 @@
-import Display.*;
-import SheetHandler.Settings;
-
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
-
-import javax.imageio.ImageIO;
-import javax.swing.JFrame;
-import javax.swing.UIManager;
+import java.util.ArrayList;
 
 public class Runner {
-    public static void main(String[] args) {     
+    public static void main(String[] args) {
         try {
-            // Set System L&F
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            System.out.println("Thee should  not  changeth  the  behold  and  feeleth");
-        }
-        Screen screen = new Screen();
-        JFrame frame = new JFrame("Marissa and Claire and Nick Prog");
-        try {
-            BufferedImage img = ImageIO.read(new File(Settings.settings.get("IconImageFile")));
-            frame.setIconImage(img);
-        } catch (IOException e) {
-            System.err.println("No icon image found");
-        }
+            final ArrayList<Process> processes = new ArrayList<>();
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    processes.forEach(Process::destroy);
+                }
+            }));
+            while(true) {
+                ProcessBuilder builder = new ProcessBuilder().inheritIO().command("java", "Runner2");
+                Process process = builder.start();
+                processes.add(process);
+                int exitCode = process.waitFor();
+                if (exitCode != -2)
+                    break;
+            }
+        } catch (IOException | InterruptedException e) {
 
-        frame.add(screen);
-
-        frame.pack();
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        }
     }
 }

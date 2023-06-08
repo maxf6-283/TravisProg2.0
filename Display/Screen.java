@@ -133,8 +133,11 @@ public class Screen extends JPanel
     private JButton returnToHomeFromSettings = new JButton();
     private JButton toSettings = new JButton();
     private JButton resetToDefault = new JButton();
+    private JButton restartApplication = new JButton();
 
     static {
+        if(DebugMode)
+            System.out.println("Welcome to Debug Mode!");
         logger = Logger.getLogger("MyLog");
         FileHandler fh;
         try {
@@ -222,6 +225,7 @@ public class Screen extends JPanel
         returnToHomeFromSettings.setAction(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                settingsPanel.save();
                 switchStates(State.SHEET_SELECT);
             }
         });
@@ -242,6 +246,17 @@ public class Screen extends JPanel
         resetToDefault.setBounds(300, 0, 400, 100);
         resetToDefault.setVisible(false);
 
+        add(restartApplication);
+        restartApplication.setAction(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                settingsPanel.save();
+                System.exit(-2);
+            }
+        });
+        restartApplication.setText("Apply Settings(Restart Application)");
+        restartApplication.setBounds(400, 700+40/2, 400, 60);
+        restartApplication.setVisible(false);
 
         add(toSettings);
         toSettings.setBounds(1200 - 52, 3, 50, 50);
@@ -880,6 +895,7 @@ public class Screen extends JPanel
                 returnToHomeFromSettings.setVisible(true);
                 toSettings.setVisible(false);
                 resetToDefault.setVisible(true);
+                restartApplication.setVisible(true);
             }
             case SHEET_SELECT -> {
                 state = State.SHEET_SELECT;
@@ -894,6 +910,7 @@ public class Screen extends JPanel
                 returnToHomeFromSettings.setVisible(false);
                 toSettings.setVisible(true);
                 resetToDefault.setVisible(false);
+                restartApplication.setVisible(false);
             }
             case SHEET_EDIT -> {
                 state = State.SHEET_EDIT;
@@ -907,6 +924,7 @@ public class Screen extends JPanel
                 returnToHomeFromSettings.setVisible(false);
                 toSettings.setVisible(false);
                 resetToDefault.setVisible(false);
+                restartApplication.setVisible(false);
                 zoom = 20;
                 xCorner = getWidth() / 2.0 + selectedSheet.getWidth() * 10.0;
                 yCorner = getHeight() / 2.0 - selectedSheet.getHeight() * 10.0;
@@ -947,6 +965,7 @@ public class Screen extends JPanel
                 sheetScroll.setVisible(false);
                 newSheetPrompt.reset();
                 newSheetPrompt.setVisible(true);
+                restartApplication.setVisible(false);
             }
         }
     }

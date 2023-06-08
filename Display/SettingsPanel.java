@@ -23,6 +23,7 @@ public class SettingsPanel extends JPanel {
 
     public void setup() {
         removeAll();
+        map.clear();
         setLayout(new SpringLayout());
 
         int count = 0;
