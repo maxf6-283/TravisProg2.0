@@ -5,3 +5,4 @@
 *.ngc
 .vscode
 settings.json
+*.lck
