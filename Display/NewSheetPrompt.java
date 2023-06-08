@@ -7,6 +7,7 @@ import SheetHandler.SheetThickness;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 
 import java.awt.Dimension;
@@ -15,7 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class NewSheetPrompt extends JFrame implements ActionListener {
+public class NewSheetPrompt extends JDialog implements ActionListener {
     private JButton enterSheetInfo;
     private JTextField sheetWidthField;
     private JTextField sheetHeightField;
@@ -28,6 +29,7 @@ public class NewSheetPrompt extends JFrame implements ActionListener {
     private Screen parent;
 
     public NewSheetPrompt(Screen parentScreen) {
+        setModal(true);
         setLayout(null);
         parent = parentScreen;
 
