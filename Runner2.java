@@ -30,6 +30,7 @@ public class Runner2 {
 
         frame.pack();
         frame.setVisible(true);
+        frame.setAlwaysOnTop(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }
