@@ -23,6 +23,16 @@ public class RelativePath2D extends Path2D.Double {
         return new Point3D(getCurrentPoint().getX(), getCurrentPoint().getY(), z);
     }
 
+    public ArrayList<Integer> getPathIteratorType() {
+        ArrayList<Integer> output = new ArrayList<>();
+        PathIterator path = getPathIterator(null);
+        while (!path.isDone()) {
+            output.add(path.currentSegment(new double[6]));
+            path.next();
+        }
+        return output;
+    }
+
     private double z;
     private double xP, yP;
     private boolean offsetLeft = false;
@@ -384,7 +394,7 @@ public class RelativePath2D extends Path2D.Double {
             }
         }
         paths.get(paths.size() - 1).remove(paths.get(paths.size() - 1).size() - 1);
-        //remove empty paths
+        // remove empty paths
         paths.removeIf(e -> e.size() == 0);
 
         // offset lines to the left/right
@@ -394,9 +404,9 @@ public class RelativePath2D extends Path2D.Double {
         } else if (!offsetRight) {
             offset = 0;
         }
-        
+
         // move points in tangent direction to line
-        
+
         for (ArrayList<double[]> lines : paths) {
             for (double[] line : lines) {
                 // calculate offset
@@ -490,7 +500,6 @@ public class RelativePath2D extends Path2D.Double {
                 lines.get(i)[1] = pY;
             }
         }
-        
 
         // create the new polygon
         RelativePath2D offsetPath = new RelativePath2D();
@@ -522,6 +531,40 @@ public class RelativePath2D extends Path2D.Double {
      */
     private double getSlope(double[] p1, double[] p2) {
         return (p2[1] - p1[1]) / (p2[0] - p1[0]);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder output = new StringBuilder("{RelativePath2D:\n");
+
+        PathIterator path = getPathIterator(null);
+        while (!path.isDone()) {
+            double[] data = new double[6];
+            int type = path.currentSegment(data);
+            String typeString = switch (type) {
+                case PathIterator.SEG_MOVETO -> "SEG_MOVETO";
+                case PathIterator.SEG_LINETO -> "SEG_LINETO";
+                case PathIterator.SEG_CLOSE -> "SEG_CLOSE";
+                default -> "" + type;
+            };
+            output.append(typeString + ": " + Arrays.toString(trim(data)) + "\n");
+            path.next();
+        }
+        output.append("}");
+
+        return output.toString();
+    }
+
+    private double[] trim(double[] arr) {
+        int nonZeroNum = 0;
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] != 0) {
+                nonZeroNum++;
+            }
+        }
+        double[] output = new double[nonZeroNum];
+        System.arraycopy(arr, 0, output, 0, nonZeroNum);
+        return output;
     }
 }
 

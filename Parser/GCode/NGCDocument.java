@@ -3,6 +3,8 @@ package Parser.GCode;
 import Display.Screen;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.io.File;
 
@@ -110,14 +112,17 @@ public class NGCDocument {
             }
             return path;
         } else {
-            return getOffsetInstance();
+            //return getOffsetInstance();
+            if(Screen.DebugMode)
+                System.out.println(originalGeometry);
+            return originalGeometry;
         }
     }
 
     private ArrayList<RelativePath2D> getOffsetInstance() {
         ArrayList<RelativePath2D> output = new ArrayList<>();
 
-        for(RelativePath2D path : originalGeometry) {
+        for (RelativePath2D path : originalGeometry) {
             output.add(path.getOffsetInstance2(toolOffset));
         }
 
@@ -191,12 +196,25 @@ public class NGCDocument {
             setUsingMachineCoordinates(false);
             return;
         }
+
+        if (Screen.DebugMode)
+            System.out.println(getRelativity());
+
+        boolean XandYHasChanged = true;
+        boolean XHasChanged = true;
+        boolean YHasChanged = true;
+
         if (!attributes.containsKey("X")) {
+            XandYHasChanged = false;
             attributes.put("X", getRelativity() ? 0 : previousAttributes.getOrDefault("X", 0.0));
         }
         if (!attributes.containsKey("Y")) {
+            XandYHasChanged = false;
             attributes.put("Y", getRelativity() ? 0 : previousAttributes.getOrDefault("Y", 0.0));
         }
+
+        XandYHasChanged = XHasChanged || YHasChanged;
+
         if (!attributes.containsKey("Z")) {
             attributes.put("Z", getRelativity() ? 0 : previousAttributes.getOrDefault("Z", 0.0));
         }
@@ -208,19 +226,34 @@ public class NGCDocument {
         if (!attributes.containsKey("J")) {
             attributes.put("J", getRelativityArc() ? 0 : previousAttributes.getOrDefault("J", 0.0));
         }
+
+        if (Screen.DebugMode) {
+            System.out.println(attributes);
+            System.out.println("xandy: "+XandYHasChanged);
+        }
+
         switch ((int) attributes.get("G").doubleValue()) {
             case 0 -> {
+                Scanner scan = new Scanner(System.in);
                 if (getRelativity()) {
-                    if (attributes.get("Z") + getCurrentPointr().getZ() > 0) {
+                    if (attributes.get("Z") + getCurrentPointr().getZ() > 0 && getCurrentPath2D().getPathIteratorType()
+                            .stream().anyMatch(e -> e != PathIterator.SEG_MOVETO)) {
                         newPath2D();
                     }
-                    getCurrentPath2D().moveToRelative(attributes.get("X"), -attributes.get("Y"));
+                    if (XandYHasChanged) {
+                        getCurrentPath2D().moveToRelative(attributes.get("X"), -attributes.get("Y"));
+                        //scan.nextLine();
+                    }
                     getCurrentPath2D().setZRelative(attributes.get("Z"));
                 } else {
-                    if (attributes.get("Z") > 0) {
+                    if (attributes.get("Z") > 0 && getCurrentPath2D().getPathIteratorType().stream()
+                            .anyMatch(e -> e != PathIterator.SEG_MOVETO)) {
                         newPath2D();
                     }
-                    getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
+                    if (XandYHasChanged) {
+                        getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
+                        //scan.nextLine();
+                    }
                     getCurrentPath2D().setZ(attributes.get("Z"));
                     getCurrentPath2D().setRelative(attributes.get("X"), -attributes.get("Y"));
                 }
@@ -275,15 +308,15 @@ public class NGCDocument {
                 inchesMode = false;
             }
             case 41 -> {
-                //cutter comp left
-                if(attributes.get("G") == 41) {
+                // cutter comp left
+                if (attributes.get("G") == 41) {
                     getCurrentPath2D().offsetLeft();
                 } else {
                     throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
                 }
             }
             case 42 -> {
-                if(attributes.get("G") == 42) {
+                if (attributes.get("G") == 42) {
                     getCurrentPath2D().offsetRight();
                 } else {
                     throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
@@ -342,9 +375,6 @@ public class NGCDocument {
                 throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
             }
 
-        }
-        if (Screen.DebugMode) {
-            System.out.println(attributes);
         }
 
         previousAttributes = attributes;
