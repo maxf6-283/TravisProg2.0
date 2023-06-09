@@ -1,9 +1,10 @@
+package Display;
+
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 
@@ -17,7 +18,6 @@ public class makeImageColorUtil {
                 for (int j = 0; j < wrtRaster.getHeight(); j++) {
                     float[] rgba = new float[4];
                     wrtRaster.getPixel(i, j, rgba);
-                    //System.out.println(Arrays.toString(rgba));
                     if(rgba[3] != 0.0){
                         float[] output = set.getComponents(rgba);
                         for(int k = 0; k < output.length; k++) {
