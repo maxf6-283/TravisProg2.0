@@ -24,6 +24,7 @@ public class Sheet {
     private Cut activeCut;
     private double width, height; // in inches
     private File sheetFile, holeFile, activeCutFile, parentFile;
+    //static threadpool to avoid instantiation cost but allow multithreaded gcode parsing
     public static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
 
     /**

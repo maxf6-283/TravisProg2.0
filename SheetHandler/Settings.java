@@ -21,7 +21,9 @@ import Display.Screen;
  */
 public class Settings {
     public static Settings settings;
+    // stores current settings
     private HashMap<String, String> settingsMap = new HashMap<>();
+    // stores default settings
     private static final HashMap<String, String> defaultSettingsMap = new HashMap<>();
 
     static {
@@ -41,6 +43,7 @@ public class Settings {
         defaultSettingsMap.put("IconImageFile", "Display/971 Icon.png");
         defaultSettingsMap.put("SettingsIconImage", "Display/gear.png");
         defaultSettingsMap.put("SettingsIconImage2", "Display/gear2.png");
+        defaultSettingsMap.put("ScrewHeadSize", "0.4");
 
         settings = new Settings(new File("./settings.json"));
     }
@@ -52,6 +55,12 @@ public class Settings {
         readFile();
     }
 
+    /**
+     * @param key settings key
+     * @return returns value in the active settings.json or the default value
+     * 
+     * @see HashMap#get(Object)
+     */
     public String get(String key) {
         String output = settingsMap.get(key);
         if (output == null) {
@@ -63,17 +72,31 @@ public class Settings {
         return output;
     }
 
+    /**
+     * @return a set of all the key Strings in the current settings
+     * 
+     * @see HashMap#keySet()
+     */
     public Set<String> keySet() {
         return settingsMap.keySet();
     }
 
+    /**
+     * @param key
+     * @param value
+     * 
+     * @see HashMap#put(Object, Object)
+     */
     public void put(String key, String value) {
         settingsMap.put(key, value);
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     * sets current settings HashMap to a clone of the static, final default one
+     */
     public void resetToDefault() {
-        settingsMap = (HashMap<String,String>) defaultSettingsMap.clone();
+        settingsMap = (HashMap<String, String>) defaultSettingsMap.clone();
     }
 
     /**
@@ -85,6 +108,7 @@ public class Settings {
         try (FileInputStream fin = new FileInputStream(settingsFile)) {
             boolean hasStartBracket = false;
             while (fin.available() > 0) {
+                // start parsing only after first open bracket
                 if (!hasStartBracket) {
                     hasStartBracket = (char) fin.read() == '{';
                 } else {
@@ -98,6 +122,10 @@ public class Settings {
                     String key = "";
                     String value = "";
 
+                    // if a " is read, add key for the the chars until the next "
+                    // then skips chars until the next " which is read until the next " for the
+                    // value
+                    // then puts the key and value interpreted into the Hashmap
                     if ((char) read == '\"') {
                         while ((char) (read = fin.read()) != '\"') {
                             key += (char) read;
@@ -116,6 +144,7 @@ public class Settings {
                 }
             }
         } catch (FileNotFoundException e) {
+            // no settings.json, create a new one
             settingsMap = (HashMap<String, String>) defaultSettingsMap.clone();
             saveFile();
         } catch (IOException e) {
@@ -127,14 +156,20 @@ public class Settings {
             settingsMap.forEach((key, value) -> System.out.println(key + " " + value));
     }
 
+    /**
+     * saves the current settings in the HashMap to the settings.json file(overwrites)
+     */
     public void saveFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(settingsFile))) {
+            //writes open bracket
             writer.write("{\n");
             ArrayList<String> iteratorList = new ArrayList<>(Settings.settings.keySet());
             Collections.sort(iteratorList);
-            for(String key : iteratorList) {
-                writer.write("\t\""+key+"\": \""+settingsMap.get(key)+"\",\n");
+            //writes key and values in json format in a sorted order(does create trailing comma but doesn't affect anything)
+            for (String key : iteratorList) {
+                writer.write("\t\"" + key + "\": \"" + settingsMap.get(key) + "\",\n");
             }
+            //closes json file
             writer.write("}");
         } catch (IOException e) {
             e.printStackTrace();

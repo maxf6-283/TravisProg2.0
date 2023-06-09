@@ -16,12 +16,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import Display.ErrorDialog;
-import Display.Returnable;
 import Display.WarningDialog;
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
 import Parser.GCode.RelativePath2D;
 
+/**
+ * holds all information and methods related to a part
+ */
 public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
     private ArrayList<NGCDocument> activeNgcDocs = new ArrayList<>();
@@ -29,9 +31,10 @@ public class Part {
     private NGCDocument emitNGCDoc;
     private File partFile;
     private boolean selected = false;
-    private ArrayList<Future<NGCDocument>> futures = new ArrayList<>();
+    private ArrayList<Future<NGCDocument>> futures = new ArrayList<>(); // holds all future for concurrent gcode file
+                                                                        // parsing
     private boolean exist = true;
-    //private Shape outline;
+    // private Shape outline;
 
     public Part(File partFile, double xLoc, double yLoc, double rot) {
         if (partFile == null) {
@@ -40,27 +43,40 @@ public class Part {
             this.partFile = partFile;
             try {
                 File[] files = new File[0];
+
+                // either creates array of all the different files in the part folder or the
+                // gcode file for the hole(unecessary but good practice)
                 if (this instanceof Hole) {
                     files = new File[] { partFile };
                 } else {
                     files = partFile.listFiles();
                 }
+
                 ArrayList<File> ngcFiles = new ArrayList<>();
                 File parent = partFile;
+
+                // throws error of the folder of a part cannot be found
                 if (files == null) {
                     new WarningDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found", null);
                     exist = false;
                     return;
                 }
+
+                // adds all the gcode files(with .ngc ext.) to the arraylist of gcode files
                 for (File file : files) {
                     if (file.getName().lastIndexOf(".") != -1 && file.getName()
                             .substring(file.getName().lastIndexOf(".") + 1, file.getName().length()).equals("ngc")) {
                         ngcFiles.add(file);
                     }
                 }
+
+                // throws error if no ngc files found
                 if (ngcFiles.size() <= 0) {
                     new ErrorDialog(new FileNotFoundException(), "No NGC File found in: " + parent.getPath());
                 }
+
+                // checks if file has already been parsed previously(for multiple of one part),
+                // else add to new files list
                 ArrayList<File> newFiles = new ArrayList<>();
                 for (File file : ngcFiles) {
                     end: {
@@ -73,13 +89,17 @@ public class Part {
                         newFiles.add(file);
                     }
                 }
+
+                // submits each parsing to the executor pool and parses the last one
                 for (int i = 0; i < newFiles.size(); i++) {
-                    if (i == newFiles.size()-1) {
-                        allNGCDocs.add(Parser.parse(newFiles.get(i)));
+                    if (i == newFiles.size() - 1) {
+                        allNGCDocs.add(Parser.parse(newFiles.get(i)));// prevents weird get ahead errors(can still be
+                                                                      // prone i)
                     } else {
                         futures.add(Sheet.executor.submit(new Parser(newFiles.get(i))));
                     }
                 }
+
                 activeNgcDocs.add(allNGCDocs.get(0));
             } catch (FileNotFoundException e) {
                 new ErrorDialog(e, "File : " + partFile.getAbsolutePath() + " Not Found");
@@ -91,13 +111,19 @@ public class Part {
         sheetY = yLoc;
         rotation = rot;
 
-        //generateOutline();
+        // generateOutline();
     }
 
+    /**
+     * @return whether this part truly exists or not
+     */
     public boolean exists() {
         return exist;
     }
 
+    /**
+     * Pretty much reinstantiates this Part
+     */
     public void reload() {
         try {
             allNGCDocs.clear();
@@ -136,7 +162,7 @@ public class Part {
                 }
             }
             for (int i = 0; i < newFiles.size(); i++) {
-                if (i == newFiles.size()-1) {
+                if (i == newFiles.size() - 1) {
                     allNGCDocs.add(Parser.parse(newFiles.get(i)));
                 } else {
                     futures.add(Sheet.executor.submit(new Parser(newFiles.get(i))));
@@ -155,8 +181,8 @@ public class Part {
      */
     private boolean checkFutures() {
         ArrayList<Future<NGCDocument>> toRemove = new ArrayList<>();
-        for(Future<NGCDocument> future : futures) {
-            if(future.isDone()) {
+        for (Future<NGCDocument> future : futures) {
+            if (future.isDone()) {
                 try {
                     allNGCDocs.add(future.get());
                 } catch (InterruptedException | ExecutionException e) {
@@ -169,25 +195,37 @@ public class Part {
         return futures.size() == 0;
     }
 
+    /**
+     * @return list of all the NGCDocuments this part has
+     */
     public ArrayList<NGCDocument> getAllNgcDocuments() {
         checkFutures();
         return allNGCDocs;
     }
 
+    /**
+     * Makes the file to emit with null
+     */
     public void nullify() {
         emitNGCDoc = null;
     }
 
+    /**
+     * @param suffix the suffix of which to match the emitted cut to
+     * @return whether that suffix exists in a gcode file
+     */
     public boolean setSelectedGCode(String suffix) {
-        if(this instanceof Hole) {
+        if (this instanceof Hole) {
             emitNGCDoc = allNGCDocs.get(0);
             return suffix.equals("holes");
         }
+
         checkFutures();
-        for(NGCDocument ngcDocument : allNGCDocs) {
+
+        for (NGCDocument ngcDocument : allNGCDocs) {
             String fileName = ngcDocument.getGcodeFile().getName();
-            int lastIndexOf_ = fileName.lastIndexOf('_')+1;
-            if(suffix.equals(fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_, fileName.lastIndexOf('.')))) {
+            int lastIndexOf_ = fileName.lastIndexOf('_') + 1;
+            if (suffix.equals(fileName.substring(lastIndexOf_ == -1 ? 0 : lastIndexOf_, fileName.lastIndexOf('.')))) {
                 emitNGCDoc = ngcDocument;
                 return true;
             }
@@ -196,24 +234,33 @@ public class Part {
         return false;
     }
 
+    /**
+     * @return the current active emit NGCDocument
+     */
     public NGCDocument getNgcDocument() {
         return emitNGCDoc;
     }
 
+    /**
+     * @return an array of all the suffixes of gcode files
+     */
     public String[] getSuffixes() {
-        if(this instanceof Hole) {
-            return new String[]{"holes"};
+        if (this instanceof Hole) {
+            return new String[] { "holes" };
         }
         checkFutures();
         String[] suffixes = new String[allNGCDocs.size()];
-        for(int i = 0; i < suffixes.length; i++) {
+        for (int i = 0; i < suffixes.length; i++) {
             String fileName = allNGCDocs.get(i).getGcodeFile().getName();
             int lastIndexOf_ = fileName.lastIndexOf('_');
-            suffixes[i] = fileName.substring(lastIndexOf_ == -1? 0 : lastIndexOf_+1, fileName.lastIndexOf('.'));
+            suffixes[i] = fileName.substring(lastIndexOf_ == -1 ? 0 : lastIndexOf_ + 1, fileName.lastIndexOf('.'));
         }
         return suffixes;
     }
 
+    /**
+     * @param doc adds this the list of NGDocuments to be drawn
+     */
     public void addActiveGcode(NGCDocument doc) {
         checkFutures();
         if (!allNGCDocs.stream().anyMatch(e -> e.equals(doc))) {
@@ -222,6 +269,9 @@ public class Part {
         activeNgcDocs.add(doc);
     }
 
+    /**
+     * @param doc removes this the list of NGDocuments to be drawn
+     */
     public void removeActiveGcode(NGCDocument doc) {
         checkFutures();
         if (!activeNgcDocs.stream().anyMatch(e -> e.equals(doc))) {
@@ -286,6 +336,10 @@ public class Part {
         return partFile;
     }
 
+    /**
+     * translates the reference frame to the part, then draws all RelativePath2Ds from each Active NGCDocument
+     * @param g Graphics instance to be drawn to
+     */
     public void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform prevTransform = g2d.getTransform();
@@ -324,47 +378,51 @@ public class Part {
         return activeNgcDocs;
     }
 
-    public boolean equivalent(Object obj){
-        if (((Part)obj).getSelected()){
+    public boolean equivalent(Object obj) {
+        if (((Part) obj).getSelected()) {
             return true;
         }
         return false;
     }
 
-    /*@Deprecated
-    public void generateOutline() {
-        // outline = new Area(ngcDoc.getCurrentPath2D());
-        Stroke stroke = new BasicStroke((float) activeNgcDoc.getToolOffset(), BasicStroke.CAP_ROUND,
-                BasicStroke.JOIN_ROUND,
-                0);
-        // Area strokeShape = new Area(stroke.createStrokedShape(outline));
-
-        RelativePath2D temp = activeNgcDoc.getCurrentPath2D();
-        for (RelativePath2D path : activeNgcDoc.getRelativePath2Ds()) {
-            if (calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())) {
-                temp = path;
-            }
-        }
-
-        outline = stroke.createStrokedShape(temp);
-    }*/
+    /*
+     * @Deprecated
+     * public void generateOutline() {
+     * // outline = new Area(ngcDoc.getCurrentPath2D());
+     * Stroke stroke = new BasicStroke((float) activeNgcDoc.getToolOffset(),
+     * BasicStroke.CAP_ROUND,
+     * BasicStroke.JOIN_ROUND,
+     * 0);
+     * // Area strokeShape = new Area(stroke.createStrokedShape(outline));
+     * 
+     * RelativePath2D temp = activeNgcDoc.getCurrentPath2D();
+     * for (RelativePath2D path : activeNgcDoc.getRelativePath2Ds()) {
+     * if (calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())) {
+     * temp = path;
+     * }
+     * }
+     * 
+     * outline = stroke.createStrokedShape(temp);
+     * }
+     */
 
     // public void generateOutline() {
-    //     //outline = new Area(ngcDoc.getCurrentPath2D());
-    //     Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0);
-    //     //Area strokeShape = new Area(stroke.createStrokedShape(outline));
+    // //outline = new Area(ngcDoc.getCurrentPath2D());
+    // Stroke stroke = new BasicStroke((float) ngcDoc.getToolOffset(),
+    // BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0);
+    // //Area strokeShape = new Area(stroke.createStrokedShape(outline));
 
-    //     RelativePath2D temp = ngcDoc.getCurrentPath2D();
-    //     for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
-    //         if(calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())){
-    //             temp = path;
-    //         }
-    //     }
+    // RelativePath2D temp = ngcDoc.getCurrentPath2D();
+    // for (RelativePath2D path : ngcDoc.getRelativePath2Ds()) {
+    // if(calcArea(path.getBounds2D()) > calcArea(temp.getBounds2D())){
+    // temp = path;
+    // }
+    // }
 
-    //     outline = stroke.createStrokedShape(temp);
+    // outline = stroke.createStrokedShape(temp);
     // }
 
     // private double calcArea(Rectangle2D rect){
-    //     return rect.getWidth()*rect.getHeight();
+    // return rect.getWidth()*rect.getHeight();
     // }
 }

@@ -30,6 +30,7 @@ public class Runner2 {
 
         frame.pack();
         frame.setVisible(true);
+        //sets window on top but not always
         frame.setAlwaysOnTop(true);
         frame.setAlwaysOnTop(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

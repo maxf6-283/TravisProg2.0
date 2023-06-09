@@ -2,6 +2,9 @@ package Display;
 
 import javax.swing.JButton;
 
+/**
+ * Abstract class that allows JButtons to hold an object of class {@code T}
+ */
 public abstract class SheetHandlerJButton<T> extends JButton {
     private T genericThing;
 

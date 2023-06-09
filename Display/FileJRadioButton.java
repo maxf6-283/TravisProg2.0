@@ -6,11 +6,15 @@ import javax.swing.JRadioButton;
 
 import Display.Screen.SheetMenuState;
 
+/**
+ * Allows JRadioButton to store an associated file as well as what it's being
+ * used for(type)
+ */
 public class FileJRadioButton extends JRadioButton {
     File file;
     SheetMenuState type;
 
-    public FileJRadioButton(String text, SheetMenuState type){
+    public FileJRadioButton(String text, SheetMenuState type) {
         super(text);
         setType(type);
     }

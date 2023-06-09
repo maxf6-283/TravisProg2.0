@@ -2,6 +2,9 @@ package Display;
 
 import javax.swing.JCheckBox;
 
+/**
+ * Abstract class that allows JCheckBox to hold an object of class {@code T}
+ */
 public class SheetHandlerJCheckBox<T> extends JCheckBox {
     private T genericThing;
 

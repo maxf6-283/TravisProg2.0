@@ -11,13 +11,18 @@ import java.io.File;
 
 import Parser.GCode.NGCDocument;
 
+/**
+ * Holes are essentially identical to Parts besides drawing
+ */
 public class Hole extends Part {
-    public static final double HEAD_SIZE = 0.4;
+    public static final double HEAD_SIZE = Integer.parseInt(Settings.settings.get("ScrewHeadSize"));
+
     public Hole(File holeFile, double x, double y, double rot) {
         super(holeFile, x, y, rot);
     }
 
     @Override
+    //draws circle at point instead of gcode
     public void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform prevTransform = g2d.getTransform();

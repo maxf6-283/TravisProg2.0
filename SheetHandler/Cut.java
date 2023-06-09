@@ -9,6 +9,10 @@ import Parser.Sheet.SheetParser;
 import java.awt.Graphics;
 import java.io.File;
 
+/**
+ * Stores the cutFile and holeFile as well as an arraylist of all the parts
+ * Also, essentially wraps the Arraylist to make the cut iterable for each part
+ */
 public class Cut implements Iterable<Part> {
     public ArrayList<Part> parts;
     private File cutFile;

@@ -22,6 +22,7 @@ public class SettingsPanel extends JPanel {
     }
 
     public void setup() {
+        //clears all previous components
         removeAll();
         map.clear();
         setLayout(new SpringLayout());
@@ -29,6 +30,7 @@ public class SettingsPanel extends JPanel {
         int count = 0;
         ArrayList<String> iteratorList = new ArrayList<>(Settings.settings.keySet());
         Collections.sort(iteratorList);
+        //makes compact grid of each setting name and a JTextField for each value and put in its current one
         for (String key : iteratorList) {
             JLabel temp = new JLabel(key, JLabel.TRAILING);
             add(temp);
@@ -43,6 +45,8 @@ public class SettingsPanel extends JPanel {
         makeCompactGrid(this, count, 2, 6, 6, 6, 6);
     }
 
+    // Allows grid of jlabels and jtextfields with associated keys and values to the
+    // hashmap in settings
     public static void makeCompactGrid(Container parent, int rows, int cols, int initialX, int initialY, int xPad,
             int yPad) {
         SpringLayout layout;
@@ -100,13 +104,16 @@ public class SettingsPanel extends JPanel {
         return layout.getConstraints(c);
     }
 
+    // saves puts all the field into the Hashmap of the settings and saves it to the
+    // file
     public void save() {
-        for(JTextField field : map.keySet()) {
+        for (JTextField field : map.keySet()) {
             Settings.settings.put(map.get(field), field.getText());
         }
         Settings.settings.saveFile();
     }
 
+    // saves the file each time we switch to/from the settings menu
     @Override
     public void setVisible(boolean aFlag) {
         save();

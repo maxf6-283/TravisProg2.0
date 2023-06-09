@@ -136,11 +136,13 @@ public class Screen extends JPanel
     private JButton restartApplication = new JButton();
 
     static {
-        if(DebugMode)
+        if (DebugMode)
             System.out.println("Welcome to Debug Mode!");
+        // setups logger
         logger = Logger.getLogger("MyLog");
         FileHandler fh;
         try {
+            // creates logger file and set format
             fh = new FileHandler(Settings.settings.get("LoggerFile"), true);
             logger.addHandler(fh);
             fh.setFormatter(new SimpleFormatter());
@@ -166,6 +168,7 @@ public class Screen extends JPanel
             });
         }
 
+        // sets uncaught errors during operation to create an error dialog
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
@@ -255,7 +258,7 @@ public class Screen extends JPanel
             }
         });
         restartApplication.setText("Apply Settings(Restart Application)");
-        restartApplication.setBounds(400, 700+40/2, 400, 60);
+        restartApplication.setBounds(400, 700 + 40 / 2, 400, 60);
         restartApplication.setVisible(false);
 
         add(toSettings);
@@ -301,6 +304,7 @@ public class Screen extends JPanel
             System.err.println("Logo not Found");
         }
 
+        // resizes all menu JPanels when frame is resized
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -378,6 +382,7 @@ public class Screen extends JPanel
             }
         };
 
+        // sets keybinds(key strokes to actions, actions to Code)
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Z"), "undo");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Y"), "redo");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save");
@@ -443,7 +448,7 @@ public class Screen extends JPanel
         addHole.setForeground(menuState == ADD_HOLE ? Color.LIGHT_GRAY : null);
         switch (state) {
             case SHEET_SELECT -> {
-                // g.drawImage(img, 300, 100, null);
+                // g.drawImage(img, 300, 100, null);(background image)
             }
             case SHEET_EDIT -> {
                 Graphics2D g2d = (Graphics2D) g;
@@ -515,22 +520,30 @@ public class Screen extends JPanel
                 } catch (NullPointerException e) {
                     new WarningDialog(e, "No Active Cut", () -> switchMenuStates(HOME));
                 }
+                // revalidate each invalid JPanel
                 menuPanels.stream().filter(e -> !e.isValid()).forEach(e -> e.validate());
             }
             case SHEET_ADD -> {
-
+                // do Nothing(switch States does all the work)
             }
             case SETTINGS -> {
-
+                // do Nothing(switch States does all the work)
             }
         }
     }
 
-    public void switchMenuStates(SheetMenuState newState) {
+    /**
+     * switch the state of menuState
+     * 
+     * @param newState the new state
+     * @see SheetMenuState
+     */
+    private void switchMenuStates(SheetMenuState newState) {
         menuState = newState;
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
         });
+        // only creates emitPanel when there is an active cut and sheet
         if (selectedSheet != null && selectedSheet.getActiveCut() != null) {
             emitPanel = new EmitSelect();
             add(emitPanel);
@@ -873,13 +886,15 @@ public class Screen extends JPanel
     /**
      * Switch between program states
      * 
-     * @param newState - the state to swtich to
+     * @param newState - the state to switch to
      */
     private void switchStates(State newState) {
+        // clears all JPanels
         menuPanels.stream().forEach(e -> {
             e.setVisible(false);
         });
 
+        // sets all components needed visible/not visible
         switch (newState) {
             case SETTINGS -> {
                 state = State.SETTINGS;
@@ -1010,13 +1025,19 @@ public class Screen extends JPanel
         repaint();
     }
 
+    /**
+     * JPanel that makes the default/home menu state
+     */
     private class SheetEditMenu extends JPanel {
+        // JLabel that fills up all the gap at the bottom
         private JLabel buffer;
 
         public SheetEditMenu() {
             setLayout(new GridBagLayout());
+            // sets menu to left edge of the screen
             setBounds(0, 0, 300, 800);
 
+            // Adds menu buttons and text in a grid system
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.HORIZONTAL;
             c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -1161,6 +1182,10 @@ public class Screen extends JPanel
         }
     }
 
+    /**
+     * First menu when changing GCode viewed
+     * Selects which cut to change to
+     */
     private class CutSelectGcode extends JPanel {
         private CutSelectGcode() {
             setLayout(new GridLayout(0, 1));
@@ -1171,6 +1196,10 @@ public class Screen extends JPanel
                 }
             });
 
+            // creates a SheetHandlerJButton(which stores the Cut) for each cut and displays
+            // it
+            // allows Action Listener to use instanceof to detect change and select which
+            // cut to use to select the part in the next SelectGcode Menu
             for (Cut cut : selectedSheet.getCuts()) {
                 add(new SheetHandlerJButtonCut(cut.getCutFile().getName(), cut) {
                     {
@@ -1188,6 +1217,10 @@ public class Screen extends JPanel
         }
     }
 
+    /**
+     * Second menu when changing GCode viewed
+     * Selects which part to change to
+     */
     private class PartSelectGcode extends JPanel implements Returnable {
         private Cut cut;
 
@@ -1202,7 +1235,10 @@ public class Screen extends JPanel
                 }
             });
 
+            // creates a SheetHandlerJButtonPart(similar to Cut one used above) and does
+            // pretty much the same thing as above except with parts
             for (Part part : cut) {
+                // ignores holes
                 if (part instanceof Hole) {
                     continue;
                 }
@@ -1225,12 +1261,17 @@ public class Screen extends JPanel
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
+        // allows state to change back to selecting cuts
         @Override
         public void returnTo() {
             switchMenuStates(GCODE_SELECT);
         }
     }
 
+    /**
+     * Third and last menu when changing GCode viewed
+     * Selects which gcode to view
+     */
     private class GCodeSelectGcode extends JPanel implements Returnable {
         private Cut cut;
 
@@ -1245,6 +1286,10 @@ public class Screen extends JPanel
                 }
             });
 
+            // creates JCheckBox for each ngc doc that stores the ngc doc that can be used
+            // actionPerformed uses instanceof to detect change and to select which are
+            // viewed
+            // pre-checks the NGCDocuments that are already being shown
             for (NGCDocument docs : part.getAllNgcDocuments()) {
                 add(new SheetHandlerJCheckBoxNGCDoc(docs.getGcodeFile().getName(), docs, part) {
                     {
@@ -1264,10 +1309,12 @@ public class Screen extends JPanel
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
+        // used to return to previous menus
         public Cut getCut() {
             return cut;
         }
 
+        // allows the panel to change back to Part select
         @Override
         public void returnTo() {
             returnToTemp();
@@ -1283,6 +1330,9 @@ public class Screen extends JPanel
         menuPanels.add(gcodePartPanel);
     }
 
+    /**
+     * Allows user to select which cut is active
+     */
     private class CutSelect extends JPanel {
         private ButtonGroup buttons;
 
@@ -1295,6 +1345,11 @@ public class Screen extends JPanel
                 }
             });
 
+            // creates a button group to allow only 1 cut to be viewed
+            // each button stores a cut file that is shown and checks if it is currently
+            // being viewed
+            // allows actionperformed to use instanceof and get the file for the new cut
+            // file to be shown
             buttons = new ButtonGroup();
             for (File cutFile : selectedSheet.getParentFile().listFiles()) {
                 if (!cutFile.getName().endsWith(".cut")) {
@@ -1329,6 +1384,13 @@ public class Screen extends JPanel
         }
     }
 
+    /**
+     * Allows instanceof to be detected for returning to home in actionPerformed()
+     * and implements cloneable to allow the same text and location for subsequent
+     * buttons
+     * 
+     * @see JButton
+     */
     private class ReturnToHomeJButton extends JButton implements Cloneable {
         public ReturnToHomeJButton(String text) {
             super(text);
@@ -1345,6 +1407,15 @@ public class Screen extends JPanel
         }
     }
 
+    /**
+     * Allows instanceof to be detected for returning once(with the returnable
+     * interface) in actionPerformed()
+     * and implements cloneable to allow the same text and location for subsequent
+     * buttons
+     * 
+     * @see JButton
+     * @see ReturnToHomeJButton
+     */
     private class ReturnOnceJButton extends JButton implements Cloneable {
         public ReturnOnceJButton(String text) {
             super(text);
@@ -1361,6 +1432,10 @@ public class Screen extends JPanel
         }
     }
 
+    /**
+     * The emit menu that allows which extension(aka endmill size) to emit and the
+     * new file name
+     */
     private class EmitSelect extends JPanel {
         public JTextField gCodeName;
         public JLabel gCodeNameLabel;
@@ -1510,6 +1585,9 @@ public class Screen extends JPanel
             return;
         }
 
+        /**
+         * creates a JButton that is a unique class that stores a File
+         */
         class FileJButton extends JButton {
             private File file;
 
@@ -1529,22 +1607,34 @@ public class Screen extends JPanel
         }
     }
 
+    /**
+     * Enum that encodes the state of the menu
+     */
     public enum SheetMenuState {
         NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, GCODE_SELECT_PART, EMIT_SELECT, ADD_ITEM, ADD_HOLE, ADD_CUT;
     }
 
+    /**
+     * @see SheetHandlerJButton
+     */
     class SheetHandlerJButtonCut extends SheetHandlerJButton<Cut> {
         public SheetHandlerJButtonCut(String text, Cut genericThing) {
             super(text, genericThing);
         }
     }
 
+    /**
+     * @see SheetHandlerJButton
+     */
     class SheetHandlerJButtonPart extends SheetHandlerJButton<Part> {
         public SheetHandlerJButtonPart(String text, Part genericThing) {
             super(text, genericThing);
         }
     }
 
+    /**
+     * @see SheetHandlerJCheckBox
+     */
     class SheetHandlerJCheckBoxNGCDoc extends SheetHandlerJCheckBox<NGCDocument> {
         private Part part;
 
