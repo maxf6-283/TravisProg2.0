@@ -118,7 +118,7 @@ public class NGCDocument {
         ArrayList<RelativePath2D> output = new ArrayList<>();
 
         for(RelativePath2D path : originalGeometry) {
-            output.add(path.getOffsetInstance(toolOffset));
+            output.add(path.getOffsetInstance2(toolOffset));
         }
 
         return output;

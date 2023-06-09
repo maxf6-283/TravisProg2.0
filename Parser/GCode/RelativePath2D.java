@@ -1,6 +1,8 @@
 package Parser.GCode;
 
 import Display.Screen;
+
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
@@ -351,6 +353,155 @@ public class RelativePath2D extends Path2D.Double {
 
     private double[] getAsPrimitive(java.lang.Double[] arr) {
         return Arrays.stream(arr).mapToDouble(java.lang.Double::doubleValue).toArray();
+    }
+
+    public RelativePath2D getOffsetInstance2(double offset) {
+
+        PathIterator holder = getPathIterator(null);
+        // stores the start and endpoints of the lines
+        ArrayList<ArrayList<double[]>> paths = new ArrayList<>();
+
+        while (!holder.isDone()) {
+            double[] pointLocation = new double[6];
+            int type = holder.currentSegment(pointLocation);
+            holder.next();
+            if (type == PathIterator.SEG_MOVETO) {
+                // remove the last line with a trailing thing
+                if (paths.size() > 0)
+                    paths.get(paths.size() - 1).remove(paths.get(paths.size() - 1).size() - 1);
+                ArrayList<double[]> currentPath = new ArrayList<>();
+                paths.add(currentPath);
+                currentPath.add(new double[4]);
+                currentPath.get(0)[0] = pointLocation[0];
+                currentPath.get(0)[1] = pointLocation[1];
+            } else if (type == PathIterator.SEG_LINETO) {
+                ArrayList<double[]> currentPath = paths.get(paths.size() - 1);
+                currentPath.get(currentPath.size() - 1)[2] = pointLocation[0];
+                currentPath.get(currentPath.size() - 1)[3] = pointLocation[1];
+                currentPath.add(new double[4]);
+                currentPath.get(currentPath.size() - 1)[0] = pointLocation[0];
+                currentPath.get(currentPath.size() - 1)[1] = pointLocation[1];
+            }
+        }
+        paths.get(paths.size() - 1).remove(paths.get(paths.size() - 1).size() - 1);
+        //remove empty paths
+        paths.removeIf(e -> e.size() == 0);
+
+        // offset lines to the left/right
+        // offset is negative to the left, positive to the right
+        if (offsetLeft) {
+            offset = -offset;
+        } else if (!offsetRight) {
+            offset = 0;
+        }
+        
+        // move points in tangent direction to line
+        
+        for (ArrayList<double[]> lines : paths) {
+            for (double[] line : lines) {
+                // calculate offset
+                double pOffsetX = line[2] - line[0];
+                double pOffsetY = line[3] - line[1];
+
+                // normalize
+                double mag = Math.sqrt(pOffsetX * pOffsetX + pOffsetY * pOffsetY);
+                pOffsetX /= mag;
+                pOffsetY /= mag;
+
+                // rotate 90 degrees to the right
+                double temp = pOffsetX;
+                pOffsetX = pOffsetY;
+                pOffsetY = -temp;
+
+                // multiply by offset
+                pOffsetX *= offset;
+                pOffsetY *= offset;
+
+                // move points
+                line[0] += pOffsetX;
+                line[1] += pOffsetY;
+                line[2] += pOffsetX;
+                line[3] += pOffsetY;
+            }
+        }
+
+        // extend/retract lines to each other
+        // i refers to the ith point in the line (0-indexed)
+        for (ArrayList<double[]> lines : paths) {
+            for (int i = 1; i < lines.size(); i++) {
+                // fine I'll find slopes
+                if (lines.get(i - 1)[0] == lines.get(i - 1)[2]) {
+                    // line 1 is vertical
+                    if (lines.get(i)[0] == lines.get(i)[2]) {
+                        // the lines are parallel, leave the point where it is
+                        continue;
+                    }
+
+                    double line2Slope = (lines.get(i)[1] - lines.get(i)[3]) / (lines.get(i)[0] - lines.get(i)[2]);
+                    double line2Offset = lines.get(i)[1] - lines.get(i)[0] * line2Slope;
+
+                    // get the intersection point
+                    double pX = lines.get(i - 1)[0];
+                    double pY = line2Slope * pX + line2Offset;
+
+                    // actually set the line positions
+                    lines.get(i - 1)[2] = pX;
+                    lines.get(i - 1)[3] = pY;
+                    lines.get(i)[0] = pX;
+                    lines.get(i)[1] = pY;
+                    continue;
+                }
+                if (lines.get(i)[0] == lines.get(i)[2]) {
+                    // line 2 is vertical
+                    double line1Slope = (lines.get(i - 1)[1] - lines.get(i - 1)[3])
+                            / (lines.get(i - 1)[0] - lines.get(i - 1)[2]);
+                    double line1Offset = lines.get(i - 1)[1] - lines.get(i - 1)[0] * line1Slope;
+
+                    // get the intersection point
+                    double pX = lines.get(i - 1)[0];
+                    double pY = line1Slope * pX + line1Offset;
+
+                    // actually set the line positions
+                    lines.get(i - 1)[2] = pX;
+                    lines.get(i - 1)[3] = pY;
+                    lines.get(i)[0] = pX;
+                    lines.get(i)[1] = pY;
+                    continue;
+                }
+                double line1Slope = (lines.get(i - 1)[1] - lines.get(i - 1)[3])
+                        / (lines.get(i - 1)[0] - lines.get(i - 1)[2]);
+                double line1Offset = lines.get(i - 1)[1] - lines.get(i - 1)[0] * line1Slope;
+                double line2Slope = (lines.get(i)[1] - lines.get(i)[3]) / (lines.get(i)[0] - lines.get(i)[2]);
+                double line2Offset = lines.get(i)[1] - lines.get(i)[0] * line2Slope;
+
+                if (line1Slope == line2Slope) {
+                    // the lines are parallel, leave the point where it is
+                    continue;
+                }
+
+                // get the intersection point
+                double pX = (line2Offset - line1Offset) / (line1Slope - line2Slope);
+                double pY = line1Slope * pX + line1Offset;
+
+                // actually set the line positions
+                lines.get(i - 1)[2] = pX;
+                lines.get(i - 1)[3] = pY;
+                lines.get(i)[0] = pX;
+                lines.get(i)[1] = pY;
+            }
+        }
+        
+
+        // create the new polygon
+        RelativePath2D offsetPath = new RelativePath2D();
+        for (ArrayList<double[]> lines : paths) {
+            offsetPath.moveTo(lines.get(0)[0], lines.get(0)[1]);
+            for (double[] line : lines) {
+                offsetPath.lineTo(line[2], line[3]);
+            }
+        }
+
+        return offsetPath;
     }
 
     /**
