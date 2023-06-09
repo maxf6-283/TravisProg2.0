@@ -112,8 +112,8 @@ public class NGCDocument {
             }
             return path;
         } else {
-            //return getOffsetInstance();
-            if(Screen.DebugMode)
+            // return getOffsetInstance();
+            if (Screen.DebugMode)
                 System.out.println(originalGeometry);
             return originalGeometry;
         }
@@ -229,7 +229,7 @@ public class NGCDocument {
 
         if (Screen.DebugMode) {
             System.out.println(attributes);
-            System.out.println("xandy: "+XandYHasChanged);
+            System.out.println("xandy: " + XandYHasChanged);
         }
 
         switch ((int) attributes.get("G").doubleValue()) {
@@ -242,7 +242,7 @@ public class NGCDocument {
                     }
                     if (XandYHasChanged) {
                         getCurrentPath2D().moveToRelative(attributes.get("X"), -attributes.get("Y"));
-                        //scan.nextLine();
+                        // scan.nextLine();
                     }
                     getCurrentPath2D().setZRelative(attributes.get("Z"));
                 } else {
@@ -252,7 +252,7 @@ public class NGCDocument {
                     }
                     if (XandYHasChanged) {
                         getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
-                        //scan.nextLine();
+                        // scan.nextLine();
                     }
                     getCurrentPath2D().setZ(attributes.get("Z"));
                     getCurrentPath2D().setRelative(attributes.get("X"), -attributes.get("Y"));
@@ -260,10 +260,12 @@ public class NGCDocument {
             }
             case 1 -> {
                 if (getRelativity()) {
-                    getCurrentPath2D().lineToRelative(attributes.get("X"), -attributes.get("Y"));
+                    if (XandYHasChanged)
+                        getCurrentPath2D().lineToRelative(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZRelative(attributes.get("Z"));
                 } else {
-                    getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
+                    if (XandYHasChanged)
+                        getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
                     getCurrentPath2D().setZ(attributes.get("Z"));
                     getCurrentPath2D().setRelative(attributes.get("X"), -attributes.get("Y"));
                 }
