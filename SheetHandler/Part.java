@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import Display.ErrorDialog;
+import Display.Screen;
 import Display.WarningDialog;
 import Parser.GCode.NGCDocument;
 import Parser.GCode.Parser;
@@ -92,7 +93,7 @@ public class Part {
 
                 // submits each parsing to the executor pool and parses the last one
                 for (int i = 0; i < newFiles.size(); i++) {
-                    if (i == newFiles.size() - 1) {
+                    if (Screen.DebugMode || i == newFiles.size() - 1) {//debugMode stops any parallelization
                         allNGCDocs.add(Parser.parse(newFiles.get(i)));// prevents weird get ahead errors(can still be
                                                                       // prone i)
                     } else {

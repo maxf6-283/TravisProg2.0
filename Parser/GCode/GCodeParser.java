@@ -2,6 +2,8 @@ package Parser.GCode;
 
 import java.util.HashMap;
 
+import Display.Screen;
+
 public class GCodeParser {
     public static void parse(String gcodeLine, int lineNum, NGCDocument doc) {
         // split the line into multiple and parse all of them if it has >1 g
@@ -23,6 +25,8 @@ public class GCodeParser {
                 }
             }
 
+            if(Screen.DebugMode)
+                System.out.println(lineNum + ": " + gcodeLine+":"+doc.getGcodeFile());
             doc.addGCodeAttributes(attributes);
         }
     }
