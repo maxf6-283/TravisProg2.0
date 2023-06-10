@@ -8,8 +8,8 @@ public class CommentsParser {
                     + gcodeLine.substring(gcodeLine.indexOf(')') + 1, gcodeLine.length());
             String tempDouble = "";
             if (temp.contains("T1") && temp.contains("D=")) {
-                int i = temp.indexOf("D=")+2;
-                while(temp.charAt(i) != ' ') {
+                int i = temp.indexOf("D=") + 2;
+                while (temp.charAt(i) != ' ') {
                     tempDouble += temp.charAt(i++);
                 }
                 doc.setToolOffset(Double.parseDouble(tempDouble));

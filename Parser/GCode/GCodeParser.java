@@ -25,8 +25,8 @@ public class GCodeParser {
                 }
             }
 
-            if(Screen.DebugMode)
-                System.out.println(lineNum + ": " + gcodeLine+":"+doc.getGcodeFile());
+            if (Screen.DebugMode)
+                System.out.println(lineNum + ": " + gcodeLine + ":" + doc.getGcodeFile());
             doc.addGCodeAttributes(attributes);
         }
     }

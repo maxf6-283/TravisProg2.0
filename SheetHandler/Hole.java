@@ -22,7 +22,7 @@ public class Hole extends Part {
     }
 
     @Override
-    //draws circle at point instead of gcode
+    // draws circle at point instead of gcode
     public void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform prevTransform = g2d.getTransform();
@@ -48,7 +48,7 @@ public class Hole extends Part {
 
         g2d.setStroke(currentStrok);
         g2d.setColor(Color.ORANGE);
-        g2d.draw(new Ellipse2D.Double(-HEAD_SIZE/2, -HEAD_SIZE/2, HEAD_SIZE, HEAD_SIZE));
+        g2d.draw(new Ellipse2D.Double(-HEAD_SIZE / 2, -HEAD_SIZE / 2, HEAD_SIZE, HEAD_SIZE));
         g2d.setColor(prevColor);
         g2d.setTransform(prevTransform);
     }

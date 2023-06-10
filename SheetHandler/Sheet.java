@@ -24,7 +24,8 @@ public class Sheet {
     private Cut activeCut;
     private double width, height; // in inches
     private File sheetFile, holeFile, activeCutFile, parentFile;
-    //static threadpool to avoid instantiation cost but allow multithreaded gcode parsing
+    // static threadpool to avoid instantiation cost but allow multithreaded gcode
+    // parsing
     public static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
 
     /**
@@ -134,7 +135,7 @@ public class Sheet {
      */
     public Part addPart(File partFileToPlace, double x, double y) {
         Part part = new Part(partFileToPlace, x, y, 0);
-        if(part != null)
+        if (part != null)
             addPart(part);
         return part;
     }
@@ -252,7 +253,8 @@ public class Sheet {
             for (Part part : activeCut) {
                 // ignore parts without the requisite suffix
                 if (!part.setSelectedGCode(suffix)) {
-                    if (!(suffix.equals("holes") || part instanceof Hole || notEmittedParts.stream().anyMatch(p -> p.partFile().getName().equals(part.partFile().getName())))) {
+                    if (!(suffix.equals("holes") || part instanceof Hole || notEmittedParts.stream()
+                            .anyMatch(p -> p.partFile().getName().equals(part.partFile().getName())))) {
                         new WarningDialog(new FileNotFoundException(),
                                 part.partFile().getName() + " does not have a gcode file with this endmill size",
                                 null);

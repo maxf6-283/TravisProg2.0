@@ -93,7 +93,7 @@ public class Part {
 
                 // submits each parsing to the executor pool and parses the last one
                 for (int i = 0; i < newFiles.size(); i++) {
-                    if (Screen.DebugMode || i == newFiles.size() - 1) {//debugMode stops any parallelization
+                    if (Screen.DebugMode || i == newFiles.size() - 1) {// debugMode stops any parallelization
                         allNGCDocs.add(Parser.parse(newFiles.get(i)));// prevents weird get ahead errors(can still be
                                                                       // prone i)
                     } else {
@@ -338,7 +338,9 @@ public class Part {
     }
 
     /**
-     * translates the reference frame to the part, then draws all RelativePath2Ds from each Active NGCDocument
+     * translates the reference frame to the part, then draws all RelativePath2Ds
+     * from each Active NGCDocument
+     * 
      * @param g Graphics instance to be drawn to
      */
     public void draw(Graphics g) {

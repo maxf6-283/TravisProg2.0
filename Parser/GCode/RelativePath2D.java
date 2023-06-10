@@ -396,7 +396,7 @@ public class RelativePath2D extends Path2D.Double {
         paths.get(paths.size() - 1).remove(paths.get(paths.size() - 1).size() - 1);
         // remove empty paths
         paths.removeIf(e -> e.size() == 0);
-        //remove lines that are just points
+        // remove lines that are just points
         paths.forEach(e -> e.removeIf(e2 -> e2[0] == e2[2] && e2[1] == e2[3]));
 
         // offset lines to the left/right
@@ -407,7 +407,7 @@ public class RelativePath2D extends Path2D.Double {
             offset = 0;
         }
         offset = 0.25;
-        
+
         // move points in normal direction to line
         for (ArrayList<double[]> lines : paths) {
             for (double[] line : lines) {
@@ -436,7 +436,7 @@ public class RelativePath2D extends Path2D.Double {
                 line[3] += pOffsetY;
             }
         }
-        
+
         // extend/retract lines to each other
         // i refers to the ith point in the line (0-indexed)
         for (ArrayList<double[]> lines : paths) {
@@ -487,8 +487,6 @@ public class RelativePath2D extends Path2D.Double {
                 double line2Slope = (line2[1] - line2[3]) / (line2[0] - line2[2]);
                 double line2Offset = line2[1] - line2[0] * line2Slope;
 
-                
-
                 if (line1Slope == line2Slope) {
                     // the lines are parallel, leave the point where it is
                     continue;
@@ -498,13 +496,13 @@ public class RelativePath2D extends Path2D.Double {
                 double pX = (line2Offset - line1Offset) / (line1Slope - line2Slope);
                 double pY = line1Slope * pX + line1Offset;
 
-                //print out the differences
+                // print out the differences
 
                 line1[2] = pX;
                 line1[3] = pY;
                 line2[0] = pX;
                 line2[1] = pY;
-                
+
             }
         }
 

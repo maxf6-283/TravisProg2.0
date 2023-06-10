@@ -157,19 +157,21 @@ public class Settings {
     }
 
     /**
-     * saves the current settings in the HashMap to the settings.json file(overwrites)
+     * saves the current settings in the HashMap to the settings.json
+     * file(overwrites)
      */
     public void saveFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(settingsFile))) {
-            //writes open bracket
+            // writes open bracket
             writer.write("{\n");
             ArrayList<String> iteratorList = new ArrayList<>(Settings.settings.keySet());
             Collections.sort(iteratorList);
-            //writes key and values in json format in a sorted order(does create trailing comma but doesn't affect anything)
+            // writes key and values in json format in a sorted order(does create trailing
+            // comma but doesn't affect anything)
             for (String key : iteratorList) {
                 writer.write("\t\"" + key + "\": \"" + settingsMap.get(key) + "\",\n");
             }
-            //closes json file
+            // closes json file
             writer.write("}");
         } catch (IOException e) {
             e.printStackTrace();

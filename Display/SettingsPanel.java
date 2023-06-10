@@ -22,7 +22,7 @@ public class SettingsPanel extends JPanel {
     }
 
     public void setup() {
-        //clears all previous components
+        // clears all previous components
         removeAll();
         map.clear();
         setLayout(new SpringLayout());
@@ -30,7 +30,8 @@ public class SettingsPanel extends JPanel {
         int count = 0;
         ArrayList<String> iteratorList = new ArrayList<>(Settings.settings.keySet());
         Collections.sort(iteratorList);
-        //makes compact grid of each setting name and a JTextField for each value and put in its current one
+        // makes compact grid of each setting name and a JTextField for each value and
+        // put in its current one
         for (String key : iteratorList) {
             JLabel temp = new JLabel(key, JLabel.TRAILING);
             add(temp);

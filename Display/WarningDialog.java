@@ -4,8 +4,11 @@ import java.util.logging.Level;
 import javax.swing.JOptionPane;
 
 /**
- * Similar to Error Dialog, but allows more freedom in what to do after the error and allows it to be automatically fixed and continue the application's normal operations
+ * Similar to Error Dialog, but allows more freedom in what to do after the
+ * error and allows it to be automatically fixed and continue the application's
+ * normal operations
  * The returning to a normal state must be implemented each time
+ * 
  * @see Returnable
  * @see ErrorDialog
  */
@@ -15,7 +18,7 @@ public class WarningDialog extends JOptionPane {
     }
 
     public WarningDialog(Throwable throwable, String text, Returnable returnTo) {
-        if(returnTo != null) {
+        if (returnTo != null) {
             returnTo.returnTo();
         }
         Screen.logger.log(Level.WARNING, text + "\n" + throwable.getMessage(), throwable);

@@ -29,13 +29,15 @@ public class Cut implements Iterable<Part> {
         parts = new ArrayList<>();
 
         if (!cutFile.exists()) {
-            /*try {
-                if (!cutFile.createNewFile()) {
-                    new ErrorDialog(new IOException("This Cut file already exists"));
-                }
-            } catch (IOException e) {
-                new ErrorDialog(e);
-            }*/
+            /*
+             * try {
+             * if (!cutFile.createNewFile()) {
+             * new ErrorDialog(new IOException("This Cut file already exists"));
+             * }
+             * } catch (IOException e) {
+             * new ErrorDialog(e);
+             * }
+             */
             return;
         }
 

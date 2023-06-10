@@ -29,7 +29,7 @@ public class NewSheetPrompt extends JDialog implements ActionListener {
     private Screen parent;
 
     public NewSheetPrompt(Screen parentScreen) {
-        setModal(true);
+        setModalityType(ModalityType.APPLICATION_MODAL);
         setLayout(null);
         parent = parentScreen;
 

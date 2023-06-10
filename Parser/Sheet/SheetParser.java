@@ -61,8 +61,9 @@ public class SheetParser {
     public static void parseCutFile(File cutFile, Cut cut) {
         try {
             FileInputStream reader = new FileInputStream(cutFile);
-            if(cutFile.length() <= 0) {
-                new ErrorDialog(new IOError(new DataFormatException("Blank Cut File is Bad.\nPlease Delete this file and rerun")));
+            if (cutFile.length() <= 0) {
+                new ErrorDialog(new IOError(
+                        new DataFormatException("Blank Cut File is Bad.\nPlease Delete this file and rerun")));
             }
             // get number of bytes
             int byteCounter = 0;
@@ -120,7 +121,7 @@ public class SheetParser {
                     if (Screen.DebugMode) {
                         System.out.println("Adding a hole");
                     }
-                } else if(type == 0) {
+                } else if (type == 0) {
                     // is a part(reader.read()==0)
                     int fileNameLength = reader.read();
                     byteCounter++;
@@ -137,10 +138,11 @@ public class SheetParser {
                     }
                     File partFile = new File(partFileName);
                     Part tempPart = new Part(partFile, partX, partY, partRot);
-                    if(tempPart != null)
+                    if (tempPart != null)
                         cut.parts.add(tempPart);
                 } else {
-                    new ErrorDialog(new IOError(new DataFormatException("Cut file " + cutFile.getName() + " contains a non-standard part type.")));
+                    new ErrorDialog(new IOError(new DataFormatException(
+                            "Cut file " + cutFile.getName() + " contains a non-standard part type.")));
                 }
             }
             reader.close();
@@ -153,9 +155,9 @@ public class SheetParser {
 
     public static void saveSheetInfo(File sheetFile, HashMap<String, String> sheetInfo) {
         String information = "{";
-        for(String key : sheetInfo.keySet()) {
+        for (String key : sheetInfo.keySet()) {
             information += "\"" + key + "\":";
-            if(sheetInfo.get(key).matches("[-0123456789.]+")) {
+            if (sheetInfo.get(key).matches("[-0123456789.]+")) {
                 information += sheetInfo.get(key);
             } else {
                 information += "\"" + sheetInfo.get(key) + "\"";
@@ -176,45 +178,45 @@ public class SheetParser {
 
     public static void saveCutInfo(Cut cut) {
         ArrayList<Byte> bytes = new ArrayList<>();
-        
+
         for (Part part : cut.parts) {
-            for(byte b : toByteArray(part.getX())) {
+            for (byte b : toByteArray(part.getX())) {
                 bytes.add(b);
             }
-            for(byte b : toByteArray(part.getY())) {
+            for (byte b : toByteArray(part.getY())) {
                 bytes.add(b);
             }
-            for(byte b : toByteArray(part.getRot())) {
+            for (byte b : toByteArray(part.getRot())) {
                 bytes.add(b);
             }
             if (part instanceof Hole) {
-                bytes.add((byte)1);// for holes
+                bytes.add((byte) 1);// for holes
                 continue;
             }
-            bytes.add((byte)0);
-            
+            bytes.add((byte) 0);
+
             String filePath = part.partFile().getPath().replace('\\', '/');
-            bytes.add((byte)filePath.length());
+            bytes.add((byte) filePath.length());
 
             for (int i = 0; i < filePath.length(); i++) {
-                bytes.add((byte)filePath.charAt(i));
+                bytes.add((byte) filePath.charAt(i));
             }
         }
 
-        //do a wonky thing
+        // do a wonky thing
         long numBytes = bytes.size();
         int pos = 0;
         while (numBytes != 0) {
-            bytes.add(pos, (byte)((numBytes % 128) | (numBytes/128 != 0 ? 0x80 : 0)));
+            bytes.add(pos, (byte) ((numBytes % 128) | (numBytes / 128 != 0 ? 0x80 : 0)));
             numBytes /= 128;
             pos++;
         }
-        
+
         FileOutputStream writer;
         try {
             writer = new FileOutputStream(cut.getCutFile());
-            
-            for(byte b : bytes) {
+
+            for (byte b : bytes) {
                 writer.write(b);
             }
             writer.close();

@@ -14,13 +14,13 @@ public class makeImageColorUtil {
         try {
             BufferedImage img = ImageIO.read(new File("gear2.png"));
             WritableRaster wrtRaster = img.getRaster();
-            for(int i = 0; i < wrtRaster.getWidth(); i++) {
+            for (int i = 0; i < wrtRaster.getWidth(); i++) {
                 for (int j = 0; j < wrtRaster.getHeight(); j++) {
                     float[] rgba = new float[4];
                     wrtRaster.getPixel(i, j, rgba);
-                    if(rgba[3] != 0.0){
+                    if (rgba[3] != 0.0) {
                         float[] output = set.getComponents(rgba);
-                        for(int k = 0; k < output.length; k++) {
+                        for (int k = 0; k < output.length; k++) {
                             output[k] *= 255;
                         }
                         wrtRaster.setPixel(i, j, output);
