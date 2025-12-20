@@ -1,11 +1,10 @@
 package Parser.GCode;
 
+import Display.Screen;
 import java.util.HashMap;
 
-import Display.Screen;
-
-public class GCodeParser {
-    public static void parse(String gcodeLine, int lineNum, NGCDocument doc) {
+public class GCodeParser implements GenericParser {
+    public void parse(String gcodeLine, int lineNum, NGCDocument doc) {
         // split the line into multiple and parse all of them if it has >1 g
         if (gcodeLine.lastIndexOf('G') != gcodeLine.indexOf('G')) {
             String[] gcodeLines = gcodeLine.trim().split("G");

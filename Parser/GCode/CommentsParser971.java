@@ -1,7 +1,7 @@
 package Parser.GCode;
 
-public class CommentsParser {
-    public static String parse(String gcodeLine, NGCDocument doc) {
+public class CommentsParser implements GenericParser {
+    public String parse(String gcodeLine, int lineNum, NGCDocument doc) {
         while (gcodeLine.contains("(")) {
             String temp = gcodeLine.substring(gcodeLine.indexOf('(') + 1, gcodeLine.indexOf(')'));
             gcodeLine = gcodeLine.substring(0, gcodeLine.indexOf('('))
