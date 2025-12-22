@@ -2,14 +2,6 @@ package Display;
 
 import static Display.Screen.SheetMenuState.*;
 
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.MouseInputListener;
-
 import Parser.GCode.NGCDocument;
 import SheetHandler.Cut;
 import SheetHandler.Hole;
@@ -17,7 +9,37 @@ import SheetHandler.Part;
 import SheetHandler.Settings;
 import SheetHandler.Sheet;
 import SheetHandler.SheetThickness;
-
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
@@ -27,40 +49,20 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
-
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Insets;
-import java.awt.Dimension;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseWheelListener;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.Collections;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.MouseInputListener;
 
 public class Screen extends JPanel
-        implements MouseWheelListener, MouseInputListener, ActionListener, ListSelectionListener, ItemListener {
+        implements MouseWheelListener,
+        MouseInputListener,
+        ActionListener,
+        ListSelectionListener,
+        ItemListener {
     public static Screen screen;
     public static final boolean DebugMode = Boolean.parseBoolean(Settings.settings.get("DebugMode"));
     private JList<File> sheetList;
@@ -160,21 +162,23 @@ public class Screen extends JPanel
         sheetFileList = new DefaultListModel<>();
         sheetsParent = new File(Settings.settings.get("SheetParentFolder"));
         for (int i = 0; i < sheetsParent.listFiles().length; i++) {
-            sheetFileList.addElement(new File(sheetsParent.listFiles()[i].getAbsolutePath()) {
-                @Override
-                public String toString() {
-                    return getName();
-                }
-            });
+            sheetFileList.addElement(
+                    new File(sheetsParent.listFiles()[i].getAbsolutePath()) {
+                        @Override
+                        public String toString() {
+                            return getName();
+                        }
+                    });
         }
 
         // sets uncaught errors during operation to create an error dialog
-        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                new ErrorDialog(e);
-            }
-        });
+        Thread.setDefaultUncaughtExceptionHandler(
+                new UncaughtExceptionHandler() {
+                    @Override
+                    public void uncaughtException(Thread t, Throwable e) {
+                        new ErrorDialog(e);
+                    }
+                });
 
         sheetList = new JList<File>(sheetFileList);
         sheetScroll = new JScrollPane(sheetList);
@@ -225,50 +229,54 @@ public class Screen extends JPanel
         settingsPanel.setVisible(false);
 
         add(returnToHomeFromSettings);
-        returnToHomeFromSettings.setAction(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                settingsPanel.save();
-                switchStates(State.SHEET_SELECT);
-            }
-        });
+        returnToHomeFromSettings.setAction(
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        settingsPanel.save();
+                        switchStates(State.SHEET_SELECT);
+                    }
+                });
         returnToHomeFromSettings.setText("Return");
         returnToHomeFromSettings.setBounds(700, 0, 200, 100);
         returnToHomeFromSettings.setVisible(false);
 
         add(resetToDefault);
-        resetToDefault.setAction(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Settings.settings.resetToDefault();
-                settingsPanel.revalidate();
-                settingsPanel.setup();
-            }
-        });
+        resetToDefault.setAction(
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        Settings.settings.resetToDefault();
+                        settingsPanel.revalidate();
+                        settingsPanel.setup();
+                    }
+                });
         resetToDefault.setText("Reset to Default");
         resetToDefault.setBounds(300, 0, 400, 100);
         resetToDefault.setVisible(false);
 
         add(restartApplication);
-        restartApplication.setAction(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                settingsPanel.save();
-                System.exit(-2);
-            }
-        });
+        restartApplication.setAction(
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        settingsPanel.save();
+                        System.exit(-2);
+                    }
+                });
         restartApplication.setText("Apply Settings(Restart Application)");
         restartApplication.setBounds(400, 700 + 40 / 2, 400, 60);
         restartApplication.setVisible(false);
 
         add(toSettings);
         toSettings.setBounds(1200 - 52, 3, 50, 50);
-        toSettings.setAction(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                switchStates(State.SETTINGS);
-            }
-        });
+        toSettings.setAction(
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        switchStates(State.SETTINGS);
+                    }
+                });
         try {
             BufferedImage img = ImageIO.read(new File(Settings.settings.get("SettingsIconImage")));
             BufferedImage img2 = ImageIO.read(new File(Settings.settings.get("SettingsIconImage2")));
@@ -305,12 +313,13 @@ public class Screen extends JPanel
         }
 
         // resizes all menu JPanels when frame is resized
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                menuPanels.stream().forEach(j -> j.setBounds(0, 0, 400, e.getComponent().getHeight()));
-            }
-        });
+        addComponentListener(
+                new ComponentAdapter() {
+                    @Override
+                    public void componentResized(ComponentEvent e) {
+                        menuPanels.stream().forEach(j -> j.setBounds(0, 0, 400, e.getComponent().getHeight()));
+                    }
+                });
 
         addMouseListener(this);
         addMouseMotionListener(this);
@@ -360,8 +369,12 @@ public class Screen extends JPanel
                 if (selectedPart != null) {
                     // correct for deleting and moving a part at the same time
                     if (selectedPart == partBeingDragged) {
-                        undoList.add(new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY,
-                                partGrabbedInitialRot));
+                        undoList.add(
+                                new EditAction(
+                                        partBeingDragged,
+                                        partGrabbedInitialX,
+                                        partGrabbedInitialY,
+                                        partGrabbedInitialRot));
                         draggingPart = false;
                         partBeingDragged = null;
                     }
@@ -387,50 +400,67 @@ public class Screen extends JPanel
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Y"), "redo");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save");
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("DELETE"), "delete");
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("BACK_SPACE"), "delete");
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("A"), "placement mode on");
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released A"), "placement mode off");
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control CONTROL"),
-                "rotation mode on");
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released CONTROL"),
-                "rotation mode off");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("BACK_SPACE"), "delete");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("A"), "placement mode on");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("released A"), "placement mode off");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("control CONTROL"), "rotation mode on");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("released CONTROL"), "rotation mode off");
 
         getActionMap().put("undo", undo);
         getActionMap().put("redo", redo);
         getActionMap().put("delete", deleteSelected);
-        getActionMap().put("placement mode on", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                aHeld = true;
-            }
-        });
+        getActionMap()
+                .put(
+                        "placement mode on",
+                        new AbstractAction() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                aHeld = true;
+                            }
+                        });
 
-        getActionMap().put("placement mode off", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                aHeld = false;
-            }
-        });
+        getActionMap()
+                .put(
+                        "placement mode off",
+                        new AbstractAction() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                aHeld = false;
+                            }
+                        });
 
-        getActionMap().put("rotation mode on", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ctrlPressed = true;
-            }
-        });
+        getActionMap()
+                .put(
+                        "rotation mode on",
+                        new AbstractAction() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                ctrlPressed = true;
+                            }
+                        });
 
-        getActionMap().put("rotation mode off", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ctrlPressed = false;
-                rotatingPart = false;
-                rotationPoint = null;
-            }
-        });
+        getActionMap()
+                .put(
+                        "rotation mode off",
+                        new AbstractAction() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                ctrlPressed = false;
+                                rotatingPart = false;
+                                rotationPoint = null;
+                            }
+                        });
 
-        menuPanels.stream().forEach(e -> {
-            e.setVisible(false);
-        });
+        menuPanels.stream()
+                .forEach(
+                        e -> {
+                            e.setVisible(false);
+                        });
     }
 
     @Override
@@ -463,9 +493,15 @@ public class Screen extends JPanel
                     g2d.setColor(Color.ORANGE);
                     Point2D rPnt = sheetToScreen(rotationPoint);
                     g2d.setStroke(new BasicStroke(2));
-                    g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() - 5, (int) rPnt.getX() + 5,
+                    g2d.drawLine(
+                            (int) rPnt.getX() - 5,
+                            (int) rPnt.getY() - 5,
+                            (int) rPnt.getX() + 5,
                             (int) rPnt.getY() + 5);
-                    g2d.drawLine((int) rPnt.getX() - 5, (int) rPnt.getY() + 5, (int) rPnt.getX() + 5,
+                    g2d.drawLine(
+                            (int) rPnt.getX() - 5,
+                            (int) rPnt.getY() + 5,
+                            (int) rPnt.getX() + 5,
                             (int) rPnt.getY() - 5);
                 }
                 if (menuState == MEASURE) {
@@ -482,9 +518,11 @@ public class Screen extends JPanel
                         g2d.fillOval((int) screenPoint2.getX() - 5, (int) screenPoint2.getY() - 5, 10, 10);
                     }
                     if (measurePoint1 != null && measurePoint2 != null) {
-                        g2d.drawLine((int) screenPoint1.getX(), (int) screenPoint1.getY(), (int) screenPoint2.getX(),
-                                (int) screenPoint2.getY());
-                        g2d.drawString(String.format("%.3f\"", measurePoint1.distance(measurePoint2)),
+                        g2d.drawLine(
+                                (int) screenPoint1.getX(), (int) screenPoint1.getY(),
+                                (int) screenPoint2.getX(), (int) screenPoint2.getY());
+                        g2d.drawString(
+                                String.format("%.3f\"", measurePoint1.distance(measurePoint2)),
                                 (int) (screenPoint1.getX() / 2 + screenPoint2.getX() / 2 + 10),
                                 (int) (screenPoint1.getY() / 2 + screenPoint2.getY() / 2 - 10));
                     }
@@ -534,15 +572,17 @@ public class Screen extends JPanel
 
     /**
      * switch the state of menuState
-     * 
+     *
      * @param newState the new state
      * @see SheetMenuState
      */
     private void switchMenuStates(SheetMenuState newState) {
         menuState = newState;
-        menuPanels.stream().forEach(e -> {
-            e.setVisible(false);
-        });
+        menuPanels.stream()
+                .forEach(
+                        e -> {
+                            e.setVisible(false);
+                        });
         // only creates emitPanel when there is an active cut and sheet
         if (selectedSheet != null && selectedSheet.getActiveCut() != null) {
             emitPanel = new EmitSelect();
@@ -579,7 +619,8 @@ public class Screen extends JPanel
             } else if (menuState == ADD_ITEM && aHeld) {
                 Point2D.Double partPoint = actualScreenToSheet(e.getPoint());
 
-                Part part = selectedSheet.addPart(itemSelectMenu.partFileToPlace, partPoint.getX(), partPoint.getY());
+                Part part = selectedSheet.addPart(
+                        itemSelectMenu.partFileToPlace, partPoint.getX(), partPoint.getY());
 
                 undoList.add(new EditAction(part, true));
             } else {
@@ -631,8 +672,9 @@ public class Screen extends JPanel
     public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
             if (draggingPart) {
-                EditAction toBeUndone = new EditAction(partBeingDragged, partGrabbedInitialX, partGrabbedInitialY,
-                        partGrabbedInitialRot);
+                EditAction toBeUndone = new EditAction(
+                        partBeingDragged, partGrabbedInitialX,
+                        partGrabbedInitialY, partGrabbedInitialRot);
                 undoList.add(toBeUndone);
                 redoList.clear();
                 partBeingDragged = null;
@@ -657,41 +699,46 @@ public class Screen extends JPanel
             yCorner = startY + e.getY() / zoom;
         } else if (draggingPart) {
             Point2D movedPoint = screenToSheet(e.getPoint());
-            if (rotatingPart && partGrabbedX - rotationPoint.getX() != 0
+            if (rotatingPart
+                    && partGrabbedX - rotationPoint.getX() != 0
                     && movedPoint.getX() - rotationPoint.getX() != 0) {
                 // oo fun rotation i had no pain at all coding this
 
                 // get the starting angle from the rotation point
-                double startingAngle = Math
-                        .atan((partGrabbedY - rotationPoint.getY()) / (partGrabbedX - rotationPoint.getX()));
+                double startingAngle = Math.atan(
+                        (partGrabbedY - rotationPoint.getY()) / (partGrabbedX - rotationPoint.getX()));
                 if ((partGrabbedX - rotationPoint.getX()) > 0) {
                     startingAngle += Math.PI;
                 }
 
                 // get the ending angle from the rotation point
-                double endingAngle = Math
-                        .atan((movedPoint.getY() - rotationPoint.getY()) / (movedPoint.getX() - rotationPoint.getX()));
+                double endingAngle = Math.atan(
+                        (movedPoint.getY() - rotationPoint.getY())
+                                / (movedPoint.getX() - rotationPoint.getX()));
                 if ((movedPoint.getX() - rotationPoint.getX()) > 0) {
                     startingAngle += Math.PI;
                 }
                 double rot = endingAngle - startingAngle;
 
                 // now time for the movement!!!! yay!!!!!!!!!!!!!!
-                // so baiscally what i need to do is translate the ctrl point along the same
-                // rotation as if it were attachted to the part and then move the part by the
-                // offset
+                // so baiscally what i need to do is translate the ctrl point along the
+                // same rotation as if it were attachted to the part and then move the
+                // part by the offset
                 Point2D.Double ctrlPoint = (Point2D.Double) rotationPoint.clone();
 
                 // translate it so the part center is at 0,0
-                ctrlPoint.setLocation(ctrlPoint.getX() - partGrabbedInitialX + selectedSheet.getWidth(),
+                ctrlPoint.setLocation(
+                        ctrlPoint.getX() - partGrabbedInitialX + selectedSheet.getWidth(),
                         ctrlPoint.getY() + partGrabbedInitialY - selectedSheet.getHeight());
 
                 // rotate it the same angle
-                ctrlPoint.setLocation(ctrlPoint.getX() * Math.cos(rot) + ctrlPoint.getY() * -Math.sin(rot),
+                ctrlPoint.setLocation(
+                        ctrlPoint.getX() * Math.cos(rot) + ctrlPoint.getY() * -Math.sin(rot),
                         ctrlPoint.getX() * Math.sin(rot) + ctrlPoint.getY() * Math.cos(rot));
 
                 // translate it back
-                ctrlPoint.setLocation(ctrlPoint.getX() + partGrabbedInitialX - selectedSheet.getWidth(),
+                ctrlPoint.setLocation(
+                        ctrlPoint.getX() + partGrabbedInitialX - selectedSheet.getWidth(),
                         ctrlPoint.getY() - partGrabbedInitialY + selectedSheet.getHeight());
 
                 // get the difference
@@ -708,7 +755,6 @@ public class Screen extends JPanel
                 partGrabbedX = movedPoint.getX();
                 partGrabbedY = movedPoint.getY();
             }
-
         }
         repaint();
     }
@@ -760,7 +806,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == addCut) {
             switchMenuStates(ADD_CUT);
         } else if (e.getSource() == newCutButton) {
-            File temp = new File(selectedSheet.getParentFile().getPath() + "\\" + newCutField.getText() + ".cut");
+            File temp = Path.of(selectedSheet.getParentFile().getPath(), newCutField.getText() + ".cut").toFile();
             selectedSheet.addCut(new Cut(temp, selectedSheet.getHolesFile()));
             selectedSheet.changeActiveCutFile(temp);
             switchMenuStates(HOME);
@@ -797,7 +843,8 @@ public class Screen extends JPanel
         } else if (e.getSource() instanceof SheetHandlerJButtonPart) {
             remove(gcodePartPanel);
             menuPanels.remove(gcodePartPanel);
-            gcodePartPanel = new GCodeSelectGcode(((SheetHandlerJButtonPart) e.getSource()).getgenericThing(),
+            gcodePartPanel = new GCodeSelectGcode(
+                    ((SheetHandlerJButtonPart) e.getSource()).getgenericThing(),
                     ((PartSelectGcode) gcodePartPanel).getCut());
             gcodePartPanel.setBounds(editMenu.getBounds());
             add(gcodePartPanel);
@@ -869,12 +916,13 @@ public class Screen extends JPanel
 
     /**
      * Create a new sheet based on the given parameters
-     * 
+     *
      * @param sheetWidth - the width of the sheet (almost always will be negative)
      * @param sheetY     - the height of the sheet
      * @param sheetName  - the name of the sheet
      */
-    public void enterNewSheetInfo(double sheetWidth, double sheetHeight, String sheetName, SheetThickness thickness) {
+    public void enterNewSheetInfo(
+            double sheetWidth, double sheetHeight, String sheetName, SheetThickness thickness) {
         selectedSheet = new Sheet(sheetsParent, sheetName, sheetWidth, sheetHeight, thickness);
         switchStates(State.SHEET_SELECT);
     }
@@ -885,14 +933,16 @@ public class Screen extends JPanel
 
     /**
      * Switch between program states
-     * 
+     *
      * @param newState - the state to switch to
      */
     private void switchStates(State newState) {
         // clears all JPanels
-        menuPanels.stream().forEach(e -> {
-            e.setVisible(false);
-        });
+        menuPanels.stream()
+                .forEach(
+                        e -> {
+                            e.setVisible(false);
+                        });
 
         // sets all components needed visible/not visible
         switch (newState) {
@@ -990,7 +1040,6 @@ public class Screen extends JPanel
         out.setLocation(out.getX() - xCorner * zoom, out.getY() - yCorner * zoom);
         out.setLocation(out.getX() / zoom, out.getY() / zoom);
         return out;
-
     }
 
     private Point2D.Double actualScreenToSheet(Point2D in) {
@@ -1000,7 +1049,6 @@ public class Screen extends JPanel
 
         out.setLocation(out.getX() + selectedSheet.getWidth(), selectedSheet.getHeight() - out.getY());
         return out;
-
     }
 
     private Point2D sheetToScreen(Point2D in) {
@@ -1025,9 +1073,7 @@ public class Screen extends JPanel
         repaint();
     }
 
-    /**
-     * JPanel that makes the default/home menu state
-     */
+    /** JPanel that makes the default/home menu state */
     private class SheetEditMenu extends JPanel {
         // JLabel that fills up all the gap at the bottom
         private JLabel buffer;
@@ -1182,30 +1228,29 @@ public class Screen extends JPanel
         }
     }
 
-    /**
-     * First menu when changing GCode viewed
-     * Selects which cut to change to
-     */
+    /** First menu when changing GCode viewed Selects which cut to change to */
     private class CutSelectGcode extends JPanel {
         private CutSelectGcode() {
             setLayout(new GridLayout(0, 1));
             add(returnToHomeMenu.clone());
-            add(new JLabel("Select Cut to Change: ") {
-                {
-                    setForeground(Color.WHITE);
-                }
-            });
+            add(
+                    new JLabel("Select Cut to Change: ") {
+                        {
+                            setForeground(Color.WHITE);
+                        }
+                    });
 
-            // creates a SheetHandlerJButton(which stores the Cut) for each cut and displays
-            // it
-            // allows Action Listener to use instanceof to detect change and select which
-            // cut to use to select the part in the next SelectGcode Menu
+            // creates a SheetHandlerJButton(which stores the Cut) for each cut and
+            // displays it allows Action Listener to use instanceof to detect change
+            // and select which cut to use to select the part in the next SelectGcode
+            // Menu
             for (Cut cut : selectedSheet.getCuts()) {
-                add(new SheetHandlerJButtonCut(cut.getCutFile().getName(), cut) {
-                    {
-                        addActionListener(Screen.this);
-                    }
-                });
+                add(
+                        new SheetHandlerJButtonCut(cut.getCutFile().getName(), cut) {
+                            {
+                                addActionListener(Screen.this);
+                            }
+                        });
             }
         }
 
@@ -1217,10 +1262,7 @@ public class Screen extends JPanel
         }
     }
 
-    /**
-     * Second menu when changing GCode viewed
-     * Selects which part to change to
-     */
+    /** Second menu when changing GCode viewed Selects which part to change to */
     private class PartSelectGcode extends JPanel implements Returnable {
         private Cut cut;
 
@@ -1229,24 +1271,26 @@ public class Screen extends JPanel
             setLayout(new GridLayout(0, 1));
             add(returnToHomeMenu.clone());
             add(returnOnce.clone());
-            add(new JLabel("Select Part to Change: ") {
-                {
-                    setForeground(Color.WHITE);
-                }
-            });
+            add(
+                    new JLabel("Select Part to Change: ") {
+                        {
+                            setForeground(Color.WHITE);
+                        }
+                    });
 
-            // creates a SheetHandlerJButtonPart(similar to Cut one used above) and does
-            // pretty much the same thing as above except with parts
+            // creates a SheetHandlerJButtonPart(similar to Cut one used above) and
+            // does pretty much the same thing as above except with parts
             for (Part part : cut) {
                 // ignores holes
                 if (part instanceof Hole) {
                     continue;
                 }
-                add(new SheetHandlerJButtonPart(part.partFile().getName(), part) {
-                    {
-                        addActionListener(Screen.this);
-                    }
-                });
+                add(
+                        new SheetHandlerJButtonPart(part.partFile().getName(), part) {
+                            {
+                                addActionListener(Screen.this);
+                            }
+                        });
             }
         }
 
@@ -1269,8 +1313,7 @@ public class Screen extends JPanel
     }
 
     /**
-     * Third and last menu when changing GCode viewed
-     * Selects which gcode to view
+     * Third and last menu when changing GCode viewed Selects which gcode to view
      */
     private class GCodeSelectGcode extends JPanel implements Returnable {
         private Cut cut;
@@ -1280,25 +1323,27 @@ public class Screen extends JPanel
             setLayout(new GridLayout(0, 1));
             add(returnToHomeMenu.clone());
             add(returnOnce.clone());
-            add(new JLabel("Select GCode File to View: ") {
-                {
-                    setForeground(Color.WHITE);
-                }
-            });
-
-            // creates JCheckBox for each ngc doc that stores the ngc doc that can be used
-            // actionPerformed uses instanceof to detect change and to select which are
-            // viewed
-            // pre-checks the NGCDocuments that are already being shown
-            for (NGCDocument docs : part.getAllNgcDocuments()) {
-                add(new SheetHandlerJCheckBoxNGCDoc(docs.getGcodeFile().getName(), docs, part) {
-                    {
-                        addItemListener(Screen.this);
-                        if (part.getNgcDocuments().stream().anyMatch(e -> e.equals(docs))) {
-                            setSelected(true);
+            add(
+                    new JLabel("Select GCode File to View: ") {
+                        {
+                            setForeground(Color.WHITE);
                         }
-                    }
-                });
+                    });
+
+            // creates JCheckBox for each ngc doc that stores the ngc doc that can be
+            // used actionPerformed uses instanceof to detect change and to select
+            // which are viewed pre-checks the NGCDocuments that are already being
+            // shown
+            for (NGCDocument docs : part.getAllNgcDocuments()) {
+                add(
+                        new SheetHandlerJCheckBoxNGCDoc(docs.getGcodeFile().getName(), docs, part) {
+                            {
+                                addItemListener(Screen.this);
+                                if (part.getNgcDocuments().stream().anyMatch(e -> e.equals(docs))) {
+                                    setSelected(true);
+                                }
+                            }
+                        });
             }
         }
 
@@ -1330,34 +1375,32 @@ public class Screen extends JPanel
         menuPanels.add(gcodePartPanel);
     }
 
-    /**
-     * Allows user to select which cut is active
-     */
+    /** Allows user to select which cut is active */
     private class CutSelect extends JPanel {
         private ButtonGroup buttons;
 
         private CutSelect() {
             setLayout(new GridLayout(0, 1));
             add(returnToHomeMenu.clone());
-            add(new JLabel("Select Active Cut:") {
-                {
-                    setForeground(Color.WHITE);
-                }
-            });
+            add(
+                    new JLabel("Select Active Cut:") {
+                        {
+                            setForeground(Color.WHITE);
+                        }
+                    });
 
             // creates a button group to allow only 1 cut to be viewed
-            // each button stores a cut file that is shown and checks if it is currently
-            // being viewed
-            // allows actionperformed to use instanceof and get the file for the new cut
-            // file to be shown
+            // each button stores a cut file that is shown and checks if it is
+            // currently being viewed allows actionperformed to use instanceof and get
+            // the file for the new cut file to be shown
             buttons = new ButtonGroup();
             for (File cutFile : selectedSheet.getParentFile().listFiles()) {
                 if (!cutFile.getName().endsWith(".cut")) {
                     continue;
                 }
                 buttons.add(
-                        new FileJRadioButton(cutFile.getName().substring(0, cutFile.getName().lastIndexOf(".cut")),
-                                CUT_SELECT) {
+                        new FileJRadioButton(
+                                cutFile.getName().substring(0, cutFile.getName().lastIndexOf(".cut")), CUT_SELECT) {
                             {
                                 addActionListener(Screen.this);
                                 if (selectedSheet.getActiveCutFile() != null
@@ -1386,9 +1429,9 @@ public class Screen extends JPanel
 
     /**
      * Allows instanceof to be detected for returning to home in actionPerformed()
-     * and implements cloneable to allow the same text and location for subsequent
-     * buttons
-     * 
+     * and implements
+     * cloneable to allow the same text and location for subsequent buttons
+     *
      * @see JButton
      */
     private class ReturnToHomeJButton extends JButton implements Cloneable {
@@ -1409,10 +1452,11 @@ public class Screen extends JPanel
 
     /**
      * Allows instanceof to be detected for returning once(with the returnable
-     * interface) in actionPerformed()
-     * and implements cloneable to allow the same text and location for subsequent
+     * interface) in
+     * actionPerformed() and implements cloneable to allow the same text and
+     * location for subsequent
      * buttons
-     * 
+     *
      * @see JButton
      * @see ReturnToHomeJButton
      */
@@ -1464,8 +1508,13 @@ public class Screen extends JPanel
                 }
             }
 
-            gCodeName = new JTextField(selectedSheet.getActiveCut().getCutFile().getName().substring(0,
-                    selectedSheet.getActiveCut().getCutFile().getName().lastIndexOf('.')));
+            gCodeName = new JTextField(
+                    selectedSheet
+                            .getActiveCut()
+                            .getCutFile()
+                            .getName()
+                            .substring(
+                                    0, selectedSheet.getActiveCut().getCutFile().getName().lastIndexOf('.')));
             gCodeName.setBounds(50, 50, 200, 25);
             add(gCodeName);
 
@@ -1493,12 +1542,13 @@ public class Screen extends JPanel
         public NewCutMenu() {
             setLayout(null);
 
-            add(new JLabel("Adding new sheet cut. Enter filename:") {
-                {
-                    setBounds(10, 0, editMenu.getWidth(), 50);
-                    setForeground(Color.WHITE);
-                }
-            });
+            add(
+                    new JLabel("Adding new sheet cut. Enter filename:") {
+                        {
+                            setBounds(10, 0, editMenu.getWidth(), 50);
+                            setForeground(Color.WHITE);
+                        }
+                    });
 
             newCutField = new JTextField();
             newCutField.setBounds(10, 60, 200, 50);
@@ -1551,12 +1601,14 @@ public class Screen extends JPanel
          * directory
          */
         public void selectFile(File file) {
-            fileButtons.stream().forEach(e -> {
-                remove(e);
-                if (e instanceof JButton) {
-                    ((JButton) e).removeActionListener(Screen.this);
-                }
-            });
+            fileButtons.stream()
+                    .forEach(
+                            e -> {
+                                remove(e);
+                                if (e instanceof JButton) {
+                                    ((JButton) e).removeActionListener(Screen.this);
+                                }
+                            });
             fileButtons.clear();
             if (!file.getName().equals("parts_library")) {
                 FileJButton button = new FileJButton(file.getParentFile(), "..");
@@ -1585,9 +1637,7 @@ public class Screen extends JPanel
             return;
         }
 
-        /**
-         * creates a JButton that is a unique class that stores a File
-         */
+        /** creates a JButton that is a unique class that stores a File */
         class FileJButton extends JButton {
             private File file;
 
@@ -1607,11 +1657,18 @@ public class Screen extends JPanel
         }
     }
 
-    /**
-     * Enum that encodes the state of the menu
-     */
+    /** Enum that encodes the state of the menu */
     public enum SheetMenuState {
-        NULL, HOME, MEASURE, CUT_SELECT, GCODE_SELECT, GCODE_SELECT_PART, EMIT_SELECT, ADD_ITEM, ADD_HOLE, ADD_CUT;
+        NULL,
+        HOME,
+        MEASURE,
+        CUT_SELECT,
+        GCODE_SELECT,
+        GCODE_SELECT_PART,
+        EMIT_SELECT,
+        ADD_ITEM,
+        ADD_HOLE,
+        ADD_CUT;
     }
 
     /**

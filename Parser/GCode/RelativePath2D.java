@@ -1,8 +1,6 @@
 package Parser.GCode;
 
 import Display.Screen;
-
-import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
@@ -11,7 +9,7 @@ import java.util.Arrays;
 
 /**
  * Defines a geometric path with relative coordinates and arcs possible
- * 
+ *
  * @see Path2D
  * @see Path2D.Double
  */
@@ -48,8 +46,9 @@ public class RelativePath2D extends Path2D.Double {
 
     /**
      * Adds an arc segment, defined by 2 points, by drawing an arc that intersects
-     * {@code (x2,y2)}, using the specified point {@code (x1,y2)}
-     * 
+     * {@code (x2,y2)},
+     * using the specified point {@code (x1,y2)}
+     *
      * @param x1            the X-coordinate of the center of the arc
      * @param y1            the Y-coordinate of the center of the arc
      * @param x2            the X-coordinate of the final end point
@@ -59,7 +58,13 @@ public class RelativePath2D extends Path2D.Double {
      * @param isRelative    whether or not x2 and y2 are relative
      * @param isRelativeArc whether or not x1 and y1 are relative
      */
-    public void arcTo(double x1, double y1, double x2, double y2, int direction, boolean isRelative,
+    public void arcTo(
+            double x1,
+            double y1,
+            double x2,
+            double y2,
+            int direction,
+            boolean isRelative,
             boolean isRelativeArc) {
         if (direction < -1 || direction > 1) {
             throw new IllegalArgumentException("Direction: " + direction + " is not in the range -1, 1");
@@ -87,8 +92,9 @@ public class RelativePath2D extends Path2D.Double {
 
         if (Screen.DebugMode) {
             System.out.printf("Arguments: x1: %f, y1: %f, x2: %f, y2: %f%n", x1, y1, x2, y2);
-            System.out.printf("Arcing from %f, %f to %f, %f around %f, %f%n", startX, startY, endX, endY, centerX,
-                    centerY);
+            System.out.printf(
+                    "Arcing from %f, %f to %f, %f around %f, %f%n",
+                    startX, startY, endX, endY, centerX, centerY);
         }
 
         double startingAngle = Math.atan((startY - centerY) / (startX - centerX));
@@ -104,17 +110,21 @@ public class RelativePath2D extends Path2D.Double {
             endingAngle += Math.PI * 2 * direction;
         }
 
-        double radius = Math.sqrt((startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
+        double radius = Math.sqrt(
+                (startX - centerX) * (startX - centerX) + (startY - centerY) * (startY - centerY));
         double radius2 = Math.sqrt((endX - centerX) * (endX - centerX) + (endY - centerY) * (endY - centerY));
 
         if (Screen.DebugMode) {
-            System.out.printf("Radius is %f, starting angle is %f, ending angle is %f%n", radius, startingAngle,
-                    endingAngle);
+            System.out.printf(
+                    "Radius is %f, starting angle is %f, ending angle is %f%n",
+                    radius, startingAngle, endingAngle);
         }
 
         if (Math.abs(radius - radius2) > 0.05
-                || (Math.abs(radius - radius2) > 0.05 && Math.abs(radius - radius2) > (radius + radius2) / 2 * 0.001)) {
-            throw new IllegalGCodeError("Arc is not defined to have a self-similar radius");
+                || (Math.abs(radius - radius2) > 0.05
+                        && Math.abs(radius - radius2) > (radius + radius2) / 2 * 0.001)) {
+            throw new IllegalGCodeError(
+                    "Arc is not defined to have a self-similar radius:\nr1: " + radius + "\nr2: " + radius2);
         } else {
             radius = radius / 2 + radius2 / 2;
             double angle = startingAngle;
@@ -137,8 +147,9 @@ public class RelativePath2D extends Path2D.Double {
     }
 
     /**
-     * Adds a point to the path by moving to the specified, relative
-     * coordinates specified in double precision.
+     * Adds a point to the path by moving to the specified, relative coordinates
+     * specified in double
+     * precision.
      *
      * @param x the specified X coordinate relative to the previous point
      * @param y the specified Y coordinate relative to the previous point
@@ -149,9 +160,9 @@ public class RelativePath2D extends Path2D.Double {
     }
 
     /**
-     * Adds a point to the path by drawing a straight line from the
-     * current coordinates to the new specified, relative coordinates
-     * specified in double precision.
+     * Adds a point to the path by drawing a straight line from the current
+     * coordinates to the new
+     * specified, relative coordinates specified in double precision.
      *
      * @param x the specified X coordinate relative to the previous point
      * @param y the specified Y coordinate relative to the previous point
@@ -163,12 +174,14 @@ public class RelativePath2D extends Path2D.Double {
 
     /**
      * Adds a curved segment, defined by two new points, relative to the previous
-     * point, to the path by
-     * drawing a Quadratic curve that intersects both the current
-     * coordinates and the specified coordinates {@code (x2,y2)},
-     * using the specified point {@code (x1,y1)} as a quadratic
-     * parametric control point. Both points are relative to the previous point
-     * All coordinates are specified in double precision.
+     * point, to the path
+     * by drawing a Quadratic curve that intersects both the current coordinates and
+     * the specified
+     * coordinates {@code (x2,y2)}, using the specified point {@code (x1,y1)} as a
+     * quadratic
+     * parametric control point. Both points are relative to the previous point All
+     * coordinates are
+     * specified in double precision.
      *
      * @param x1 the X coordinate of the quadratic control point relative to the
      *           previous point
@@ -186,21 +199,28 @@ public class RelativePath2D extends Path2D.Double {
     }
 
     /**
-     * Adds a curved segment, defined by three new points, to the path by
-     * drawing a B&eacute;zier curve that intersects both the current
-     * coordinates and the specified coordinates {@code (x3,y3)},
-     * using the specified points {@code (x1,y1)} and {@code (x2,y2)} as
-     * B&eacute;zier control points. All points are relative to the previous point
-     * All coordinates are specified in double precision.
+     * Adds a curved segment, defined by three new points, to the path by drawing a
+     * B&eacute;zier
+     * curve that intersects both the current coordinates and the specified
+     * coordinates {@code
+     * (x3,y3)}, using the specified points {@code (x1,y1)} and {@code (x2,y2)} as
+     * B&eacute;zier
+     * control points. All points are relative to the previous point All coordinates
+     * are specified in
+     * double precision.
      *
      * @param x1 the X coordinate of the first B&eacute;zier control point relative
-     *           to the previous point
+     *           to the previous
+     *           point
      * @param y1 the Y coordinate of the first B&eacute;zier control point relative
-     *           to the previous point
+     *           to the previous
+     *           point
      * @param x2 the X coordinate of the second B&eacute;zier control point relative
-     *           to the previous point
+     *           to the previous
+     *           point
      * @param y2 the Y coordinate of the second B&eacute;zier control point relative
-     *           to the previous point
+     *           to the previous
+     *           point
      * @param x3 the X coordinate of the final end point relative to the previous
      *           point
      * @param y3 the Y coordinate of the final end point relative to the previous
@@ -237,8 +257,8 @@ public class RelativePath2D extends Path2D.Double {
         // adds polygon points as well as checking that it is one
         while (!holder.isDone()) {
             double[] temp = new double[2];
-            // may need to change this to get rid of moveTos(assumption that they are part
-            // of the polygon)
+            // may need to change this to get rid of moveTos(assumption that they are
+            // part of the polygon)
             if (holder.currentSegment(temp) != PathIterator.SEG_LINETO
                     && holder.currentSegment(temp) != PathIterator.SEG_MOVETO
                     && holder.currentSegment(temp) != PathIterator.SEG_CLOSE) {
@@ -258,35 +278,48 @@ public class RelativePath2D extends Path2D.Double {
         // holds slope of the normal of each point(same order as coords)
         ArrayList<java.lang.Double> slopeNorm = new ArrayList<>();
 
-        // double[] holds m and then b of parallel line(starts with edge of the first
-        // and second coords)
+        // double[] holds m and then b of parallel line(starts with edge of the
+        // first and second coords)
         ArrayList<java.lang.Double[]> offsetLineEq = new ArrayList<>();
 
         // finds all slopes of the normal line of the subgradient of each point
         // also finds equation for each parallel line with specified offset
         for (int i = 0; i < coords.size(); i++) {
             if (i == 0) {
-                slopeNorm.add(getMidNormSlope(getAsPrimitive(coords.get(coords.size() - 1)),
-                        getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1))));
-                offsetLineEq.add(getAsWrapper(
-                        getOffsetLineInfo(getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1)), offset)));
+                slopeNorm.add(
+                        getMidNormSlope(
+                                getAsPrimitive(coords.get(coords.size() - 1)),
+                                getAsPrimitive(coords.get(i)),
+                                getAsPrimitive(coords.get(i + 1))));
+                offsetLineEq.add(
+                        getAsWrapper(
+                                getOffsetLineInfo(
+                                        getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1)), offset)));
             } else if (i == coords.size() - 1) {
-                slopeNorm.add(getMidNormSlope(getAsPrimitive(coords.get(i - 1)), getAsPrimitive(coords.get(i)),
-                        getAsPrimitive(coords.get(0))));
-                offsetLineEq.add(getAsWrapper(
-                        getOffsetLineInfo(getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(0)), offset)));
+                slopeNorm.add(
+                        getMidNormSlope(
+                                getAsPrimitive(coords.get(i - 1)),
+                                getAsPrimitive(coords.get(i)),
+                                getAsPrimitive(coords.get(0))));
+                offsetLineEq.add(
+                        getAsWrapper(
+                                getOffsetLineInfo(
+                                        getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(0)), offset)));
             } else {
-                slopeNorm.add(getMidNormSlope(getAsPrimitive(coords.get(i - 1)), getAsPrimitive(coords.get(i)),
-                        getAsPrimitive(coords.get(i + 1))));
-                offsetLineEq.add(getAsWrapper(
-                        getOffsetLineInfo(getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1)), offset)));
+                slopeNorm.add(
+                        getMidNormSlope(
+                                getAsPrimitive(coords.get(i - 1)),
+                                getAsPrimitive(coords.get(i)),
+                                getAsPrimitive(coords.get(i + 1))));
+                offsetLineEq.add(
+                        getAsWrapper(
+                                getOffsetLineInfo(
+                                        getAsPrimitive(coords.get(i)), getAsPrimitive(coords.get(i + 1)), offset)));
             }
-
         }
 
         // TODO remove disappearing sides
         for (int i = 0; i < coords.size(); i++) {
-
         }
 
         RelativePath2D output = new RelativePath2D();
@@ -341,11 +374,12 @@ public class RelativePath2D extends Path2D.Double {
             } else {
                 output[1] += offset / Math.cos(theta);
             }
-        } else if (output[0] == 0) {// slope of zero(edge case)
+        } else if (output[0] == 0) { // slope of zero(edge case)
             // TODO finish
-        } else if (output[0] == java.lang.Double.POSITIVE_INFINITY || output[0] == java.lang.Double.NEGATIVE_INFINITY) {// vertical
-                                                                                                                        // line(edge
-                                                                                                                        // case)
+        } else if (output[0] == java.lang.Double.POSITIVE_INFINITY
+                || output[0] == java.lang.Double.NEGATIVE_INFINITY) { // vertical
+            // line(edge
+            // case)
             // TODO finish
         } else if (deltaY == 0) {
             // do nothing?(same point i think)
@@ -502,7 +536,6 @@ public class RelativePath2D extends Path2D.Double {
                 line1[3] = pY;
                 line2[0] = pX;
                 line2[1] = pY;
-
             }
         }
 
@@ -593,9 +626,8 @@ class Point3D extends Point2D.Double {
 
     @Override
     /**
-     * Returns a {@code String} that represents the value
-     * of this {@code Point3D}.
-     * 
+     * Returns a {@code String} that represents the value of this {@code Point3D}.
+     *
      * @return a string representation of this {@code Point3D}.
      */
     public String toString() {

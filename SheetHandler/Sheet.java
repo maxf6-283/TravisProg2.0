@@ -1,23 +1,24 @@
 package SheetHandler;
 
+import Display.WarningDialog;
+import Parser.GCode.NGCDocument;
+import Parser.GCode.NgcStrain;
+import Parser.Sheet.SheetParser;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-
-import Display.WarningDialog;
-
-import java.awt.Color;
-
-import Parser.Sheet.SheetParser;
+import java.util.stream.Collectors;
 
 public class Sheet {
     private ArrayList<Cut> cuts;
@@ -30,7 +31,7 @@ public class Sheet {
 
     /**
      * Declares a new sheet from a file
-     * 
+     *
      * @param sheetFile - the .sheet file to get the information from
      */
     public Sheet(File sheetFile) {
@@ -87,7 +88,8 @@ public class Sheet {
      * Declare a new sheet from a path to the list of sheets and the name of the
      * sheet
      */
-    public Sheet(File sheetFolder, String sheetName, double width, double height, SheetThickness thickness) {
+    public Sheet(
+            File sheetFolder, String sheetName, double width, double height, SheetThickness thickness) {
         try {
             File parentFile = new File(sheetFolder, sheetName);
             parentFile.mkdir();
@@ -107,7 +109,7 @@ public class Sheet {
 
     /**
      * returns the width of the sheet
-     * 
+     *
      * @return the width of the sheet
      */
     public double getWidth() {
@@ -116,23 +118,19 @@ public class Sheet {
 
     /**
      * returns the height of the sheet
-     * 
+     *
      * @return the height of the sheet
      */
     public double getHeight() {
         return height;
     }
 
-    /**
-     * Adds a part to the active cut;
-     */
+    /** Adds a part to the active cut; */
     public void addPart(Part part) {
         activeCut.parts.add(part);
     }
 
-    /**
-     * Creates a new part and adds it to the active cut
-     */
+    /** Creates a new part and adds it to the active cut */
     public Part addPart(File partFileToPlace, double x, double y) {
         Part part = new Part(partFileToPlace, x, y, 0);
         if (part != null)
@@ -140,33 +138,25 @@ public class Sheet {
         return part;
     }
 
-    /**
-     * Adds a hole to the active cut
-     */
+    /** Adds a hole to the active cut */
     public void addHole(Hole hole) {
         activeCut.parts.add(hole);
     }
 
-    /**
-     * Adds a new hole to the active cut at the specified position
-     */
+    /** Adds a new hole to the active cut at the specified position */
     public Hole addHole(double x, double y) {
         Hole hole = new Hole(holeFile, x, y, 0);
         addHole(hole);
         return hole;
     }
 
-    /**
-     * Adds a cut to the list and sets it as active
-     */
+    /** Adds a cut to the list and sets it as active */
     public void addCut(Cut cut) {
         activeCut = cut;
         cuts.add(cut);
     }
 
-    /**
-     * Draw the sheet to the screen
-     */
+    /** Draw the sheet to the screen */
     public void draw(Graphics g) {
         g.setColor(Color.ORANGE);
         g.drawRect(0, 0, (int) Math.abs(width), (int) (height));
@@ -183,9 +173,7 @@ public class Sheet {
         g2d.translate(width, -height);
     }
 
-    /**
-     * save the sheet and its cuts
-     */
+    /** save the sheet and its cuts */
     public void saveToFile() {
         HashMap<String, String> sheetInfo = new HashMap<>();
         sheetInfo.put("w", "" + (width));
@@ -228,7 +216,7 @@ public class Sheet {
 
     /**
      * Emits the gCode from the active cut into the given file
-     * 
+     *
      * @param gCodeFile - the file to put the GCode into.
      * @param string
      */
@@ -237,25 +225,41 @@ public class Sheet {
         // specific mechanics: sandwich each part between a translation to and from
         // their position
 
-        // additionally, for each header that's the same aside from comments, merge it
-        // and put it at the start
+        // additionally, for each header that's the same aside from comments, merge
+        // it and put it at the start
 
         // and same for footers except put them at the end
         try {
+            activeCut.stream().forEach((Part p) -> p.setSelectedGCode(suffix));
+            var strains = activeCut.stream()
+                    .map(Part::getNgcDocument)
+                    .filter(Objects::nonNull)
+                    .map(NGCDocument::getNgcStrain)
+                    .collect(Collectors.toList());
+            ;
+
+            if (strains.stream().distinct().count() > 1) {
+                new WarningDialog(
+                        new IllegalStateException(),
+                        "Cut contains gcode for various machines: Undefined Behavior",
+                        null);
+            }
+            NgcStrain predominantStrain = strains.stream().findAny().get();
             gCodeFile.createNewFile();
             BufferedWriter writer = new BufferedWriter(new FileWriter(gCodeFile));
             String header = "";
             String footer = "";
-            // starting %
-            writer.write("%\n");
             activeCut.stream().forEach(Part::nullify);
             ArrayList<Part> notEmittedParts = new ArrayList<>();
             for (Part part : activeCut) {
                 // ignore parts without the requisite suffix
                 if (!part.setSelectedGCode(suffix)) {
-                    if (!(suffix.equals("holes") || part instanceof Hole || notEmittedParts.stream()
-                            .anyMatch(p -> p.partFile().getName().equals(part.partFile().getName())))) {
-                        new WarningDialog(new FileNotFoundException(),
+                    if (!(suffix.equals("holes")
+                            || part instanceof Hole
+                            || notEmittedParts.stream()
+                                    .anyMatch(p -> p.partFile().getName().equals(part.partFile().getName())))) {
+                        new WarningDialog(
+                                new FileNotFoundException(),
                                 part.partFile().getName() + " does not have a gcode file with this endmill size",
                                 null);
                         notEmittedParts.add(part);
@@ -263,28 +267,27 @@ public class Sheet {
                     continue;
                 }
                 // if the footer changes, write out the old one and remember the new one
-                String newFooter = removeGCodeSpecialness(part.getNgcDocument().getGCodeFooter());
+                String newFooter = predominantStrain.gCodeParser.removeGCodeSpecialness(
+                        part.getNgcDocument().getGCodeFooter());
                 if (!newFooter.equals(footer)) {
                     writer.write(footer);
                     footer = newFooter;
                 }
 
                 // if the header changes, write it out
-                String newHeader = removeGCodeSpecialness(part.getNgcDocument().getGCodeHeader());
+                String newHeader = predominantStrain.gCodeParser.removeGCodeSpecialness(
+                        part.getNgcDocument().getGCodeHeader());
                 if (!header.equals(newHeader)) {
                     header = newHeader;
                     writer.write(newHeader);
                 }
 
                 // the actual fun stuff
-                writer.write(gCodeTranslateTo(part));
-                writer.write(part.getNgcDocument().getGCodeBody().replaceAll("G54", "G59.3"));
+                writer.write(predominantStrain.gCodeParser.gCodeTransformClean(part));
             }
 
             // write the last footer
             writer.write(footer);
-            // ending %
-            writer.write("%");
 
             writer.flush();
             writer.close();
@@ -294,19 +297,6 @@ public class Sheet {
 
             e.printStackTrace();
         }
-    }
-
-    private String gCodeTranslateTo(Part part) {
-        double x = part.getX();
-        double y = part.getY();
-        double rot = part.getRot();
-
-        return String.format("G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, Math.toDegrees(rot));
-    }
-
-    private String removeGCodeSpecialness(String gCode) {
-        String newGCode = gCode.replaceAll("\\(.*\\)", "").trim() + "\n";
-        return gCode.substring(0, gCode.indexOf(')') + 2) + newGCode + gCode.substring(gCode.lastIndexOf('('));
     }
 
     public Cut getActiveCut() {

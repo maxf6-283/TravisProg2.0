@@ -1,12 +1,10 @@
 import Display.*;
 import SheetHandler.Settings;
-
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
@@ -24,7 +22,7 @@ public class Runner2 {
             System.out.println("Thee should  not  changeth  the  behold  and  feeleth");
         }
         Screen screen = new Screen();
-        JFrame frame = new JFrame("Marissa and Claire and Nick Prog");
+        JFrame frame = new JFrame("Marissa and Claire Prog");
         try {
             BufferedImage img = ImageIO.read(new File(Settings.settings.get("IconImageFile")));
             frame.setIconImage(img);

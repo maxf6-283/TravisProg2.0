@@ -1,12 +1,10 @@
 package Parser.GCode;
 
 import Display.Screen;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Scanner;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class NGCDocument {
     private File gcodeFile;
@@ -15,20 +13,21 @@ public class NGCDocument {
     private int SpindleSpeed;
     private double toolOffset = 0.1575;
     private double implicitGCodeHolder;
-    private boolean isRelativeArc;
+    private boolean isRelativeArc = true;
     private boolean isRelative = false;
     private int currentAxisPlane = 0;
     private double lastI = 0;
     private double lastJ = 0;
     private HashMap<String, Double> previousAttributes = new HashMap<>();
-    private boolean machineCoordinates;
+    private boolean machineCoordinates = false;
     private StringBuilder gCodeStringBuilder;
-    private boolean usingCutterComp = false;// TODO make sure to set true when G41 or G42 is called
+    private boolean usingCutterComp = false; // TODO make sure to set true when G41 or G42 is called
     private boolean inchesMode = true;
     private HashMap<Double, ArrayList<RelativePath2D>> offsetGeometry = new HashMap<>();
+    private NgcStrain ngcStrain;
 
     public NGCDocument() {
-        this(null);
+        this(null, null);
     }
 
     public void setUsingCutterComp() {
@@ -38,7 +37,9 @@ public class NGCDocument {
     public int getCurrentAxisPlane() {
         if (currentAxisPlane < 17 || currentAxisPlane > 19) {
             throw new IllegalGCodeError(
-                    "Axis Plane " + currentAxisPlane + " is not supported or needs to be called before an arc");
+                    "Axis Plane "
+                            + currentAxisPlane
+                            + " is not supported or needs to be called before an arc");
         }
         return currentAxisPlane;
     }
@@ -53,6 +54,8 @@ public class NGCDocument {
 
     public void setToolOffset(Double num) {
         toolOffset = num;
+        if (Screen.DebugMode)
+            System.out.println("new dia: " + toolOffset);
     }
 
     public void setCurrentPoint(Point3D point) {
@@ -96,11 +99,12 @@ public class NGCDocument {
         return isRelativeArc;
     }
 
-    public NGCDocument(File file) {
+    public NGCDocument(File file, NgcStrain ngcStrain) {
         this.gcodeFile = file;
         gCodeStringBuilder = new StringBuilder();
         originalGeometry = new ArrayList<>();
         originalGeometry.add(new RelativePath2D());
+        this.ngcStrain = ngcStrain;
     }
 
     public ArrayList<RelativePath2D> getRelativePath2Ds() {
@@ -129,11 +133,11 @@ public class NGCDocument {
         return output;
     }
 
-    private RelativePath2D getCurrentPath2D() {
+    protected RelativePath2D getCurrentPath2D() {
         return originalGeometry.get(originalGeometry.size() - 1);
     }
 
-    private void newPath2D() {
+    protected void newPath2D() {
         originalGeometry.add(new RelativePath2D());
     }
 
@@ -167,219 +171,7 @@ public class NGCDocument {
     }
 
     public void addGCodeAttributes(HashMap<String, Double> attributes) {
-        // set g to the last thing if theres no g
-        if (!attributes.containsKey("G")) {
-            attributes.put("G", previousAttributes.get("G"));
-        }
-
-        // if not in inches, modify distance values
-        if (!inchesMode) {
-            if (attributes.containsKey("X")) {
-                attributes.put("X", attributes.get("X") / 25.4);
-            }
-            if (attributes.containsKey("Y")) {
-                attributes.put("Y", attributes.get("Y") / 25.4);
-            }
-            if (attributes.containsKey("I")) {
-                attributes.put("I", attributes.get("I") / 25.4);
-            }
-            if (attributes.containsKey("J")) {
-                attributes.put("J", attributes.get("J") / 25.4);
-            }
-            if (attributes.containsKey("Z")) {
-                attributes.put("Z", attributes.get("Z") / 25.4);
-            }
-        }
-
-        // if it's a movement, ignore it if machine coords
-        if (usingMachineCoordinates() && attributes.get("G") >= 0 && attributes.get("G") <= 3) {
-            setUsingMachineCoordinates(false);
-            return;
-        }
-
-        if (Screen.DebugMode)
-            System.out.println(getRelativity());
-
-        boolean XandYHasChanged = true;
-        boolean XHasChanged = true;
-        boolean YHasChanged = true;
-
-        if (!attributes.containsKey("X")) {
-            XandYHasChanged = false;
-            attributes.put("X", getRelativity() ? 0 : previousAttributes.getOrDefault("X", 0.0));
-        }
-        if (!attributes.containsKey("Y")) {
-            XandYHasChanged = false;
-            attributes.put("Y", getRelativity() ? 0 : previousAttributes.getOrDefault("Y", 0.0));
-        }
-
-        XandYHasChanged = XHasChanged || YHasChanged;
-
-        if (!attributes.containsKey("Z")) {
-            attributes.put("Z", getRelativity() ? 0 : previousAttributes.getOrDefault("Z", 0.0));
-        }
-        // Note: I and J are only modal on some router contollers. This code is likely
-        // not necessary
-        if (!attributes.containsKey("I")) {
-            attributes.put("I", getRelativityArc() ? 0 : previousAttributes.getOrDefault("I", 0.0));
-        }
-        if (!attributes.containsKey("J")) {
-            attributes.put("J", getRelativityArc() ? 0 : previousAttributes.getOrDefault("J", 0.0));
-        }
-
-        if (Screen.DebugMode) {
-            System.out.println(attributes);
-            System.out.println("xandy: " + XandYHasChanged);
-        }
-
-        switch ((int) attributes.get("G").doubleValue()) {
-            case 0 -> {
-                Scanner scan = new Scanner(System.in);
-                if (getRelativity()) {
-                    if (attributes.get("Z") + getCurrentPointr().getZ() > 0 && getCurrentPath2D().getPathIteratorType()
-                            .stream().anyMatch(e -> e != PathIterator.SEG_MOVETO)) {
-                        newPath2D();
-                    }
-                    if (XandYHasChanged) {
-                        getCurrentPath2D().moveToRelative(attributes.get("X"), -attributes.get("Y"));
-                        // scan.nextLine();
-                    }
-                    getCurrentPath2D().setZRelative(attributes.get("Z"));
-                } else {
-                    if (attributes.get("Z") > 0 && getCurrentPath2D().getPathIteratorType().stream()
-                            .anyMatch(e -> e != PathIterator.SEG_MOVETO)) {
-                        newPath2D();
-                    }
-                    if (XandYHasChanged) {
-                        getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
-                        // scan.nextLine();
-                    }
-                    getCurrentPath2D().setZ(attributes.get("Z"));
-                    getCurrentPath2D().setRelative(attributes.get("X"), -attributes.get("Y"));
-                }
-            }
-            case 1 -> {
-                if (getRelativity()) {
-                    if (XandYHasChanged)
-                        getCurrentPath2D().lineToRelative(attributes.get("X"), -attributes.get("Y"));
-                    getCurrentPath2D().setZRelative(attributes.get("Z"));
-                } else {
-                    if (XandYHasChanged)
-                        getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
-                    getCurrentPath2D().setZ(attributes.get("Z"));
-                    getCurrentPath2D().setRelative(attributes.get("X"), -attributes.get("Y"));
-                }
-            }
-            case 2, 3 -> {
-                if (getCurrentAxisPlane() == 17) {
-                    double x = attributes.get("X");
-                    double y = -attributes.get("Y");
-                    double i = attributes.get("I");
-                    double j = -attributes.get("J");
-                    getCurrentPath2D().arcTo(i, j, x, y, attributes.get("G") == 2 ? -1 : 1, getRelativity(),
-                            getRelativityArc());
-                } else {
-                    if (getRelativity()) {
-                        getCurrentPath2D().lineToRelative(attributes.get("X"), -attributes.get("Y"));
-                        getCurrentPath2D().setZRelative(attributes.get("Z"));
-                    } else {
-                        getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
-                        getCurrentPath2D().setZ(attributes.get("Z"));
-                        getCurrentPath2D().setRelative(attributes.get("X"), -attributes.get("Y"));
-                    }
-                }
-                if (getRelativity()) {
-                    getCurrentPath2D().setZRelative(attributes.get("Z"));
-                } else {
-                    getCurrentPath2D().setZ(attributes.get("Z"));
-                }
-            }
-            case 4 -> {
-                // dwell aka do nothing
-            }
-            case 10 -> {
-                // WCS Offset Select
-            }
-            case 17, 18, 19 -> {
-                setCurrentAxisPlane((int) attributes.get("G").doubleValue());// sets axis planes
-            }
-            case 20 -> {
-                inchesMode = true;
-            }
-            case 21 -> {
-                inchesMode = false;
-            }
-            case 41 -> {
-                // cutter comp left
-                if (attributes.get("G") == 41) {
-                    getCurrentPath2D().offsetLeft();
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
-            }
-            case 42 -> {
-                if (attributes.get("G") == 42) {
-                    getCurrentPath2D().offsetRight();
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
-            }
-            case 43 -> {
-                // calls which tool length offset is used(TODO fix complexities)
-            }
-            case 53 -> {
-                // Move In Machine Coordinates - ignore next move command
-                setUsingMachineCoordinates(true);
-            }
-            case 54, 55, 56, 57, 58, 59 -> {
-                // WCS Offset(Do nothing for NOW TODO fix this)
-            }
-            case 64 -> {
-                // do Nothing(Path Blending??!!??)
-            }
-            case 80 -> {
-                // turn off canned cycle, does nothing???
-            }
-            case 81, 82, 83 -> {
-                // canned cycles
-                // just make a dot i give up
-                getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
-                getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
-            }
-            case 90 -> {
-                if (attributes.get("G") == 90) {
-                    // absolute distance mode
-                    setIsRelative(false);
-                } else if (attributes.get("G") == 90.1) {
-                    // absolute arc mode
-                    setIsRelativeArc(false);
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
-            }
-            case 91 -> {
-                if (attributes.get("G") == 91) {
-                    // incremental distance mode
-                    setIsRelative(true);
-                } else if (attributes.get("G") == 91.1) {
-                    setIsRelativeArc(true);
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
-            }
-            case 94 -> {
-                // do Nothing(Feed rate change)
-            }
-            case 98, 99 -> {
-                // idk
-            }
-            default -> {
-                throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-            }
-
-        }
-
-        previousAttributes = attributes;
+        ngcStrain.gCodeParser.addGCodeAttributes(attributes, this);
     }
 
     public void setUsingMachineCoordinates(boolean b) {
@@ -402,29 +194,35 @@ public class NGCDocument {
         return gCodeStringBuilder.toString();
     }
 
+    public NgcStrain getNgcStrain() {
+        return ngcStrain;
+    }
+
+    public HashMap<String, Double> getPreviousAttributes() {
+        return previousAttributes;
+    }
+
+    public boolean isInchesMode() {
+        return inchesMode;
+    }
+
+    protected void setInchesMode(boolean newMode) {
+        inchesMode = newMode;
+    }
+
+    protected void setPreviousAttributes(HashMap<String, Double> newAttributes) {
+        previousAttributes = newAttributes;
+    }
+
     public String getGCodeHeader() {
-        String gCodeString = getGCodeString();
-        int endIndex = gCodeString.indexOf("G53");
-        while (gCodeString.charAt(endIndex) != '\n') {
-            endIndex++;
-        }
-        String header = gCodeString.substring(gCodeString.indexOf('%') + 1, endIndex + 1);
-        return "(START HEADER)\n" + header + "(END HEADER)\n";
+        return ngcStrain.gCodeParser.getGCodeHeader(this);
     }
 
     public String getGCodeBody() {
-        String gCodeString = getGCodeString();
-        int endIndex = gCodeString.indexOf("G53");
-        while (gCodeString.charAt(endIndex) != '\n') {
-            endIndex++;
-        }
-        String body = gCodeString.substring(endIndex + 1, gCodeString.lastIndexOf("G53"));
-        return "(START BODY)\n" + body + "(END BODY)\n";
+        return ngcStrain.gCodeParser.getGCodeBody(this);
     }
 
     public String getGCodeFooter() {
-        String gCodeString = getGCodeString();
-        String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"), gCodeString.lastIndexOf('%'));
-        return "(START FOOTER)\n" + footer + "(END FOOTER)\n";
+        return ngcStrain.gCodeParser.getGCodeFooter(this);
     }
 }

@@ -1,7 +1,7 @@
 package Parser.GCode;
 
-public class MCodeParser implements GenericParser {
-    public void parse(String gcodeLine, int lineNum, NGCDocument doc) {
+public class MCodeParser971 implements GenericParser {
+    public String parse(String gcodeLine, int lineNum, NGCDocument doc) {
         int code;
         String tempCode = "";
         int indexOfM = gcodeLine.indexOf('M') + 1;
@@ -36,5 +36,6 @@ public class MCodeParser implements GenericParser {
             default ->
                 throw new UnknownGCodeError("MCode : " + tempCode + " not parsable @ line: " + lineNum);
         }
+        return "";
     }
 }

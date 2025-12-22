@@ -2,11 +2,17 @@ package Parser.GCode;
 
 import Display.ErrorDialog;
 import Display.Screen;
+import Display.WarningDialog;
 import SheetHandler.Part;
 import java.awt.geom.PathIterator;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class GCodeParser971 implements GenericGCodeParser {
+public class GCodeParserWinCNC implements GenericGCodeParser {
     public String parse(String gcodeLine, int lineNum, NGCDocument doc) {
         // split the line into multiple and parse all of them if it has >1 g
         if (gcodeLine.lastIndexOf('G') != gcodeLine.indexOf('G')) {
@@ -17,10 +23,16 @@ public class GCodeParser971 implements GenericGCodeParser {
                 }
             }
         } else {
+            if (gcodeLine.contains("S")) {
+                return gcodeLine;
+            }
             HashMap<String, Double> attributes = new HashMap<>();
             for (String datum : gcodeLine.trim().split(" ")) {
                 try {
-                    attributes.put(datum.substring(0, 1), Double.parseDouble(datum.substring(1)));
+                    double value = 0.0;
+                    if (datum.substring(1).length() > 0)
+                        value = Double.parseDouble(datum.substring(1));
+                    attributes.put(datum.substring(0, 1), value);
                 } catch (Exception r) {
                     r.printStackTrace();
                     new ErrorDialog(new IllegalArgumentException(), "Error: " + lineNum + ": " + gcodeLine);
@@ -34,26 +46,104 @@ public class GCodeParser971 implements GenericGCodeParser {
         return "";
     }
 
-    private String gCodeTranslateTo(Part part) {
-        double x = part.getX();
-        double y = part.getY();
-        double rot = part.getRot();
-
-        return String.format(
-                "G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, Math.toDegrees(rot));
-    }
+    private static final Pattern AXIS_PATTERN = Pattern.compile("(?i)([XYIJZ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))");
 
     public String gCodeTransformClean(Part part) {
-        NGCDocument doc = part.getNgcDocument();
+        final double dx = part.getX();
+        final double dy = part.getY();
+        final double rot = part.getRot();
+        final double cos = Math.cos(rot);
+        final double sin = Math.sin(rot);
 
-        return gCodeTranslateTo(part) + getGCodeBody(doc).replaceAll("G54", "");
+        double currentX = 0.0;
+        double currentY = 0.0;
+
+        NGCDocument doc = part.getNgcDocument();
+        // perform skelotonized parsing to transform points
+        String gcodeBody = getGCodeBody(doc);
+        StringBuilder output = new StringBuilder(gcodeBody.length() * 3 / 2);
+        try (BufferedReader reader = new BufferedReader(new StringReader(gcodeBody))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // skip if no coords in line
+                if ((!line.contains("X")
+                        && !line.contains("Y")
+                        && !line.contains("I")
+                        && !line.contains("J"))
+                        || line.contains("G4")
+                        || line.contains("[")) {
+                    output.append(line).append('\n');
+                    continue;
+                }
+
+                double currentI = 0.0;
+                double currentJ = 0.0;
+                boolean hasI = false;
+                boolean hasJ = false;
+
+                // 1. Parse the Line
+                Matcher m = AXIS_PATTERN.matcher(line);
+                while (m.find()) {
+                    String axis = m.group(1);
+                    double val = Double.parseDouble(m.group(2));
+
+                    switch (axis) {
+                        case "X":
+                            currentX = val;
+                            break;
+                        case "Y":
+                            currentY = val;
+                            break;
+                        case "I":
+                            currentI = val;
+                            hasI = true;
+                            break;
+                        case "J":
+                            currentJ = val;
+                            hasJ = true;
+                            break;
+                    }
+                }
+                double xRot = currentX * cos - currentY * sin;
+                double yRot = currentX * sin + currentY * cos;
+
+                double xFinal = xRot + dx;
+                double yFinal = yRot + dy;
+
+                double iFinal = 0.0;
+                double jFinal = 0.0;
+
+                if (hasI || hasJ) {
+                    iFinal = currentI * cos - currentJ * sin;
+                    jFinal = currentI * sin + currentJ * cos;
+                }
+
+                // Remove old X, Y, I, J tokens
+                String cleanLine = line.replaceAll("(?i)([XYIJZ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "");
+
+                output.append(cleanLine.trim());
+
+                // Always write X and Y
+                output.append(String.format(" X%.4f Y%.4f", xFinal, yFinal));
+
+                // Only write I and J if they existed in the original line
+                if (hasI || hasJ) {
+                    output.append(String.format(" I%.4f J%.4f", iFinal, jFinal));
+                }
+
+                output.append('\n');
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return output.toString();
     }
 
     public String removeGCodeSpecialness(String gCode) {
-        String newGCode = gCode.replaceAll("\\(.*\\)", "").trim() + "\n";
-        return gCode.substring(0, gCode.indexOf(')') + 2)
+        String newGCode = gCode.replaceAll("\\[.*\\]", "").trim() + "\n";
+        return gCode.substring(0, gCode.indexOf(']') + 2)
                 + newGCode
-                + gCode.substring(gCode.lastIndexOf('('));
+                + gCode.substring(gCode.lastIndexOf('['));
     }
 
     public String getGCodeHeader(NGCDocument doc) {
@@ -62,8 +152,8 @@ public class GCodeParser971 implements GenericGCodeParser {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        String header = gCodeString.substring(gCodeString.indexOf('%'), endIndex + 1);
-        return "(START HEADER)\n" + header + "(END HEADER)\n";
+        String header = gCodeString.substring(0, endIndex + 1);
+        return "[START HEADER]\n" + header + "[END HEADER]\n";
     }
 
     public String getGCodeBody(NGCDocument doc) {
@@ -73,16 +163,18 @@ public class GCodeParser971 implements GenericGCodeParser {
             endIndex++;
         }
         String body = gCodeString.substring(endIndex + 1, gCodeString.lastIndexOf("G53"));
-        return "(START BODY)\n" + body + "(END BODY)\n";
+        return "[START BODY]\n" + body + "[END BODY]\n";
     }
 
     public String getGCodeFooter(NGCDocument doc) {
         String gCodeString = doc.getGCodeString();
-        String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"), gCodeString.lastIndexOf('%') + 1);
-        return "(START FOOTER)\n" + footer + "(END FOOTER)\n";
+        String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"));
+        return "[START FOOTER]\n" + footer + "[END FOOTER]\n";
     }
 
     public void addGCodeAttributes(HashMap<String, Double> attributes, NGCDocument doc) {
+        // i and j are always relative
+        doc.setIsRelativeArc(true);
         // set g to the last thing if theres no g
         if (!attributes.containsKey("G")) {
             attributes.put("G", doc.getPreviousAttributes().get("G"));
@@ -151,6 +243,8 @@ public class GCodeParser971 implements GenericGCodeParser {
         if (Screen.DebugMode) {
             System.out.println(attributes);
             System.out.println("xandy: " + XandYHasChanged);
+            System.out.println("x: " + XHasChanged);
+            System.out.println("y: " + YHasChanged);
         }
 
         switch ((int) attributes.get("G").doubleValue()) {
@@ -191,30 +285,20 @@ public class GCodeParser971 implements GenericGCodeParser {
                 }
             }
             case 2, 3 -> {
-                if (doc.getCurrentAxisPlane() == 17) {
-                    double x = attributes.get("X");
-                    double y = -attributes.get("Y");
-                    double i = attributes.get("I");
-                    double j = -attributes.get("J");
-                    doc.getCurrentPath2D()
-                            .arcTo(
-                                    i,
-                                    j,
-                                    x,
-                                    y,
-                                    attributes.get("G") == 2 ? -1 : 1,
-                                    doc.getRelativity(),
-                                    doc.getRelativityArc());
-                } else {
-                    if (doc.getRelativity()) {
-                        doc.getCurrentPath2D().lineToRelative(attributes.get("X"), -attributes.get("Y"));
-                        doc.getCurrentPath2D().setZRelative(attributes.get("Z"));
-                    } else {
-                        doc.getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
-                        doc.getCurrentPath2D().setZ(attributes.get("Z"));
-                        doc.getCurrentPath2D().setRelative(attributes.get("X"), -attributes.get("Y"));
-                    }
-                }
+                // only does arcs in XY plane
+                double x = attributes.get("X");
+                double y = -attributes.get("Y");
+                double i = attributes.get("I");
+                double j = -attributes.get("J");
+                doc.getCurrentPath2D()
+                        .arcTo(
+                                i,
+                                j,
+                                x,
+                                y,
+                                attributes.get("G") == 2 ? -1 : 1,
+                                doc.getRelativity(),
+                                doc.getRelativityArc());
                 if (doc.getRelativity()) {
                     doc.getCurrentPath2D().setZRelative(attributes.get("Z"));
                 } else {
@@ -223,18 +307,16 @@ public class GCodeParser971 implements GenericGCodeParser {
             }
             case 4 -> {
                 // dwell aka do nothing
-            }
-            case 10 -> {
-                // WCS Offset Select
-            }
-            case 17, 18, 19 -> {
-                doc.setCurrentAxisPlane((int) attributes.get("G").doubleValue()); // sets axis planes
+                attributes.remove("X");
             }
             case 20 -> {
                 doc.setInchesMode(true);
             }
             case 21 -> {
                 doc.setInchesMode(false);
+            }
+            case 40 -> {
+                throw new UnknownGCodeError("G40 not handled currently");
             }
             case 41 -> {
                 // cutter comp left
@@ -251,54 +333,28 @@ public class GCodeParser971 implements GenericGCodeParser {
                     throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
                 }
             }
-            case 43 -> {
-                // calls which tool length offset is used(TODO fix complexities)
-            }
             case 53 -> {
-                // Move In Machine Coordinates - ignore next move command
-                doc.setUsingMachineCoordinates(true);
+                // move in machine coordinates directly, do nothing
             }
             case 54, 55, 56, 57, 58, 59 -> {
-                // WCS Offset(Do nothing for NOW TODO fix this)
-            }
-            case 64 -> {
-                // do Nothing(Path Blending??!!??)
-            }
-            case 80 -> {
-                // turn off canned cycle, does nothing???
-            }
-            case 81, 82, 83 -> {
-                // canned cycles
-                // just make a dot i give up
-                doc.getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
-                doc.getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
+                // WCS Offset, not set
+                new WarningDialog(
+                        new IllegalArgumentException(),
+                        "WCS are not innately supported. Please only "
+                                + "allow this if you know what you're doing.(justin)",
+                        () -> {
+                        });
             }
             case 90 -> {
                 if (attributes.get("G") == 90) {
                     // absolute distance mode
                     doc.setIsRelative(false);
-                } else if (attributes.get("G") == 90.1) {
-                    // absolute arc mode
-                    doc.setIsRelativeArc(false);
                 } else {
                     throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
                 }
             }
             case 91 -> {
-                if (attributes.get("G") == 91) {
-                    // incremental distance mode
-                    doc.setIsRelative(true);
-                } else if (attributes.get("G") == 91.1) {
-                    doc.setIsRelativeArc(true);
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
-            }
-            case 94 -> {
-                // do Nothing(Feed rate change)
-            }
-            case 98, 99 -> {
-                // idk
+                throw new UnknownGCodeError("G91 makes me sad");
             }
             default -> {
                 throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");

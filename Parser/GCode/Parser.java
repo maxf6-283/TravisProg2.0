@@ -42,12 +42,16 @@ public class Parser implements Callable<NGCDocument> {
         fileInput = new File(fileInput.getPath());
         input = new Scanner(fileInput);
         NgcStrain ngcStrain;
+
         if (getExt(fileInput.getName()).equalsIgnoreCase("ngc")) {
             ngcStrain = NgcStrain.router_971;
+        } else if (getExt(fileInput.getName()).equalsIgnoreCase("tap")) {
+            ngcStrain = NgcStrain.router_WinCNC;
         } else {
             throw new IllegalArgumentException();
         }
-        NGCDocument doc = new NGCDocument(fileInput);
+
+        NGCDocument doc = new NGCDocument(fileInput, ngcStrain);
         while (input.hasNextLine()) {
             String line = input.nextLine();
             doc.addToString(line);
@@ -55,10 +59,11 @@ public class Parser implements Callable<NGCDocument> {
             // out.write(line + "\n");
             line = ngcStrain.commentsParser.parse(line, lineNum, doc);
             if (line.contains("M")) {
-                ngcStrain.mCodeParser.parse(line, lineNum, doc);
+                line = ngcStrain.mCodeParser.parse(line, lineNum, doc);
             } else if (line.length() > 2) {
-                ngcStrain.gCodeParser.parse(line, lineNum, doc);
+                line = ngcStrain.gCodeParser.parse(line, lineNum, doc);
             }
+            line = ngcStrain.endParser.parse(line, lineNum, doc);
         }
         input.close();
         parsedDocuments.add(doc);

@@ -1,11 +1,11 @@
 package Parser.GCode;
 
-public class CommentsParser971 implements GenericParser {
+public class CommentsParserWinCNC implements GenericParser {
     public String parse(String gcodeLine, int lineNum, NGCDocument doc) {
-        while (gcodeLine.contains("(")) {
-            String temp = gcodeLine.substring(gcodeLine.indexOf('(') + 1, gcodeLine.indexOf(')'));
-            gcodeLine = gcodeLine.substring(0, gcodeLine.indexOf('('))
-                    + gcodeLine.substring(gcodeLine.indexOf(')') + 1, gcodeLine.length());
+        while (gcodeLine.contains("[")) {
+            String temp = gcodeLine.substring(gcodeLine.indexOf('[') + 1, gcodeLine.indexOf(']'));
+            gcodeLine = gcodeLine.substring(0, gcodeLine.indexOf('['))
+                    + gcodeLine.substring(gcodeLine.indexOf(']') + 1, gcodeLine.length());
             String tempDouble = "";
             if (temp.contains("T1") && temp.contains("D=")) {
                 int i = temp.indexOf("D=") + 2;
