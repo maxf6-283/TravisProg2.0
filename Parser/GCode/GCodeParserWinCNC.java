@@ -47,20 +47,12 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
     }
 
     public String getToolCode(int toolNum) {
-        return "[Tool " + toolNum + "]\n" + "T" + toolNum;
+        return "G53 Z\nM5\n[Tool " + toolNum + "]\n" + "T" + toolNum;
     }
 
     public String gCodeTransformClean(Part part, int toolNum) {
         NGCDocument doc = part.getNgcDocument();
-
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("G53[^\\n]*Z")
-                .matcher(doc.getGCodeForTool(toolNum));
-
-        int i = -1;
-        while (m.find())
-            i = m.start(); // Loop finds the LAST matching index
-        String rawBody = doc.getGCodeForTool(toolNum)
-                .substring(0, i == -1 ? doc.getGCodeForTool(toolNum).length() : i);
+        String rawBody = doc.getGCodeForTool(toolNum);
         return rawBody != "" ? gCodeTransformClean(part, rawBody) : "";
     }
 
@@ -206,7 +198,6 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         if (i == -1)
             i = gCodeString.lastIndexOf("G53");
         String body = gCodeString.substring(endIndex + 1, i);
-        System.out.println("body: " + body);
         return "[START BODY]\n" + body + "[END BODY]\n";
     }
 

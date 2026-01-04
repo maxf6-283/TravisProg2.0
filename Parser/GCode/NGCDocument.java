@@ -255,6 +255,18 @@ public class NGCDocument {
     }
 
     public void changeTool(int toolNumber) {
+        if (toolScripts.containsKey(currentToolNumber)) {
+            String rawBody = toolScripts.get(currentToolNumber).toString();
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("G53[^\\n]*Z").matcher(rawBody);
+
+            int i = -1;
+            while (m.find())
+                i = m.start(); // Loop finds the LAST matching index
+
+            toolScripts.put(
+                    currentToolNumber,
+                    new StringBuilder(rawBody.substring(0, i == -1 ? rawBody.length() : i)));
+        }
         this.currentToolNumber = toolNumber;
 
         // Create layer if it doesn't exist

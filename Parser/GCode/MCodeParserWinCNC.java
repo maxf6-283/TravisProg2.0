@@ -12,10 +12,14 @@ public class MCodeParserWinCNC implements GenericParser {
         code = Integer.parseInt(tempCode);
 
         switch (code) {
-            case 3, 4, 5 -> {
+            case 3, 4 -> {
                 // S by itself handles it
                 return gcodeLine.replace("M" + code, "");
             } // spindle speed
+            case 5 -> {
+                doc.changeTool(0);
+                return gcodeLine.replace("M" + code, "");
+            }
             case 6 -> {
             } // tool change
             case 0, 30, 8, 9 -> {
