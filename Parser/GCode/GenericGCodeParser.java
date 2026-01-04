@@ -15,4 +15,8 @@ public interface GenericGCodeParser extends GenericParser {
     public String removeGCodeSpecialness(String gCode);
 
     public String gCodeTransformClean(Part part);
+
+    public String gCodeTransformClean(Part part, int toolNum);
+
+    public String getToolCode(int toolNum);
 }

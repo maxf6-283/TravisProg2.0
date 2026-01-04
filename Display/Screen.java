@@ -18,6 +18,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -33,26 +36,31 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
+import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputListener;
@@ -806,7 +814,7 @@ public class Screen extends JPanel
         } else if (e.getSource() == addCut) {
             switchMenuStates(ADD_CUT);
         } else if (e.getSource() == newCutButton) {
-            File temp = Path.of(selectedSheet.getParentFile().getPath(), newCutField.getText() + ".cut").toFile();
+            File temp = new File(selectedSheet.getParentFile().getPath() + "\\" + newCutField.getText() + ".cut");
             selectedSheet.addCut(new Cut(temp, selectedSheet.getHolesFile()));
             selectedSheet.changeActiveCutFile(temp);
             switchMenuStates(HOME);
@@ -856,11 +864,36 @@ public class Screen extends JPanel
         } else {
             for (JButton button : suffixes) {
                 if (e.getSource() == button) {
-                    File outputFolder = new File(
-                            "./output/" + java.time.LocalDate.now().toString().replaceAll("-", ""));
-                    outputFolder.mkdir();
-                    File outputFile = new File(outputFolder, emitPanel.gCodeName.getText() + ".ngc");
-                    selectedSheet.emitGCode(outputFile, button.getText());
+                    HashSet<Integer> toolSet = new java.util.HashSet<>();
+
+                    for (Part part : selectedSheet.getActiveCut()) {
+                        // This loads the correct NGCDocument for the part
+                        if (part.setSelectedGCode(button.getText())) {
+                            // Now getNgcDocument() returns the loaded doc
+                            if (part.getNgcDocument() != null) {
+                                toolSet.addAll(part.getNgcDocument().getToolTable().keySet());
+                            }
+                        }
+                    }
+                    toolSet.remove(0); // Remove header tool
+                    ArrayList<Integer> toolList = new ArrayList<>(toolSet);
+                    Collections.sort(toolList);
+
+                    // 2. Show the Popup Dialog
+                    ToolOrderDialog dialog = new ToolOrderDialog(
+                            (java.awt.Frame) SwingUtilities.getWindowAncestor(this), toolList);
+                    dialog.setVisible(true); // Pauses here until dialog closes
+
+                    // 3. If confirmed, Emit
+                    List<Integer> finalOrder = dialog.getResult();
+                    if (finalOrder != null) {
+                        File outputFolder = new File(
+                                "./output/" + java.time.LocalDate.now().toString().replaceAll("-", ""));
+                        outputFolder.mkdir();
+                        File outputFile = new File(outputFolder, emitPanel.gCodeName.getText() + ".ngc");
+
+                        selectedSheet.emitGCode(outputFile, button.getText(), finalOrder);
+                    }
                 }
             }
         }
@@ -1702,6 +1735,102 @@ public class Screen extends JPanel
 
         public Part getPart() {
             return part;
+        }
+    }
+
+    /** New Popup Dialog for Tool Ordering */
+    private static class ToolOrderDialog extends JDialog {
+        private final DefaultListModel<Integer> listModel;
+        private final JList<Integer> list;
+        private List<Integer> result = null;
+
+        public ToolOrderDialog(java.awt.Frame owner, List<Integer> tools) {
+            super(owner, "Verify Tool Order", true); // Modal
+            setLayout(new java.awt.BorderLayout());
+
+            JLabel help = new JLabel("  Drag items to reorder:");
+            help.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            add(help, java.awt.BorderLayout.NORTH);
+
+            listModel = new DefaultListModel<>();
+            for (Integer t : tools)
+                listModel.addElement(t);
+
+            list = new JList<>(listModel);
+            list.setDragEnabled(true);
+            list.setDropMode(DropMode.INSERT);
+            list.setTransferHandler(new ListTransferHandler());
+            list.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+            add(new JScrollPane(list), java.awt.BorderLayout.CENTER);
+
+            JPanel buttons = new JPanel();
+            JButton ok = new JButton("Confirm Emit");
+            JButton cancel = new JButton("Cancel");
+
+            ok.addActionListener(
+                    e -> {
+                        result = new ArrayList<>();
+                        for (int i = 0; i < listModel.size(); i++)
+                            result.add(listModel.get(i));
+                        dispose();
+                    });
+
+            cancel.addActionListener(e -> dispose());
+
+            buttons.add(cancel);
+            buttons.add(ok);
+            add(buttons, java.awt.BorderLayout.SOUTH);
+
+            setSize(300, 400);
+            setLocationRelativeTo(owner);
+        }
+
+        public List<Integer> getResult() {
+            return result;
+        }
+
+        // Internal Transfer Handler for Drag-and-Drop
+        private class ListTransferHandler extends TransferHandler {
+            @Override
+            public int getSourceActions(JComponent c) {
+                return TransferHandler.MOVE;
+            }
+
+            @Override
+            protected Transferable createTransferable(JComponent c) {
+                return new StringSelection(String.valueOf(list.getSelectedIndex()));
+            }
+
+            @Override
+            public boolean canImport(TransferSupport support) {
+                return support.isDataFlavorSupported(DataFlavor.stringFlavor);
+            }
+
+            @Override
+            public boolean importData(TransferSupport support) {
+                try {
+                    String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+                    int fromIndex = Integer.parseInt(data);
+                    JList.DropLocation dl = (JList.DropLocation) support.getDropLocation();
+                    int toIndex = dl.getIndex();
+
+                    if (fromIndex < 0
+                            || fromIndex >= listModel.getSize()
+                            || toIndex < 0
+                            || toIndex > listModel.getSize())
+                        return false;
+
+                    Integer val = listModel.get(fromIndex);
+                    listModel.remove(fromIndex);
+                    if (fromIndex < toIndex)
+                        toIndex--;
+                    listModel.add(toIndex, val);
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
         }
     }
 }

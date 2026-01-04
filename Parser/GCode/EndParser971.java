@@ -5,7 +5,7 @@ public class EndParser971 implements GenericParser {
         gcodeLine = gcodeLine.replace("%", "");
         if (!gcodeLine.isEmpty()) {
             throw new IllegalArgumentException(
-                    "The following Gcode line cannot be parsed:\n" + gcodeLine);
+                    "The following Gcode at line " + lineNum + " cannot be parsed:\n" + gcodeLine);
         }
         return gcodeLine;
     }

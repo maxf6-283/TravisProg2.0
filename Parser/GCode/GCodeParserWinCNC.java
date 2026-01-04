@@ -46,9 +46,31 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         return "";
     }
 
+    public String getToolCode(int toolNum) {
+        return "[Tool " + toolNum + "]\n" + "T" + toolNum;
+    }
+
+    public String gCodeTransformClean(Part part, int toolNum) {
+        NGCDocument doc = part.getNgcDocument();
+
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("G53[^\\n]*Z")
+                .matcher(doc.getGCodeForTool(toolNum));
+
+        int i = -1;
+        while (m.find())
+            i = m.start(); // Loop finds the LAST matching index
+        String rawBody = doc.getGCodeForTool(toolNum)
+                .substring(0, i == -1 ? doc.getGCodeForTool(toolNum).length() : i);
+        return rawBody != "" ? gCodeTransformClean(part, rawBody) : "";
+    }
+
     private static final Pattern AXIS_PATTERN = Pattern.compile("(?i)([XYIJZ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))");
 
     public String gCodeTransformClean(Part part) {
+        return gCodeTransformClean(part, getGCodeBody(part.getNgcDocument()));
+    }
+
+    private String gCodeTransformClean(Part part, String gcode) {
         final double dx = part.getX();
         final double dy = part.getY();
         final double rot = part.getRot();
@@ -60,11 +82,20 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
 
         NGCDocument doc = part.getNgcDocument();
         // perform skelotonized parsing to transform points
-        String gcodeBody = getGCodeBody(doc);
-        StringBuilder output = new StringBuilder(gcodeBody.length() * 3 / 2);
-        try (BufferedReader reader = new BufferedReader(new StringReader(gcodeBody))) {
+        StringBuilder output = new StringBuilder(gcode.length() * 3 / 2);
+        try (BufferedReader reader = new BufferedReader(new StringReader(gcode))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+
+                // Remove old tool table comments like [T1 D=0.1575 ...]
+                if (trimmed.startsWith("[T") && trimmed.contains("D=")) {
+                    continue;
+                }
+                // Remove standalone T commands (e.g., T1) to avoid redundancy
+                if (trimmed.matches("T\\d+")) {
+                    continue;
+                }
                 // skip if no coords in line
                 if ((!line.contains("X")
                         && !line.contains("Y")
@@ -75,6 +106,8 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                     output.append(line).append('\n');
                     continue;
                 }
+                if (trimmed.isEmpty())
+                    continue;
 
                 double currentI = 0.0;
                 double currentJ = 0.0;
@@ -162,14 +195,36 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        String body = gCodeString.substring(endIndex + 1, gCodeString.lastIndexOf("G53"));
+        // Regex: Find 'G53' followed by anything (except newline) then 'Z'
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("G53[^\\n]*Z").matcher(gCodeString);
+
+        int i = -1;
+        while (m.find())
+            i = m.start(); // Loop finds the LAST matching index
+
+        // Fallback: If no "G53...Z" line exists, grab the last G53 of any kind
+        if (i == -1)
+            i = gCodeString.lastIndexOf("G53");
+        String body = gCodeString.substring(endIndex + 1, i);
+        System.out.println("body: " + body);
         return "[START BODY]\n" + body + "[END BODY]\n";
     }
 
     public String getGCodeFooter(NGCDocument doc) {
-        String gCodeString = doc.getGCodeString();
-        String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"));
-        return "[START FOOTER]\n" + footer + "[END FOOTER]\n";
+        String s = doc.getGCodeString();
+
+        // Regex: Find 'G53' followed by anything (except newline) then 'Z'
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("G53[^\\n]*Z").matcher(s);
+
+        int i = -1;
+        while (m.find())
+            i = m.start(); // Loop finds the LAST matching index
+
+        // Fallback: If no "G53...Z" line exists, grab the last G53 of any kind
+        if (i == -1)
+            i = s.lastIndexOf("G53");
+
+        return "[START FOOTER]\n" + (i != -1 ? s.substring(i) : "") + "[END FOOTER]\n";
     }
 
     public void addGCodeAttributes(HashMap<String, Double> attributes, NGCDocument doc) {
@@ -316,22 +371,13 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                 doc.setInchesMode(false);
             }
             case 40 -> {
-                throw new UnknownGCodeError("G40 not handled currently");
+                doc.setCutterCompMode(0);
             }
             case 41 -> {
-                // cutter comp left
-                if (attributes.get("G") == 41) {
-                    doc.getCurrentPath2D().offsetLeft();
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
+                doc.setCutterCompMode(1);
             }
             case 42 -> {
-                if (attributes.get("G") == 42) {
-                    doc.getCurrentPath2D().offsetRight();
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
+                doc.setCutterCompMode(2);
             }
             case 53 -> {
                 // move in machine coordinates directly, do nothing

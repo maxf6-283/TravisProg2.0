@@ -5,13 +5,12 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class NGCDocument {
     private File gcodeFile;
-    private ArrayList<RelativePath2D> originalGeometry;
     private Point3D currentPoint;
     private int SpindleSpeed;
-    private double toolOffset = 0.1575;
     private double implicitGCodeHolder;
     private boolean isRelativeArc = true;
     private boolean isRelative = false;
@@ -21,17 +20,17 @@ public class NGCDocument {
     private HashMap<String, Double> previousAttributes = new HashMap<>();
     private boolean machineCoordinates = false;
     private StringBuilder gCodeStringBuilder;
-    private boolean usingCutterComp = false; // TODO make sure to set true when G41 or G42 is called
     private boolean inchesMode = true;
-    private HashMap<Double, ArrayList<RelativePath2D>> offsetGeometry = new HashMap<>();
     private NgcStrain ngcStrain;
+    private HashMap<Integer, ToolInfo> toolLibrary = new HashMap<>();
+    private LinkedHashMap<Integer, ArrayList<RelativePath2D>> toolLayers = new LinkedHashMap<>();
+    private LinkedHashMap<Integer, StringBuilder> toolScripts = new LinkedHashMap<>();
+    private int currentToolNumber = 0;
+    // 0=Off, 1=Left (G41), 2=Right (G42)
+    private int currentCutterCompMode = 0;
 
     public NGCDocument() {
         this(null, null);
-    }
-
-    public void setUsingCutterComp() {
-        usingCutterComp = true;
     }
 
     public int getCurrentAxisPlane() {
@@ -52,12 +51,6 @@ public class NGCDocument {
         currentAxisPlane = GCode;
     }
 
-    public void setToolOffset(Double num) {
-        toolOffset = num;
-        if (Screen.DebugMode)
-            System.out.println("new dia: " + toolOffset);
-    }
-
     public void setCurrentPoint(Point3D point) {
         currentPoint = point;
     }
@@ -75,9 +68,11 @@ public class NGCDocument {
     }
 
     public boolean contains(Point2D point) {
-        for (RelativePath2D path : originalGeometry) {
-            if (path.contains(point)) {
-                return true;
+        for (ArrayList<RelativePath2D> layer : toolLayers.values()) {
+            for (RelativePath2D path : layer) {
+                if (path.contains(point)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -102,43 +97,69 @@ public class NGCDocument {
     public NGCDocument(File file, NgcStrain ngcStrain) {
         this.gcodeFile = file;
         gCodeStringBuilder = new StringBuilder();
-        originalGeometry = new ArrayList<>();
-        originalGeometry.add(new RelativePath2D());
         this.ngcStrain = ngcStrain;
+        changeTool(0);
+        toolScripts.put(0, new StringBuilder()); // Bucket for header/setup
     }
 
     public ArrayList<RelativePath2D> getRelativePath2Ds() {
-        if (usingCutterComp) {
-            ArrayList<RelativePath2D> path = offsetGeometry.get(toolOffset);
-            if (path == null) {
-                path = getOffsetInstance();
-                offsetGeometry.put(toolOffset, path);
-            }
-            return path;
-        } else {
-            // return getOffsetInstance();
-            if (Screen.DebugMode)
-                System.out.println(originalGeometry);
-            return originalGeometry;
+        ArrayList<RelativePath2D> allPaths = new ArrayList<>();
+        HashMap<Integer, ArrayList<RelativePath2D>> layers = getToolpathLayers();
+        for (ArrayList<RelativePath2D> layer : layers.values()) {
+            allPaths.addAll(layer);
         }
+        return allPaths;
     }
 
-    private ArrayList<RelativePath2D> getOffsetInstance() {
+    public HashMap<Integer, ArrayList<RelativePath2D>> getToolpathLayers() {
+        HashMap<Integer, ArrayList<RelativePath2D>> output = new HashMap<>();
+
+        for (Integer toolNum : toolLayers.keySet()) {
+            ArrayList<RelativePath2D> layerPaths = toolLayers.get(toolNum);
+            // Get the specific radius for this tool (default 0.0)
+            double thisToolRadius = toolLibrary.getOrDefault(toolNum, new ToolInfo()).toolRadius();
+
+            ArrayList<RelativePath2D> offsetPaths = new ArrayList<>();
+            for (RelativePath2D path : layerPaths) {
+                // Calculate the offset path based on THIS tool's radius
+                offsetPaths.add(path.getOffsetInstance2(thisToolRadius));
+            }
+            output.put(toolNum, offsetPaths);
+        }
+        return output;
+    }
+
+    private ArrayList<RelativePath2D> getOffsetGeometryAll() {
         ArrayList<RelativePath2D> output = new ArrayList<>();
 
-        for (RelativePath2D path : originalGeometry) {
-            output.add(path.getOffsetInstance2(toolOffset));
-        }
+        for (Integer toolNum : toolLayers.keySet()) {
+            ArrayList<RelativePath2D> layerPaths = toolLayers.get(toolNum);
 
+            // Find the offset for THIS specific tool (default to 0.0 if missing)
+            double thisToolRadius = toolLibrary.getOrDefault(toolNum, new ToolInfo()).toolRadius();
+
+            // Calculate offset for every path in this layer
+            for (RelativePath2D path : layerPaths) {
+                // Apply the specific radius for this tool
+                output.add(path.getOffsetInstance2(thisToolRadius));
+            }
+        }
         return output;
     }
 
     protected RelativePath2D getCurrentPath2D() {
-        return originalGeometry.get(originalGeometry.size() - 1);
+        ArrayList<RelativePath2D> currentGeometry = toolLayers.get(currentToolNumber);
+        return currentGeometry.get(currentGeometry.size() - 1);
     }
 
     protected void newPath2D() {
-        originalGeometry.add(new RelativePath2D());
+        RelativePath2D newPath = new RelativePath2D();
+        if (currentCutterCompMode == 1)
+            newPath.offsetLeft();
+        else if (currentCutterCompMode == 2)
+            newPath.offsetRight();
+
+        toolLayers.get(currentToolNumber).add(newPath);
     }
 
     public void setGcodeFile(File file) {
@@ -182,12 +203,15 @@ public class NGCDocument {
         return machineCoordinates;
     }
 
-    public double getToolOffset() {
-        return toolOffset;
-    }
-
     public void addToString(String lineToAdd) {
         gCodeStringBuilder.append("\n" + lineToAdd);
+
+        toolScripts.putIfAbsent(currentToolNumber, new StringBuilder());
+        toolScripts.get(currentToolNumber).append("\n" + lineToAdd);
+    }
+
+    public String getGCodeForTool(int toolNumber) {
+        return toolScripts.getOrDefault(toolNumber, new StringBuilder()).toString();
     }
 
     public String getGCodeString() {
@@ -224,5 +248,47 @@ public class NGCDocument {
 
     public String getGCodeFooter() {
         return ngcStrain.gCodeParser.getGCodeFooter(this);
+    }
+
+    public void defineTool(int toolNumber, double diameter) {
+        toolLibrary.put(toolNumber, new ToolInfo(diameter / 2.0)); // Store radius
+    }
+
+    public void changeTool(int toolNumber) {
+        this.currentToolNumber = toolNumber;
+
+        // Create layer if it doesn't exist
+        if (!toolLayers.containsKey(toolNumber)) {
+            ArrayList<RelativePath2D> newLayer = new ArrayList<>();
+            newLayer.add(new RelativePath2D());
+            toolLayers.put(toolNumber, newLayer);
+        }
+
+        // Reset comp mode on tool change for safety
+        setCutterCompMode(0);
+    }
+
+    public void setCutterCompMode(int mode) {
+        this.currentCutterCompMode = mode;
+        // Apply immediately to current path
+        if (mode == 1)
+            getCurrentPath2D().offsetLeft();
+        else if (mode == 2)
+            getCurrentPath2D().offsetRight();
+    }
+
+    public void setToolOffset(ToolInfo num) {
+        // Save this offset for the CURRENT tool
+        toolLibrary.put(currentToolNumber, num);
+        if (Screen.DebugMode)
+            System.out.println("Updated T" + currentToolNumber + " offset to: " + num);
+    }
+
+    public ToolInfo getToolOffset(int num) {
+        return toolLibrary.getOrDefault(num, new ToolInfo());
+    }
+
+    public HashMap<Integer, ToolInfo> getToolTable() {
+        return toolLibrary;
     }
 }

@@ -3,6 +3,7 @@ package SheetHandler;
 import Display.WarningDialog;
 import Parser.GCode.NGCDocument;
 import Parser.GCode.NgcStrain;
+import Parser.GCode.ToolInfo;
 import Parser.Sheet.SheetParser;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -14,7 +15,10 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -220,7 +224,7 @@ public class Sheet {
      * @param gCodeFile - the file to put the GCode into.
      * @param string
      */
-    public void emitGCode(File gCodeFile, String suffix) {
+    public void emitGCode(File gCodeFile, String suffix, List<Integer>... toolOrderArr) {
 
         // specific mechanics: sandwich each part between a translation to and from
         // their position
@@ -231,12 +235,11 @@ public class Sheet {
         // and same for footers except put them at the end
         try {
             activeCut.stream().forEach((Part p) -> p.setSelectedGCode(suffix));
-            var strains = activeCut.stream()
+            var docs = activeCut.stream()
                     .map(Part::getNgcDocument)
                     .filter(Objects::nonNull)
-                    .map(NGCDocument::getNgcStrain)
                     .collect(Collectors.toList());
-            ;
+            var strains = docs.stream().map(NGCDocument::getNgcStrain).collect(Collectors.toList());
 
             if (strains.stream().distinct().count() > 1) {
                 new WarningDialog(
@@ -245,45 +248,143 @@ public class Sheet {
                         null);
             }
             NgcStrain predominantStrain = strains.stream().findAny().get();
+
+            if (!areToolTablesConsistent(docs)) {
+                new WarningDialog(
+                        new IllegalArgumentException(),
+                        "Tool tables for selected files are inconsistent: "
+                                + "Undefined Behavior\n"
+                                + docs.stream()
+                                        .map(NGCDocument::getToolTable)
+                                        .map(
+                                                map -> map.entrySet().stream()
+                                                        .filter(e -> !e.getKey().equals(0))
+                                                        .map(e -> e.getKey() + "=" + e.getValue())
+                                                        .collect(Collectors.joining(", ", "{", "}")))
+                                        .collect(Collectors.joining(", ")),
+                        null);
+            }
+
+            List<Integer> toolOrder;
+            Map<Integer, ToolInfo> toolTable = getMasterToolTable(docs);
+
+            if (predominantStrain != NgcStrain.router_971) {
+                if (toolOrderArr.length > 1) {
+                    throw new IllegalArgumentException("Only one tool order allowed");
+                }
+                if (toolOrderArr.length == 1) {
+                    toolOrder = toolOrderArr[0];
+                } else {
+                    toolOrder = new ArrayList<>(toolTable.keySet());
+                }
+                if (!(toolTable.keySet().containsAll(toolOrder)
+                        && toolOrder.containsAll(toolTable.keySet()))) {
+                    throw new IllegalArgumentException("Master Tool Table and Tool Order aren't consistent.");
+                }
+            } else {
+                toolOrder = Collections.singletonList(1);
+            }
             gCodeFile.createNewFile();
+
             BufferedWriter writer = new BufferedWriter(new FileWriter(gCodeFile));
+            final String openBracket = predominantStrain == NgcStrain.router_WinCNC ? "[" : "(";
+            final String closeBracket = predominantStrain == NgcStrain.router_WinCNC ? "]" : ")";
+
+            // 2. Write Master Tool Table with Dynamic Brackets
+            writer.write(openBracket + "Master Tool Table" + closeBracket + "\n");
+            toolTable.entrySet().stream()
+                    .filter(e -> e.getKey() != 0)
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(
+                            e -> {
+                                try {
+                                    double diam = e.getValue().toolRadius() * 2;
+                                    // Format: (T# D=Diameter) or [T# D=Diameter]
+                                    String comment = String.format(
+                                            "%sT%d D=%.4f%s\n", openBracket, e.getKey(), diam, closeBracket);
+                                    writer.write(comment);
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            });
+
             String header = "";
             String footer = "";
             activeCut.stream().forEach(Part::nullify);
             ArrayList<Part> notEmittedParts = new ArrayList<>();
-            for (Part part : activeCut) {
-                // ignore parts without the requisite suffix
-                if (!part.setSelectedGCode(suffix)) {
-                    if (!(suffix.equals("holes")
-                            || part instanceof Hole
-                            || notEmittedParts.stream()
-                                    .anyMatch(p -> p.partFile().getName().equals(part.partFile().getName())))) {
-                        new WarningDialog(
-                                new FileNotFoundException(),
-                                part.partFile().getName() + " does not have a gcode file with this endmill size",
-                                null);
-                        notEmittedParts.add(part);
+            for (Integer toolNum : toolOrder) {
+                // --- STEP 1: Gather valid parts for this tool ---
+                List<Part> partsForTool = new ArrayList<>();
+                for (Part part : activeCut) {
+                    // Ensure the part has the correct GCode selected
+                    if (!part.setSelectedGCode(suffix)) {
+                        // Only log warnings once (handled by the else block logic below if
+                        // needed)
+                        if (!(suffix.equals("holes")
+                                || part instanceof Hole
+                                || notEmittedParts.stream()
+                                        .anyMatch(p -> p.partFile().getName().equals(part.partFile().getName())))) {
+                            new WarningDialog(
+                                    new FileNotFoundException(), part.partFile().getName() + " missing gcode", null);
+                            notEmittedParts.add(part);
+                        }
+                        continue;
                     }
-                    continue;
-                }
-                // if the footer changes, write out the old one and remember the new one
-                String newFooter = predominantStrain.gCodeParser.removeGCodeSpecialness(
-                        part.getNgcDocument().getGCodeFooter());
-                if (!newFooter.equals(footer)) {
-                    writer.write(footer);
-                    footer = newFooter;
+
+                    // Check if part uses this tool (code is not empty)
+                    // Note: We use the tool-specific transform here to check validity
+                    String testCode;
+                    if (predominantStrain == NgcStrain.router_971)
+                        testCode = predominantStrain.gCodeParser.gCodeTransformClean(part);
+                    else
+                        testCode = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum);
+
+                    if (!testCode.trim().isEmpty()) {
+                        partsForTool.add(part);
+                    }
                 }
 
-                // if the header changes, write it out
-                String newHeader = predominantStrain.gCodeParser.removeGCodeSpecialness(
-                        part.getNgcDocument().getGCodeHeader());
-                if (!header.equals(newHeader)) {
-                    header = newHeader;
-                    writer.write(newHeader);
-                }
+                // --- STEP 2: Optimize the order for THIS tool ---
+                List<Part> sortedParts = getOptimizedPartOrder(partsForTool);
 
-                // the actual fun stuff
-                writer.write(predominantStrain.gCodeParser.gCodeTransformClean(part));
+                boolean toolChangeWritten = false;
+
+                // --- STEP 3: Write the sorted parts ---
+                for (Part part : sortedParts) {
+
+                    // Re-fetch header/footer (state updates)
+                    String newFooter = predominantStrain.gCodeParser.removeGCodeSpecialness(
+                            part.getNgcDocument().getGCodeFooter());
+                    if (!newFooter.equals(footer)) {
+                        writer.write(footer);
+                        footer = newFooter;
+                    }
+                    String newHeader = predominantStrain.gCodeParser.removeGCodeSpecialness(
+                            part.getNgcDocument().getGCodeHeader());
+                    if (!newHeader.equals(header)) {
+                        writer.write(newHeader);
+                        header = newHeader;
+                    }
+
+                    // Get final code
+                    String cleanCode;
+                    if (predominantStrain == NgcStrain.router_971)
+                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part);
+                    else
+                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum);
+
+                    if (!cleanCode.trim().isEmpty()) {
+                        // Write Tool Change (Once per group)
+                        if (!toolChangeWritten) {
+                            writer.write(predominantStrain.gCodeParser.getToolCode(toolNum) + "\n");
+                            toolChangeWritten = true;
+                        }
+
+                        // Write Part
+                        writer.write(openBracket + "Part: " + part.partFile().getName() + closeBracket);
+                        writer.write(cleanCode);
+                    }
+                }
             }
 
             // write the last footer
@@ -297,6 +398,110 @@ public class Sheet {
 
             e.printStackTrace();
         }
+    }
+
+    public static boolean areToolTablesConsistent(List<NGCDocument> documents) {
+        Map<Integer, ToolInfo> master = new HashMap<>();
+
+        for (NGCDocument doc : documents) {
+            for (var entry : doc.getToolTable().entrySet()) {
+                // putIfAbsent returns the EXISTING value if present, or null if it was
+                // just added. This does the lookup and insertion in a single
+                // atomic-like step.
+                ToolInfo existing = master.putIfAbsent(entry.getKey(), entry.getValue());
+
+                // If existing is NOT null, it means we saw this tool before. Check for
+                // conflict.
+                if (existing != null && !existing.equals(entry.getValue())) {
+                    return false; // Conflict found, stop immediately
+                }
+            }
+        }
+        return true;
+    }
+
+    public static Map<Integer, ToolInfo> getMasterToolTable(List<NGCDocument> documents) {
+        Map<Integer, ToolInfo> master = new HashMap<>();
+
+        for (NGCDocument doc : documents) {
+            for (var entry : doc.getToolTable().entrySet()) {
+                // putIfAbsent returns the EXISTING value if present, or null if it was
+                // just added. This does the lookup and insertion in a single
+                // atomic-like step.
+                ToolInfo existing = master.putIfAbsent(entry.getKey(), entry.getValue());
+
+                // If existing is NOT null, it means we saw this tool before. Check for
+                // conflict.
+                if (existing != null && !existing.equals(entry.getValue())) {
+                    throw new IllegalStateException(
+                            "Consistency should be checked before getting master table.");
+                }
+            }
+        }
+        return master;
+    }
+
+    /**
+     * Optimizes part order by trying every part as a starting point and running
+     * Nearest Neighbor.
+     * Returns the sequence with the minimum total travel distance.
+     */
+    private List<Part> getOptimizedPartOrder(List<Part> parts) {
+        if (parts.isEmpty())
+            return new ArrayList<>();
+        if (parts.size() == 1)
+            return new ArrayList<>(parts);
+
+        List<Part> bestOrder = null;
+        double minTotalDistance = Double.MAX_VALUE;
+
+        // Try starting at every possible part to find the best chain
+        for (int i = 0; i < parts.size(); i++) {
+            List<Part> currentOrder = new ArrayList<>();
+            List<Part> unvisited = new ArrayList<>(parts);
+
+            // Pick start node
+            Part current = unvisited.remove(i);
+            currentOrder.add(current);
+
+            double currentTotalDist = 0;
+
+            // Run Nearest Neighbor from this start node
+            while (!unvisited.isEmpty()) {
+                Part nearest = null;
+                double minDist = Double.MAX_VALUE;
+
+                for (Part p : unvisited) {
+                    // Calculate Euclidean distance
+                    double dx = current.getCenterPoint().getCenterX() - p.getCenterPoint().getCenterX();
+                    double dy = current.getCenterPoint().getCenterY() - p.getCenterPoint().getCenterY();
+                    double dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = p;
+                    }
+                }
+
+                currentTotalDist += minDist;
+
+                // Optimization: Abort if we already exceed the best path found so far
+                if (currentTotalDist >= minTotalDistance) {
+                    break;
+                }
+
+                current = nearest;
+                currentOrder.add(nearest);
+                unvisited.remove(nearest);
+            }
+
+            // Check if this full path is the new best
+            if (unvisited.isEmpty() && currentTotalDist < minTotalDistance) {
+                minTotalDistance = currentTotalDist;
+                bestOrder = currentOrder;
+            }
+        }
+        return bestOrder;
     }
 
     public Cut getActiveCut() {

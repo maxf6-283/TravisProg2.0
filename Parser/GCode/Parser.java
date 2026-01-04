@@ -52,6 +52,11 @@ public class Parser implements Callable<NGCDocument> {
         }
 
         NGCDocument doc = new NGCDocument(fileInput, ngcStrain);
+        try {
+            System.out.println(fileInput.getCanonicalPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         while (input.hasNextLine()) {
             String line = input.nextLine();
             doc.addToString(line);

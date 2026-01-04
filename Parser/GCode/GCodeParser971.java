@@ -34,6 +34,10 @@ public class GCodeParser971 implements GenericGCodeParser {
         return "";
     }
 
+    public String getToolCode(int toolNum) {
+        return "(Tool " + toolNum + ")\n" + "T" + toolNum + " M6";
+    }
+
     private String gCodeTranslateTo(Part part) {
         double x = part.getX();
         double y = part.getY();
@@ -43,14 +47,19 @@ public class GCodeParser971 implements GenericGCodeParser {
                 "G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, Math.toDegrees(rot));
     }
 
+    public String gCodeTransformClean(Part part, int toolNum) {
+        throw new UnsupportedOperationException("This router hath no tool changer.");
+    }
+
     public String gCodeTransformClean(Part part) {
         NGCDocument doc = part.getNgcDocument();
 
-        return gCodeTranslateTo(part) + getGCodeBody(doc).replaceAll("G54", "");
+        return "\n" + gCodeTranslateTo(part) + getGCodeBody(doc).replaceAll(".*G54.*\\R?", "");
     }
 
     public String removeGCodeSpecialness(String gCode) {
         String newGCode = gCode.replaceAll("\\(.*\\)", "").trim() + "\n";
+        newGCode = newGCode.replaceAll("\\n+", "\n").trim();
         return gCode.substring(0, gCode.indexOf(')') + 2)
                 + newGCode
                 + gCode.substring(gCode.lastIndexOf('('));
@@ -236,20 +245,18 @@ public class GCodeParser971 implements GenericGCodeParser {
             case 21 -> {
                 doc.setInchesMode(false);
             }
+            case 40 -> {
+                doc.setCutterCompMode(0);
+            }
             case 41 -> {
-                // cutter comp left
-                if (attributes.get("G") == 41) {
-                    doc.getCurrentPath2D().offsetLeft();
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
+                doc.setCutterCompMode(1);
+                if (attributes.containsKey("D"))
+                    doc.setToolOffset(new ToolInfo(attributes.get("D") / 2.0));
             }
             case 42 -> {
-                if (attributes.get("G") == 42) {
-                    doc.getCurrentPath2D().offsetRight();
-                } else {
-                    throw new UnknownGCodeError("Attributes " + attributes + "Not accepted GCode");
-                }
+                doc.setCutterCompMode(2);
+                if (attributes.containsKey("D"))
+                    doc.setToolOffset(new ToolInfo(attributes.get("D") / 2.0));
             }
             case 43 -> {
                 // calls which tool length offset is used(TODO fix complexities)

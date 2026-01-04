@@ -1,10 +1,10 @@
 package Parser.GCode;
 
 public class NgcStrain {
-    protected static final NgcStrain router_971 = new NgcStrain(
+    public static final NgcStrain router_971 = new NgcStrain(
             new CommentsParser971(), new MCodeParser971(),
             new GCodeParser971(), new EndParser971());
-    protected static final NgcStrain router_WinCNC = new NgcStrain(
+    public static final NgcStrain router_WinCNC = new NgcStrain(
             new CommentsParserWinCNC(), new MCodeParserWinCNC(),
             new GCodeParserWinCNC(), new EndParserWinCNC());
 

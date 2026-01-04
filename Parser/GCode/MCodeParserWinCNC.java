@@ -10,13 +10,14 @@ public class MCodeParserWinCNC implements GenericParser {
             indexOfM++;
         }
         code = Integer.parseInt(tempCode);
-        tempCode = null;
 
         switch (code) {
             case 3, 4, 5 -> {
                 // S by itself handles it
                 return gcodeLine.replace("M" + code, "");
             } // spindle speed
+            case 6 -> {
+            } // tool change
             case 0, 30, 8, 9 -> {
             } // program end(30), coolant or turned off(8 or
             // 9)
@@ -24,6 +25,6 @@ public class MCodeParserWinCNC implements GenericParser {
             default ->
                 throw new UnknownGCodeError("MCode : " + tempCode + " not parsable @ line: " + lineNum);
         }
-        return "";
+        return gcodeLine.replace("M" + code, "");
     }
 }

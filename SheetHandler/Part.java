@@ -13,11 +13,13 @@ import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -315,6 +317,21 @@ public class Part {
         return sheetX;
     }
 
+    public Rectangle2D getCenterPoint() {
+        HashMap<Integer, ArrayList<RelativePath2D>> layers = emitNGCDoc.getToolpathLayers();
+        Rectangle2D boundingBox = null;
+        for (Integer toolNum : layers.keySet()) {
+            for (RelativePath2D path : layers.get(toolNum)) {
+                if (boundingBox == null) {
+                    boundingBox = path.getBounds2D();
+                } else {
+                    Rectangle2D.union(boundingBox, path.getBounds2D(), boundingBox);
+                }
+            }
+        }
+        return boundingBox;
+    }
+
     public void setX(double x) {
         sheetX = x;
     }
@@ -363,13 +380,23 @@ public class Part {
         // ((Graphics2D)g).draw(new Ellipse2D.Double(sheetX-0.5,-sheetY-1,1,2));
 
         for (NGCDocument activeNgcDoc : activeNgcDocs) {
-            g2d.setStroke(
-                    new BasicStroke(
-                            (float) activeNgcDoc.getToolOffset(),
-                            BasicStroke.CAP_ROUND,
-                            BasicStroke.JOIN_ROUND,
-                            100000));
-            activeNgcDoc.getRelativePath2Ds().stream().forEach(e -> g2d.draw(e));
+            HashMap<Integer, ArrayList<RelativePath2D>> layers = activeNgcDoc.getToolpathLayers();
+            for (Integer toolNum : layers.keySet()) {
+                // 1. Get radius for this specific tool layer
+                double radius = activeNgcDoc.getToolOffset(toolNum).toolRadius();
+
+                // 2. Calculate diameter (stroke width). Ensure it's visible (>0)
+                float strokeWidth = (float) (radius * 2.0);
+                if (strokeWidth <= 0.001)
+                    strokeWidth = 0.01f;
+
+                // 3. Set the stroke
+                g2d.setStroke(
+                        new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 100000));
+
+                // 4. Draw only the paths for this tool
+                layers.get(toolNum).forEach(e -> g2d.draw(e));
+            }
         }
         g2d.setColor(prevColor);
         g2d.setStroke(currentStrok);
