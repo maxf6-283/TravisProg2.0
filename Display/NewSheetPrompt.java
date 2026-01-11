@@ -1,20 +1,17 @@
 package Display;
 
-import javax.swing.JFrame;
-import javax.swing.JTextField;
-
 import SheetHandler.SheetThickness;
-
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
 
 public class NewSheetPrompt extends JDialog implements ActionListener {
     private JButton enterSheetInfo;
@@ -42,7 +39,7 @@ public class NewSheetPrompt extends JDialog implements ActionListener {
         widthLabel.setBounds(25, 10, 100, 25);
         add(widthLabel);
 
-        sheetWidthField = new JTextField();
+        sheetWidthField = new JTextField("48");
         sheetWidthField.setBounds(25, 50, 100, 25);
         add(sheetWidthField);
 
@@ -50,7 +47,7 @@ public class NewSheetPrompt extends JDialog implements ActionListener {
         heightLabel.setBounds(150, 10, 100, 25);
         add(heightLabel);
 
-        sheetHeightField = new JTextField();
+        sheetHeightField = new JTextField("30");
         sheetHeightField.setBounds(150, 50, 100, 25);
         add(sheetHeightField);
 
@@ -72,13 +69,14 @@ public class NewSheetPrompt extends JDialog implements ActionListener {
         add(thicknessSelect);
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                parent.returnToNormal();
-                parent.repaint();
-            }
-        });
+        addWindowListener(
+                new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        parent.returnToNormal();
+                        parent.repaint();
+                    }
+                });
     }
 
     @Override
@@ -91,12 +89,15 @@ public class NewSheetPrompt extends JDialog implements ActionListener {
         if (e.getSource() == enterSheetInfo) {
             try {
                 double sheetWidth = -Double.parseDouble(sheetWidthField.getText());
-                double sheetHeight = -Double.parseDouble(sheetWidthField.getText());
+                double sheetHeight = Double.parseDouble(sheetHeightField.getText());
                 String sheetName = sheetNameField.getText();
-                if (sheetWidth < 0 || sheetHeight < 0) {
+                if (sheetWidth > 0 || sheetHeight < 0) {
                     throw new NumberFormatException();
                 } else {
-                    parent.enterNewSheetInfo(sheetWidth, sheetHeight, sheetName,
+                    parent.enterNewSheetInfo(
+                            sheetWidth,
+                            sheetHeight,
+                            sheetName,
                             (SheetThickness) thicknessSelect.getSelectedItem());
                 }
             } catch (NumberFormatException err) {
@@ -107,11 +108,14 @@ public class NewSheetPrompt extends JDialog implements ActionListener {
 
     public void reset() {
         errMsg.setVisible(false);
-        sheetWidthField.setText("");
-        sheetHeightField.setText("");
+        sheetWidthField.setText("48");
+        sheetHeightField.setText("30");
         sheetNameField.setText("");
-        setBounds(parent.getParent().getX() + parent.getParent().getWidth() / 2 - 425 / 2,
-                parent.getParent().getY() + parent.getParent().getHeight() / 2 - 200 / 2, 425, 200);
+        setBounds(
+                parent.getParent().getX() + parent.getParent().getWidth() / 2 - 425 / 2,
+                parent.getParent().getY() + parent.getParent().getHeight() / 2 - 200 / 2,
+                425,
+                200);
         pack();
     }
 }

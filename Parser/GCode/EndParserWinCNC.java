@@ -1,7 +1,5 @@
 package Parser.GCode;
 
-import java.util.Arrays;
-
 public class EndParserWinCNC implements GenericParser {
     public String parse(String gcodeLine, int lineNum, NGCDocument doc) {
         if (gcodeLine.contains("T")) { // tool changer
@@ -13,7 +11,6 @@ public class EndParserWinCNC implements GenericParser {
 
             // Find where the number ends (split at first non-digit)
             String[] parts = afterT.split("[^0-9]");
-            System.err.println(Arrays.toString(parts));
 
             if (parts.length > 0 && !parts[0].isEmpty()) {
                 try {

@@ -47,7 +47,8 @@ public class Sheet {
         width = Double.parseDouble(decodedFile.get("w"));
         height = Double.parseDouble(decodedFile.get("h"));
         holeFile = new File(decodedFile.get("hole_file"));
-        activeCutFile = new File(decodedFile.get("active"));
+        String activeFile = decodedFile.getOrDefault("active", null);
+        activeCutFile = activeFile == null ? null : new File(activeFile);
 
         // time to get the parts
         parentFile = sheetFile.getParentFile();
