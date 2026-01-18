@@ -315,18 +315,41 @@ public class Part {
 
     public boolean contains(Point2D point) {
         for (NGCDocument activeNgcDoc : activeNgcDocs) {
-            for (RelativePath2D path : activeNgcDoc.getRelativePath2Ds()) {
-                Point2D.Double pointToCheck = new Point2D.Double(point.getX(), -point.getY());
-                pointToCheck.setLocation(pointToCheck.getX() + sheetX, pointToCheck.getY() + sheetY);
+            // CHANGE: Iterate through layers to get the specific tool for each path
+            HashMap<Integer, ArrayList<RelativePath2D>> layers = activeNgcDoc.getToolpathLayers();
 
-                pointToCheck.setLocation(
-                        pointToCheck.getX() * Math.cos(-rotation) + pointToCheck.getY() * -Math.sin(-rotation),
-                        pointToCheck.getX() * Math.sin(-rotation) + pointToCheck.getY() * Math.cos(-rotation));
+            for (Integer toolNum : layers.keySet()) {
+                // 1. Get the visual thickness (Tool Diameter)
+                double radius = activeNgcDoc.getToolOffset(toolNum).toolRadius();
+                float strokeWidth = (float) (radius * 2.0);
 
-                pointToCheck.setLocation(-pointToCheck.getX(), pointToCheck.getY());
+                // Ensure it's at least clickable (e.g., 0.1 inches) even if tool is tiny
+                if (strokeWidth < 0.1f) {
+                    strokeWidth = 0.1f;
+                }
 
-                if (path.contains(pointToCheck)) {
-                    return true;
+                // 2. Create a stroke to represent the physical cut width
+                BasicStroke stroke = new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+
+                for (RelativePath2D path : layers.get(toolNum)) {
+                    // --- Coordinate Transformation (Unchanged) ---
+                    Point2D.Double pointToCheck = new Point2D.Double(point.getX(), -point.getY());
+                    pointToCheck.setLocation(pointToCheck.getX() + sheetX, pointToCheck.getY() + sheetY);
+
+                    pointToCheck.setLocation(
+                            pointToCheck.getX() * Math.cos(-rotation)
+                                    + pointToCheck.getY() * -Math.sin(-rotation),
+                            pointToCheck.getX() * Math.sin(-rotation)
+                                    + pointToCheck.getY() * Math.cos(-rotation));
+
+                    pointToCheck.setLocation(-pointToCheck.getX(), pointToCheck.getY());
+                    // ---------------------------------------------
+
+                    // 3. Check if point is ON the line (Stroke) OR INSIDE the shape
+                    if (stroke.createStrokedShape(path).contains(pointToCheck)
+                            || path.contains(pointToCheck)) {
+                        return true;
+                    }
                 }
             }
         }
