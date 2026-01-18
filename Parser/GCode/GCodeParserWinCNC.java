@@ -57,11 +57,7 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         return rawBody != "" ? gCodeTransformClean(part, rawBody, origin) : "";
     }
 
-    private static final Pattern AXIS_PATTERN = Pattern.compile("(?i)([XYIJZ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))");
-
-    public String gCodeTransformClean(Part part, Point2D origin) {
-        return gCodeTransformClean(part, getGCodeBody(part.getNgcDocument()), origin);
-    }
+    private static final Pattern AXIS_PATTERN = Pattern.compile("(?i)([XYIJZRF])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))");
 
     private String gCodeTransformClean(Part part, String gcode, Point2D origin) {
         double offX = (origin == null) ? 0 : origin.getX();
@@ -73,99 +69,163 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         final double cos = Math.cos(rot);
         final double sin = Math.sin(rot);
 
-        double currentX = 0.0;
-        double currentY = 0.0;
+        int lastGMode = 0;
 
-        NGCDocument doc = part.getNgcDocument();
-        // perform skelotonized parsing to transform points
         StringBuilder output = new StringBuilder(gcode.length() * 3 / 2);
+
         try (BufferedReader reader = new BufferedReader(new StringReader(gcode))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String trimmed = line.trim();
 
-                // Remove old tool table comments like [T1 D=0.1575 ...]
-                if (trimmed.startsWith("[T") && trimmed.contains("D=")) {
-                    continue;
+                // 1. Split Comment from Command
+                String commandPart = trimmed;
+                String commentPart = "";
+                if (trimmed.contains("[")) {
+                    int idx = trimmed.indexOf("[");
+                    commandPart = trimmed.substring(0, idx).trim();
+                    commentPart = trimmed.substring(idx);
                 }
-                // Remove standalone T commands (e.g., T1) to avoid redundancy
-                if (trimmed.matches("T\\d+")) {
-                    continue;
-                }
-                // skip if no coords in line
-                if ((!line.contains("X")
-                        && !line.contains("Y")
-                        && !line.contains("I")
-                        && !line.contains("J"))
-                        || line.contains("G4")
-                        || line.contains("[")) {
-                    output.append(line).append('\n');
-                    continue;
-                }
-                if (trimmed.isEmpty())
-                    continue;
 
-                double currentI = 0.0;
-                double currentJ = 0.0;
-                boolean hasI = false;
-                boolean hasJ = false;
+                if (commandPart.isEmpty()) {
+                    output.append(trimmed).append('\n');
+                    continue;
+                }
 
-                // 1. Parse the Line
-                Matcher m = AXIS_PATTERN.matcher(line);
+                if (commandPart.toUpperCase().contains("G4")) {
+                    output.append(trimmed).append('\n');
+                    continue;
+                }
+
+                // 2. Identify G-Code (G0, G1, G2, G3)
+                // We extract the "G" command manually to put it first
+                String gCommand = "";
+                if (commandPart.toUpperCase().contains("G0")) {
+                    lastGMode = 0;
+                    gCommand = "G0";
+                } else if (commandPart.toUpperCase().contains("G1")) {
+                    lastGMode = 1;
+                    gCommand = "G1";
+                } else if (commandPart.toUpperCase().contains("G2")) {
+                    lastGMode = 2;
+                    gCommand = "G2";
+                } else if (commandPart.toUpperCase().contains("G3")) {
+                    lastGMode = 3;
+                    gCommand = "G3";
+                }
+                // Handle special non-motion G-codes (like G4, G90) roughly by keeping them if
+                // found
+                // For simplicity, if we found a motion G, we use that. If not, we might rely on
+                // the
+                // 'cleanLine' method below.
+
+                // 3. Parse ALL Parameters (X, Y, Z, I, J, R, F)
+                double cX = 0, cY = 0, cZ = 0, cI = 0, cJ = 0, cR = 0, cF = 0;
+                boolean hX = false, hY = false, hZ = false, hI = false, hJ = false, hR = false, hF = false;
+
+                Matcher m = AXIS_PATTERN.matcher(commandPart);
                 while (m.find()) {
-                    String axis = m.group(1);
+                    String axis = m.group(1).toUpperCase();
                     double val = Double.parseDouble(m.group(2));
-
                     switch (axis) {
-                        case "X":
-                            currentX = val;
-                            break;
-                        case "Y":
-                            currentY = val;
-                            break;
-                        case "I":
-                            currentI = val;
-                            hasI = true;
-                            break;
-                        case "J":
-                            currentJ = val;
-                            hasJ = true;
-                            break;
+                        case "X" -> {
+                            cX = val;
+                            hX = true;
+                        }
+                        case "Y" -> {
+                            cY = val;
+                            hY = true;
+                        }
+                        case "Z" -> {
+                            cZ = val;
+                            hZ = true;
+                        }
+                        case "I" -> {
+                            cI = val;
+                            hI = true;
+                        }
+                        case "J" -> {
+                            cJ = val;
+                            hJ = true;
+                        }
+                        case "R" -> {
+                            cR = val;
+                            hR = true;
+                        }
+                        case "F" -> {
+                            cF = val;
+                            hF = true;
+                        }
                     }
                 }
-                double xRot = currentX * cos - currentY * sin;
-                double yRot = currentX * sin + currentY * cos;
 
-                double xFinal = xRot + dx;
-                double yFinal = yRot + dy;
-
-                double iFinal = 0.0;
-                double jFinal = 0.0;
-
-                if (hasI || hasJ) {
-                    iFinal = currentI * cos - currentJ * sin;
-                    jFinal = currentI * sin + currentJ * cos;
+                // 4. Ghost Arc Fix (Z-Only Move in Arc Mode)
+                if ((lastGMode == 2 || lastGMode == 3) && hZ && !hX && !hY && !hI && !hJ && !hR) {
+                    gCommand = "G1"; // Force linear
+                    lastGMode = 1;
                 }
 
-                // Remove old X, Y, I, J tokens
-                String cleanLine = line.replaceAll("(?i)([XYIJ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "");
-
-                output.append(cleanLine.trim());
-
-                // Always write X and Y
-                output.append(String.format(" X%.4f Y%.4f", xFinal, yFinal));
-
-                // Only write I and J if they existed in the original line
-                if (hasI || hasJ) {
-                    output.append(String.format(" I%.4f J%.4f", iFinal, jFinal));
+                // 5. Pass through lines with NO recognized parameters (e.g. "M3", "S12000")
+                if (!hX && !hY && !hZ && !hI && !hJ && !hR && !hF) {
+                    output.append(commandPart);
+                    if (!commentPart.isEmpty())
+                        output.append(" ").append(commentPart);
+                    output.append('\n');
+                    continue;
                 }
 
+                // 6. Transform Coordinates
+                double xRot = cX * cos - cY * sin;
+                double yRot = cX * sin + cY * cos;
+                double iRot = cI * cos - cJ * sin;
+                double jRot = cI * sin + cJ * cos;
+
+                // 7. RECONSTRUCT LINE (Strict Order)
+
+                // A. Start with G-Command (if it existed) or whatever was left (e.g. M codes
+                // mixed in)
+                // To be safe, let's strip all params from the original line to find any "extra"
+                // commands
+                // (M3, S, etc.)
+                String extras = commandPart
+                        .replaceAll("(?i)([XYIJZRFG])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "")
+                        .trim();
+                // Note: We strip 'G' above so we can re-add the motion G manually.
+                // But if there was a G90 or G54, we might want to keep it.
+                // For a robust "Motion Clean", usually we just output the active motion G.
+
+                if (!gCommand.isEmpty()) {
+                    output.append(gCommand);
+                } else if (!extras.isEmpty()) {
+                    output.append(extras); // Append things like M3 if no G command exists
+                }
+
+                // B. Append Parameters in Desired Order
+                if (hX || hY)
+                    output.append(String.format(" X%.4f Y%.4f", xRot + dx, yRot + dy));
+                if (hZ)
+                    output.append(String.format(" Z%.4f", cZ)); // EXTRACTED Z
+                if (hI || hJ)
+                    output.append(String.format(" I%.4f J%.4f", iRot, jRot));
+                if (hR)
+                    output.append(String.format(" R%.4f", cR));
+                if (hF)
+                    output.append(String.format(" F%.1f", cF)); // Feedrate last
+
+                // C. Append Comment
+                if (!commentPart.isEmpty()) {
+                    output.append(" ").append(commentPart);
+                }
                 output.append('\n');
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
         return output.toString();
+    }
+
+    public String gCodeTransformClean(Part part, Point2D origin) {
+        return gCodeTransformClean(part, getGCodeBody(part.getNgcDocument()), origin);
     }
 
     public String removeGCodeSpecialness(String gCode) {
