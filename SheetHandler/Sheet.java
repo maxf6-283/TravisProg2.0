@@ -1,5 +1,6 @@
 package SheetHandler;
 
+import Display.Screen;
 import Display.WarningDialog;
 import Parser.GCode.NGCDocument;
 import Parser.GCode.NgcStrain;
@@ -14,6 +15,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,7 +31,8 @@ public class Sheet {
     private ArrayList<Cut> cuts;
     private Cut activeCut;
     private double width, height; // in inches
-    private File sheetFile, holeFile, activeCutFile, parentFile;
+    private File sheetFile, activeCutFile, parentFile;
+    private Path holeFile;
     // static threadpool to avoid instantiation cost but allow multithreaded gcode
     // parsing
     public static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
@@ -46,7 +50,7 @@ public class Sheet {
 
         width = Double.parseDouble(decodedFile.get("w"));
         height = Double.parseDouble(decodedFile.get("h"));
-        holeFile = new File(decodedFile.get("hole_file"));
+        holeFile = Paths.get(decodedFile.get("hole_file"));
         String activeFile = decodedFile.getOrDefault("active", null);
         activeCutFile = activeFile == null ? null : new File(activeFile);
 
@@ -56,7 +60,7 @@ public class Sheet {
             if (!cutFile.getName().endsWith(".cut")) {
                 continue;
             }
-            Cut newCut = new Cut(cutFile, holeFile);
+            Cut newCut = new Cut(cutFile, holeFile.toFile());
             cuts.add(newCut);
             if (activeCutFile != null && cutFile.getName().equals(activeCutFile.getName())) {
                 activeCut = newCut;
@@ -73,7 +77,7 @@ public class Sheet {
     }
 
     public File getHolesFile() {
-        return holeFile;
+        return holeFile.toFile();
     }
 
     public void changeActiveCutFile(File newCut) {
@@ -102,7 +106,7 @@ public class Sheet {
             HashMap<String, String> sheetInfo = new HashMap<>();
             sheetInfo.put("w", "" + width);
             sheetInfo.put("h", "" + height);
-            sheetInfo.put("hole_file", thickness.holesFile.getPath().replace("\\", "/"));
+            sheetInfo.put("hole_file", thickness.holesFile.toString().replace("\\", "/"));
             SheetParser.saveSheetInfo(sheetFile, sheetInfo);
         } catch (Exception e) {
             System.err.println("Could not create sheet file\n\n");
@@ -184,7 +188,7 @@ public class Sheet {
         sheetInfo.put("w", "" + (width));
         sheetInfo.put("h", "" + (height));
         String path;
-        path = holeFile.getPath().replace("\\", "/");
+        path = holeFile.toString().replace("\\", "/");
         sheetInfo.put("hole_file", path);
         path = activeCutFile.getPath().replace("\\", "/");
         sheetInfo.put("active", path.substring(path.indexOf("./")));
@@ -225,7 +229,8 @@ public class Sheet {
      * @param gCodeFile - the file to put the GCode into.
      * @param string
      */
-    public void emitGCode(File gCodeFile, String suffix, List<Integer>... toolOrderArr) {
+    public void emitGCode(
+            File gCodeFile, String suffix, boolean useDrillCycle, List<Integer>... toolOrderArr) {
 
         // specific mechanics: sandwich each part between a translation to and from
         // their position
@@ -235,7 +240,7 @@ public class Sheet {
 
         // and same for footers except put them at the end
         try {
-            activeCut.stream().forEach((Part p) -> p.setSelectedGCode(suffix));
+            activeCut.stream().forEach((Part p) -> p.setSelectedGCode(suffix, gCodeFile, useDrillCycle));
             var docs = activeCut.stream()
                     .map(Part::getNgcDocument)
                     .filter(Objects::nonNull)
@@ -253,8 +258,11 @@ public class Sheet {
             if (!areToolTablesConsistent(docs)) {
                 new WarningDialog(
                         new IllegalArgumentException(),
-                        "Tool tables for selected files are inconsistent: "
-                                + "Undefined Behavior\n"
+                        "Tool tables for selected files are inconsistent: " + "Undefined Behavior",
+                        null);
+                System.out.println(docs.toString());
+                System.out.println(
+                        "Files: \n"
                                 + docs.stream()
                                         .map(NGCDocument::getToolTable)
                                         .map(
@@ -262,8 +270,7 @@ public class Sheet {
                                                         .filter(e -> !e.getKey().equals(0))
                                                         .map(e -> e.getKey() + "=" + e.getValue())
                                                         .collect(Collectors.joining(", ", "{", "}")))
-                                        .collect(Collectors.joining(", ")),
-                        null);
+                                        .collect(Collectors.joining(", ")));
             }
 
             List<Integer> toolOrder;
@@ -280,7 +287,11 @@ public class Sheet {
                 }
                 if (!(toolTable.keySet().containsAll(toolOrder)
                         && toolOrder.containsAll(toolTable.keySet()))) {
-                    throw new IllegalArgumentException("Master Tool Table and Tool Order aren't consistent.");
+                    throw new IllegalArgumentException(
+                            "Master Tool Table and Tool Order aren't consistent: "
+                                    + toolOrder.toString()
+                                    + " - master: "
+                                    + toolTable.keySet().toString());
                 }
             } else {
                 toolOrder = Collections.singletonList(1);
@@ -318,7 +329,7 @@ public class Sheet {
                 List<Part> partsForTool = new ArrayList<>();
                 for (Part part : activeCut) {
                     // Ensure the part has the correct GCode selected
-                    if (!part.setSelectedGCode(suffix)) {
+                    if (!part.setSelectedGCode(suffix, gCodeFile, useDrillCycle)) {
                         // Only log warnings once (handled by the else block logic below if
                         // needed)
                         if (!(suffix.equals("holes")
@@ -346,7 +357,7 @@ public class Sheet {
                 }
 
                 // --- STEP 2: Optimize the order for THIS tool ---
-                List<Part> sortedParts = getOptimizedPartOrder(partsForTool);
+                List<Part> sortedParts = partsForTool; // getOptimizedPartOrder(partsForTool);
 
                 boolean toolChangeWritten = false;
 
@@ -434,8 +445,9 @@ public class Sheet {
                 // If existing is NOT null, it means we saw this tool before. Check for
                 // conflict.
                 if (existing != null && !existing.equals(entry.getValue())) {
-                    throw new IllegalStateException(
-                            "Consistency should be checked before getting master table.");
+                    if (Screen.DebugMode)
+                        throw new IllegalStateException(
+                                "Consistency should be checked before getting master table.");
                 }
             }
         }

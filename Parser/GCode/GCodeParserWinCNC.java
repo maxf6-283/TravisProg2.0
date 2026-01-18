@@ -23,7 +23,7 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                 }
             }
         } else {
-            if (gcodeLine.contains("S")) {
+            if (gcodeLine.contains("S") || gcodeLine.contains("T")) {
                 return gcodeLine;
             }
             HashMap<String, Double> attributes = new HashMap<>();
@@ -144,7 +144,7 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                 }
 
                 // Remove old X, Y, I, J tokens
-                String cleanLine = line.replaceAll("(?i)([XYIJZ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "");
+                String cleanLine = line.replaceAll("(?i)([XYIJ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "");
 
                 output.append(cleanLine.trim());
 
@@ -381,6 +381,15 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                                 + "allow this if you know what you're doing.(justin)",
                         () -> {
                         });
+            }
+            case 80 -> {
+                // end drill cycle, do nothing
+            }
+            case 81, 82, 83 -> {
+                // drill cycle
+                // just make a dot i give up
+                doc.getCurrentPath2D().moveTo(attributes.get("X"), -attributes.get("Y"));
+                doc.getCurrentPath2D().lineTo(attributes.get("X"), -attributes.get("Y"));
             }
             case 90 -> {
                 if (attributes.get("G") == 90) {

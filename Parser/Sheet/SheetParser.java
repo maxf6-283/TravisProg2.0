@@ -1,25 +1,23 @@
 package Parser.Sheet;
 
+import Display.ErrorDialog;
+import Display.Screen;
+import SheetHandler.Cut;
+import SheetHandler.Hole;
+import SheetHandler.Part;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOError;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.zip.DataFormatException;
-
-import Display.ErrorDialog;
-import Display.Screen;
-import SheetHandler.Hole;
-import SheetHandler.Part;
-import SheetHandler.Cut;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOError;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 public class SheetParser {
     public static HashMap<String, String> parseSheetFile(File sheetFile) {
@@ -62,8 +60,10 @@ public class SheetParser {
         try {
             FileInputStream reader = new FileInputStream(cutFile);
             if (cutFile.length() <= 0) {
-                new ErrorDialog(new IOError(
-                        new DataFormatException("Blank Cut File is Bad.\nPlease Delete this file and rerun")));
+                new ErrorDialog(
+                        new IOError(
+                                new DataFormatException(
+                                        "Blank Cut File is Bad.\nPlease Delete this file and rerun")));
             }
             // get number of bytes
             int byteCounter = 0;
@@ -85,7 +85,10 @@ public class SheetParser {
             while (byteCounter < total) {
                 if (Screen.DebugMode) {
                     System.out.println(
-                            "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
+                            "Part read:"
+                                    + reader.readNBytes(nextNumber, 0, 8)
+                                    + ": "
+                                    + Arrays.toString(nextNumber));
                 } else {
                     reader.readNBytes(nextNumber, 0, 8);
                 }
@@ -94,7 +97,10 @@ public class SheetParser {
                 if (Screen.DebugMode) {
                     System.out.printf("Part %d's x is %f%n", byteCounter, partX);
                     System.out.println(
-                            "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
+                            "Part read:"
+                                    + reader.readNBytes(nextNumber, 0, 8)
+                                    + ": "
+                                    + Arrays.toString(nextNumber));
                 } else {
                     reader.readNBytes(nextNumber, 0, 8);
                 }
@@ -103,7 +109,10 @@ public class SheetParser {
                 if (Screen.DebugMode) {
                     System.out.printf("Part %d's y is %f%n", byteCounter, partY);
                     System.out.println(
-                            "Part read:" + reader.readNBytes(nextNumber, 0, 8) + ": " + Arrays.toString(nextNumber));
+                            "Part read:"
+                                    + reader.readNBytes(nextNumber, 0, 8)
+                                    + ": "
+                                    + Arrays.toString(nextNumber));
                 } else {
                     reader.readNBytes(nextNumber, 0, 8);
                 }
@@ -117,7 +126,7 @@ public class SheetParser {
                 int type = reader.read();
                 if (type == 1) {
                     // is a hole
-                    cut.parts.add(new Hole(cut.getHoleFile(), partX, partY, partRot));
+                    cut.parts.add(new Hole(cut.getHoleFile().toPath(), partX, partY, partRot));
                     if (Screen.DebugMode) {
                         System.out.println("Adding a hole");
                     }
@@ -126,7 +135,7 @@ public class SheetParser {
                     int fileNameLength = reader.read();
                     byteCounter++;
                     if (fileNameLength == -1) {
-                        break;// end of file
+                        break; // end of file
                     }
                     if (Screen.DebugMode) {
                         System.out.println("File name length: " + fileNameLength);
@@ -141,8 +150,10 @@ public class SheetParser {
                     if (tempPart != null)
                         cut.parts.add(tempPart);
                 } else {
-                    new ErrorDialog(new IOError(new DataFormatException(
-                            "Cut file " + cutFile.getName() + " contains a non-standard part type.")));
+                    new ErrorDialog(
+                            new IOError(
+                                    new DataFormatException(
+                                            "Cut file " + cutFile.getName() + " contains a non-standard part type.")));
                 }
             }
             reader.close();
@@ -190,7 +201,7 @@ public class SheetParser {
                 bytes.add(b);
             }
             if (part instanceof Hole) {
-                bytes.add((byte) 1);// for holes
+                bytes.add((byte) 1); // for holes
                 continue;
             }
             bytes.add((byte) 0);
@@ -225,5 +236,4 @@ public class SheetParser {
             System.out.println("Cannot save cut file???\n\n");
         }
     }
-
 }

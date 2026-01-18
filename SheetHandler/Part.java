@@ -4,6 +4,7 @@ import Display.ErrorDialog;
 import Display.Screen;
 import Display.WarningDialog;
 import Parser.GCode.NGCDocument;
+import Parser.GCode.NgcStrain;
 import Parser.GCode.Parser;
 import Parser.GCode.RelativePath2D;
 import java.awt.BasicStroke;
@@ -26,9 +27,9 @@ import java.util.concurrent.Future;
 /** holds all information and methods related to a part */
 public class Part {
     private double sheetX, sheetY, rotation; // x and y in inches, rotation in radians
-    private ArrayList<NGCDocument> activeNgcDocs = new ArrayList<>();
+    protected ArrayList<NGCDocument> activeNgcDocs = new ArrayList<>();
     private ArrayList<NGCDocument> allNGCDocs = new ArrayList<>();
-    private NGCDocument emitNGCDoc;
+    protected NGCDocument emitNGCDoc;
     private File partFile;
     private boolean selected = false;
     private ArrayList<Future<NGCDocument>> futures = new ArrayList<>(); // holds all future for concurrent gcode file
@@ -185,7 +186,7 @@ public class Part {
     /**
      * @return true if all futures have returned
      */
-    private boolean checkFutures() {
+    protected boolean checkFutures() {
         ArrayList<Future<NGCDocument>> toRemove = new ArrayList<>();
         for (Future<NGCDocument> future : futures) {
             if (future.isDone()) {
@@ -218,23 +219,50 @@ public class Part {
      * @param suffix the suffix of which to match the emitted cut to
      * @return whether that suffix exists in a gcode file
      */
-    public boolean setSelectedGCode(String suffix) {
-        if (this instanceof Hole) {
-            emitNGCDoc = allNGCDocs.get(0);
-            return suffix.equals("holes");
-        }
-
+    public boolean setSelectedGCode(String suffix, File outputFile, boolean useDrillCycle) {
         checkFutures();
 
+        // 1. Determine Target Strain based on output file extension
+        String outExt = "";
+        if (outputFile != null) {
+            String name = outputFile.getName();
+            outExt = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : "";
+        }
+
+        NgcStrain targetStrain;
+        if (outExt.equalsIgnoreCase("tap")) {
+            targetStrain = NgcStrain.router_WinCNC;
+        } else {
+            targetStrain = NgcStrain.router_971;
+        }
+
+        // 2. PASS 1: Find Exact Match (Suffix AND Strain)
         for (NGCDocument ngcDocument : allNGCDocs) {
             String fileName = ngcDocument.getGcodeFile().getName();
             int lastIndexOf_ = fileName.lastIndexOf('_') + 1;
-            if (suffix.equals(
-                    fileName.substring(lastIndexOf_ == -1 ? 0 : lastIndexOf_, fileName.lastIndexOf('.')))) {
+            String fileSuffix = fileName.substring(lastIndexOf_ == -1 ? 0 : lastIndexOf_, fileName.lastIndexOf('.'));
+
+            if (suffix.equals(fileSuffix) && ngcDocument.getNgcStrain() == targetStrain) {
                 emitNGCDoc = ngcDocument;
                 return true;
             }
         }
+
+        // 3. PASS 2: Fallback (Suffix Only)
+        // If we didn't find the specific strain (e.g. only .ngc exists but we want
+        // .tap), take what we
+        // have.
+        for (NGCDocument ngcDocument : allNGCDocs) {
+            String fileName = ngcDocument.getGcodeFile().getName();
+            int lastIndexOf_ = fileName.lastIndexOf('_') + 1;
+            String fileSuffix = fileName.substring(lastIndexOf_ == -1 ? 0 : lastIndexOf_, fileName.lastIndexOf('.'));
+
+            if (suffix.equals(fileSuffix)) {
+                emitNGCDoc = ngcDocument;
+                return true;
+            }
+        }
+        emitNGCDoc = null;
 
         return false;
     }

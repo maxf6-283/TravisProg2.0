@@ -8,10 +8,10 @@ public class NgcStrain {
             new CommentsParserWinCNC(), new MCodeParserWinCNC(),
             new GCodeParserWinCNC(), new EndParserWinCNC());
 
-    protected final GenericParser commentsParser;
-    protected final GenericParser mCodeParser;
+    public final GenericParser commentsParser;
+    public final GenericParser mCodeParser;
     public final GenericGCodeParser gCodeParser;
-    protected final GenericParser endParser;
+    public final GenericParser endParser;
 
     public NgcStrain(
             GenericParser commentsParser,
