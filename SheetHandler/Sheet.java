@@ -230,7 +230,11 @@ public class Sheet {
      * @param string
      */
     public void emitGCode(
-            File gCodeFile, String suffix, boolean useDrillCycle, List<Integer>... toolOrderArr) {
+            File gCodeFile,
+            String suffix,
+            boolean useDrillCycle,
+            Point2D origin,
+            List<Integer>... toolOrderArr) {
 
         // specific mechanics: sandwich each part between a translation to and from
         // their position
@@ -361,9 +365,9 @@ public class Sheet {
                     // Note: We use the tool-specific transform here to check validity
                     String testCode;
                     if (predominantStrain == NgcStrain.router_971)
-                        testCode = predominantStrain.gCodeParser.gCodeTransformClean(part);
+                        testCode = predominantStrain.gCodeParser.gCodeTransformClean(part, origin);
                     else
-                        testCode = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum);
+                        testCode = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum, origin);
 
                     if (!testCode.trim().isEmpty()) {
                         partsForTool.add(part);
@@ -395,9 +399,9 @@ public class Sheet {
                     // Get final code
                     String cleanCode;
                     if (predominantStrain == NgcStrain.router_971)
-                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part);
+                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part, origin);
                     else
-                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum);
+                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum, origin);
 
                     if (!cleanCode.trim().isEmpty()) {
                         // Write Tool Change (Once per group)

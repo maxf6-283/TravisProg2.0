@@ -4,6 +4,7 @@ import Display.ErrorDialog;
 import Display.Screen;
 import SheetHandler.Part;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
 import java.util.HashMap;
 
 public class GCodeParser971 implements GenericGCodeParser {
@@ -38,23 +39,26 @@ public class GCodeParser971 implements GenericGCodeParser {
         return "(Tool " + toolNum + ")\n" + "T" + toolNum + " M6";
     }
 
-    private String gCodeTranslateTo(Part part) {
-        double x = part.getX();
-        double y = part.getY();
+    private String gCodeTranslateTo(Part part, Point2D origin) {
+        double offX = (origin == null) ? 0 : origin.getX();
+        double offY = (origin == null) ? 0 : origin.getY();
+
+        double x = part.getX() - offX;
+        double y = part.getY() - offY;
         double rot = part.getRot();
 
         return String.format(
                 "G10 L2 P9 X[#5221+%f] Y[#5222+%f] Z[#5223] R%f\nG59.3\n", x, y, Math.toDegrees(rot));
     }
 
-    public String gCodeTransformClean(Part part, int toolNum) {
+    public String gCodeTransformClean(Part part, int toolNum, Point2D origin) {
         throw new UnsupportedOperationException("This router hath no tool changer.");
     }
 
-    public String gCodeTransformClean(Part part) {
+    public String gCodeTransformClean(Part part, Point2D origin) {
         NGCDocument doc = part.getNgcDocument();
 
-        return "\n" + gCodeTranslateTo(part) + getGCodeBody(doc).replaceAll(".*G54.*\\R?", "");
+        return "\n" + gCodeTranslateTo(part, origin) + getGCodeBody(doc).replaceAll(".*G54.*\\R?", "");
     }
 
     public String removeGCodeSpecialness(String gCode) {

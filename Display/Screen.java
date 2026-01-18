@@ -869,6 +869,28 @@ public class Screen extends JPanel
                 if (e.getSource() == button) {
                     HashSet<Integer> toolSet = new java.util.HashSet<>();
 
+                    Point2D.Double origin = new Point2D.Double(0, 0);
+                    String originMode = (String) emitPanel.originSelect.getSelectedItem();
+                    double w = selectedSheet.getWidth();
+                    double h = selectedSheet.getHeight();
+
+                    switch (originMode) {
+                        case "Top-Left" -> origin.setLocation(0, h);
+                        case "Top-Right" -> origin.setLocation(w, h);
+                        case "Bottom-Right" -> origin.setLocation(w, 0);
+                        case "Center" -> origin.setLocation(w / 2.0, h / 2.0);
+                        case "Selected Part/Hole" -> {
+                            if (selectedPart != null) {
+                                origin.setLocation(selectedPart.getX(), selectedPart.getY());
+                            } else {
+                                // Optional: Warn user if nothing selected
+                                System.out.println("Warning: No part selected for origin, using (0,0)");
+                            }
+                        }
+                        default -> // Bottom-Left
+                            origin.setLocation(0, 0);
+                    }
+
                     // Pass the drill cycle flag to the selection logic as well
                     boolean useDrillCycle = emitPanel.drillCycleCheck.isSelected();
 
@@ -903,7 +925,8 @@ public class Screen extends JPanel
                     }
                     if (finalOrder != null) {
 
-                        selectedSheet.emitGCode(outputFile, button.getText(), useDrillCycle, finalOrder);
+                        selectedSheet.emitGCode(
+                                outputFile, button.getText(), useDrillCycle, origin, finalOrder);
                     }
                 }
             }
@@ -1541,6 +1564,7 @@ public class Screen extends JPanel
         public JLabel gCodeNameLabel;
         public JComboBox<String> extensionSelect;
         public JCheckBox drillCycleCheck;
+        public JComboBox<String> originSelect;
 
         public EmitSelect() {
             setLayout(null);
@@ -1602,6 +1626,18 @@ public class Screen extends JPanel
             gCodeNameLabel.setBounds(50, 25, 200, 25);
             gCodeNameLabel.setForeground(Color.WHITE);
             add(gCodeNameLabel);
+
+            String[] origins = {
+                    "Bottom-Left (Default)",
+                    "Top-Left",
+                    "Top-Right",
+                    "Bottom-Right",
+                    "Center",
+                    "Selected Part/Hole"
+            };
+            originSelect = new JComboBox<>(origins);
+            originSelect.setBounds(50, 115, 200, 25);
+            add(originSelect);
         }
 
         @Override

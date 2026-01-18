@@ -5,6 +5,7 @@ import Display.Screen;
 import Display.WarningDialog;
 import SheetHandler.Part;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -50,21 +51,24 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         return "G53 Z\nM5\n[Tool " + toolNum + "]\n" + "T" + toolNum;
     }
 
-    public String gCodeTransformClean(Part part, int toolNum) {
+    public String gCodeTransformClean(Part part, int toolNum, Point2D origin) {
         NGCDocument doc = part.getNgcDocument();
         String rawBody = doc.getGCodeForTool(toolNum);
-        return rawBody != "" ? gCodeTransformClean(part, rawBody) : "";
+        return rawBody != "" ? gCodeTransformClean(part, rawBody, origin) : "";
     }
 
     private static final Pattern AXIS_PATTERN = Pattern.compile("(?i)([XYIJZ])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))");
 
-    public String gCodeTransformClean(Part part) {
-        return gCodeTransformClean(part, getGCodeBody(part.getNgcDocument()));
+    public String gCodeTransformClean(Part part, Point2D origin) {
+        return gCodeTransformClean(part, getGCodeBody(part.getNgcDocument()), origin);
     }
 
-    private String gCodeTransformClean(Part part, String gcode) {
-        final double dx = part.getX();
-        final double dy = part.getY();
+    private String gCodeTransformClean(Part part, String gcode, Point2D origin) {
+        double offX = (origin == null) ? 0 : origin.getX();
+        double offY = (origin == null) ? 0 : origin.getY();
+
+        final double dx = part.getX() - offX;
+        final double dy = part.getY() - offY;
         final double rot = part.getRot();
         final double cos = Math.cos(rot);
         final double sin = Math.sin(rot);

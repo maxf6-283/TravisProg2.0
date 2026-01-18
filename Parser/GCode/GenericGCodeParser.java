@@ -1,6 +1,7 @@
 package Parser.GCode;
 
 import SheetHandler.Part;
+import java.awt.geom.Point2D;
 import java.util.HashMap;
 
 public interface GenericGCodeParser extends GenericParser {
@@ -14,9 +15,17 @@ public interface GenericGCodeParser extends GenericParser {
 
     public String removeGCodeSpecialness(String gCode);
 
-    public String gCodeTransformClean(Part part);
+    public default String gCodeTransformClean(Part part) {
+        return gCodeTransformClean(part, null);
+    }
 
-    public String gCodeTransformClean(Part part, int toolNum);
+    public default String gCodeTransformClean(Part part, int toolNum) {
+        return gCodeTransformClean(part, toolNum, null);
+    }
+
+    public String gCodeTransformClean(Part part, Point2D origin);
+
+    public String gCodeTransformClean(Part part, int toolNum, Point2D origin);
 
     public String getToolCode(int toolNum);
 }
