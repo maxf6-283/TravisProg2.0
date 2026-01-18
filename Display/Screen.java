@@ -1652,11 +1652,28 @@ public class Screen extends JPanel
     class ItemSelectMenu extends JPanel {
         public ArrayList<JComponent> fileButtons;
         public File partFileToPlace;
+        private JPanel listContainer;
 
         public ItemSelectMenu() {
-            setLayout(new GridLayout(0, 1, 10, 10));
+            setLayout(new java.awt.BorderLayout());
 
-            add(returnToHomeMenu.clone());
+            // Add "Return to Home" at the top
+            add(returnToHomeMenu.clone(), java.awt.BorderLayout.NORTH);
+
+            // Initialize the container that will grow with the buttons
+            listContainer = new JPanel();
+            // GridLayout(0, 1) allows infinite rows with fixed height buttons
+            listContainer.setLayout(new GridLayout(0, 1, 10, 10));
+            listContainer.setBackground(Color.BLACK); // Match background color
+
+            // Wrap the listContainer in a ScrollPane
+            JScrollPane scrollPane = new JScrollPane(listContainer);
+            scrollPane.setBorder(null); // Remove border for cleaner look
+            scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Make scrolling faster
+            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+            // Add the scroll pane to the center
+            add(scrollPane, java.awt.BorderLayout.CENTER);
 
             fileButtons = new ArrayList<>();
 
@@ -1666,7 +1683,6 @@ public class Screen extends JPanel
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
-
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
@@ -1677,44 +1693,55 @@ public class Screen extends JPanel
         }
 
         /**
-         * Goes to the subbordinate list or sets the selected file if it's not a
+         * Goes to the subordinate list or sets the selected file if it's not a
          * directory
          */
         public void selectFile(File file) {
             fileButtons.stream()
                     .forEach(
                             e -> {
-                                remove(e);
+                                listContainer.remove(e);
                                 if (e instanceof JButton) {
                                     ((JButton) e).removeActionListener(Screen.this);
                                 }
                             });
             fileButtons.clear();
+
+            // Add ".." button if we are not in the root
             if (!file.getName().equals("parts_library")) {
                 FileJButton button = new FileJButton(file.getParentFile(), "..");
                 fileButtons.add(button);
-                add(button);
+                listContainer.add(button); // Add to container
                 button.addActionListener(Screen.this);
             }
+
+            // Loop through files and add buttons
             for (File subFile : file.listFiles()) {
                 if (subFile.isDirectory()) {
                     FileJButton button = new FileJButton(subFile);
                     fileButtons.add(button);
-                    add(button);
+                    listContainer.add(button); // Add to container
                     button.addActionListener(Screen.this);
                 } else {
+                    // If we reached a file/part, show instruction
                     partFileToPlace = file;
-                    JLabel holdA = new JLabel("Hold a and click to add parts");
-                    add(holdA);
+                    JLabel holdA = new JLabel("Hold 'a' and click to add parts");
                     holdA.setForeground(Color.WHITE);
+
+                    listContainer.add(holdA); // Add to container
                     fileButtons.add(holdA);
-                    validate();
+
+                    // Refresh UI
+                    listContainer.revalidate();
+                    listContainer.repaint();
                     return;
                 }
             }
             partFileToPlace = null;
-            validate();
-            return;
+
+            // Refresh UI to show new buttons
+            listContainer.revalidate();
+            listContainer.repaint();
         }
 
         /** creates a JButton that is a unique class that stores a File */
@@ -1724,11 +1751,13 @@ public class Screen extends JPanel
             public FileJButton(File file) {
                 super(file.getName());
                 this.file = file;
+                this.setPreferredSize(new Dimension(0, 50));
             }
 
             public FileJButton(File file, String name) {
                 super(name);
                 this.file = file;
+                this.setPreferredSize(new Dimension(0, 50));
             }
 
             public File file() {
