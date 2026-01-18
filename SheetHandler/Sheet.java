@@ -248,10 +248,24 @@ public class Sheet {
             var strains = docs.stream().map(NGCDocument::getNgcStrain).collect(Collectors.toList());
 
             if (strains.stream().distinct().count() > 1) {
-                new WarningDialog(
-                        new IllegalStateException(),
-                        "Cut contains gcode for various machines: Undefined Behavior",
-                        null);
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append("Conflict: Mixed Machine Formats Detected!\n\n");
+                errorMsg.append("Breakdown:\n");
+
+                for (Part part : activeCut) {
+                    NGCDocument doc = part.getNgcDocument();
+                    if (doc != null) {
+                        String partName = part.partFile().getName();
+                        // Displays "router_WinCNC" or "router_971"
+                        String strainName = doc.getNgcStrain().toString();
+                        errorMsg.append(String.format(" - %s : %s\n", partName, strainName));
+                    }
+                }
+
+                errorMsg.append(
+                        "\nThis will result in undefined behavior (e.g. missing tools or incorrect headers).");
+
+                new WarningDialog(new IllegalStateException(), errorMsg.toString(), null);
             }
             NgcStrain predominantStrain = strains.stream().findAny().get();
 
