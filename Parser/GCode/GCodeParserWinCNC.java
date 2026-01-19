@@ -152,18 +152,20 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                     }
                 }
 
+                if (!hX && !hY && !hZ && !hI && !hJ && !hF) {
+                    output.append(commandPart);
+                    if (!commentPart.isEmpty())
+                        output.append(" ").append(commentPart);
+                    output.append('\n');
+                    continue;
+                }
+
                 // 4. Update State (Modal Coordinates)
                 // This prevents the "0" bug. We only update if the file specified a new value.
                 if (hX)
                     stateX = cX;
                 if (hY)
                     stateY = cY;
-
-                // 5. Ghost Arc Fix
-                if ((lastGMode == 2 || lastGMode == 3) && hZ && !hX && !hY && !hI && !hJ) {
-                    gCommand = "G1";
-                    lastGMode = 1;
-                }
 
                 // 6. Transform Logic
                 // We rotate stateX/stateY (the full position), not just cX/cY (the fragments)

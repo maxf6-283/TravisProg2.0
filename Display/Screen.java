@@ -875,9 +875,9 @@ public class Screen extends JPanel
                     double h = selectedSheet.getHeight();
 
                     switch (originMode) {
-                        case "Top-Left" -> origin.setLocation(0, h);
-                        case "Top-Right" -> origin.setLocation(w, h);
-                        case "Bottom-Right" -> origin.setLocation(w, 0);
+                        case "Top-Right" -> origin.setLocation(0, h);
+                        case "Top-Left" -> origin.setLocation(w, h);
+                        case "Bottom-Left" -> origin.setLocation(w, 0);
                         case "Center" -> origin.setLocation(w / 2.0, h / 2.0);
                         case "Selected Part/Hole" -> {
                             if (selectedPart != null) {
@@ -1628,10 +1628,10 @@ public class Screen extends JPanel
             add(gCodeNameLabel);
 
             String[] origins = {
-                    "Bottom-Left (Default)",
+                    "Bottom-Right (Default)",
                     "Top-Left",
                     "Top-Right",
-                    "Bottom-Right",
+                    "Bottom-Left",
                     "Center",
                     "Selected Part/Hole"
             };
