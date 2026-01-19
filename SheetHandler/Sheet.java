@@ -320,6 +320,10 @@ public class Sheet {
             final String openBracket = predominantStrain == NgcStrain.router_WinCNC ? "[" : "(";
             final String closeBracket = predominantStrain == NgcStrain.router_WinCNC ? "]" : ")";
 
+            if (predominantStrain == NgcStrain.router_971) {
+                writer.write("%\n");
+            }
+
             // 2. Write Master Tool Table with Dynamic Brackets
             writer.write(openBracket + "Master Tool Table" + closeBracket + "\n");
             toolTable.entrySet().stream()
@@ -419,6 +423,10 @@ public class Sheet {
 
             // write the last footer
             writer.write(footer);
+
+            if (predominantStrain == NgcStrain.router_971) {
+                writer.write("%"); // No newline needed usually at very end
+            }
 
             writer.flush();
             writer.close();

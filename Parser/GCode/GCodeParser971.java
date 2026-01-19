@@ -66,6 +66,7 @@ public class GCodeParser971 implements GenericGCodeParser {
         newGCode = newGCode.replaceAll("\\n+", "\n").trim();
         return gCode.substring(0, gCode.indexOf(')') + 2)
                 + newGCode
+                + '\n'
                 + gCode.substring(gCode.lastIndexOf('('));
     }
 
@@ -75,7 +76,7 @@ public class GCodeParser971 implements GenericGCodeParser {
         while (gCodeString.charAt(endIndex) != '\n') {
             endIndex++;
         }
-        String header = gCodeString.substring(gCodeString.indexOf('%'), endIndex + 1);
+        String header = gCodeString.substring(gCodeString.indexOf('%') + 1, endIndex + 1);
         return "(START HEADER)\n" + header + "(END HEADER)\n";
     }
 
@@ -91,8 +92,8 @@ public class GCodeParser971 implements GenericGCodeParser {
 
     public String getGCodeFooter(NGCDocument doc) {
         String gCodeString = doc.getGCodeString();
-        String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"), gCodeString.lastIndexOf('%') + 1);
-        return "(START FOOTER)\n" + footer + "(END FOOTER)\n";
+        String footer = gCodeString.substring(gCodeString.lastIndexOf("G53"), gCodeString.lastIndexOf('%'));
+        return "(START FOOTER)\n" + footer + "\n(END FOOTER)\n";
     }
 
     public void addGCodeAttributes(HashMap<String, Double> attributes, NGCDocument doc) {
