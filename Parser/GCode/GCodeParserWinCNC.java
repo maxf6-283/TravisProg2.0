@@ -71,6 +71,9 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
 
         int lastGMode = 0;
 
+        double stateX = 0;
+        double stateY = 0;
+
         StringBuilder output = new StringBuilder(gcode.length() * 3 / 2);
 
         try (BufferedReader reader = new BufferedReader(new StringReader(gcode))) {
@@ -78,7 +81,6 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
             while ((line = reader.readLine()) != null) {
                 String trimmed = line.trim();
 
-                // 1. Split Comment from Command
                 String commandPart = trimmed;
                 String commentPart = "";
                 if (trimmed.contains("[")) {
@@ -92,13 +94,13 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                     continue;
                 }
 
+                // 1. G4 Dwell Pass-Through (Raw Output)
                 if (commandPart.toUpperCase().contains("G4")) {
                     output.append(trimmed).append('\n');
                     continue;
                 }
 
-                // 2. Identify G-Code (G0, G1, G2, G3)
-                // We extract the "G" command manually to put it first
+                // 2. Identify Motion Modes
                 String gCommand = "";
                 if (commandPart.toUpperCase().contains("G0")) {
                     lastGMode = 0;
@@ -113,15 +115,10 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                     lastGMode = 3;
                     gCommand = "G3";
                 }
-                // Handle special non-motion G-codes (like G4, G90) roughly by keeping them if
-                // found
-                // For simplicity, if we found a motion G, we use that. If not, we might rely on
-                // the
-                // 'cleanLine' method below.
 
-                // 3. Parse ALL Parameters (X, Y, Z, I, J, R, F)
-                double cX = 0, cY = 0, cZ = 0, cI = 0, cJ = 0, cR = 0, cF = 0;
-                boolean hX = false, hY = false, hZ = false, hI = false, hJ = false, hR = false, hF = false;
+                // 3. Parse Parameters
+                double cX = 0, cY = 0, cZ = 0, cI = 0, cJ = 0, cF = 0;
+                boolean hX = false, hY = false, hZ = false, hI = false, hJ = false, hF = false;
 
                 Matcher m = AXIS_PATTERN.matcher(commandPart);
                 while (m.find()) {
@@ -148,10 +145,6 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                             cJ = val;
                             hJ = true;
                         }
-                        case "R" -> {
-                            cR = val;
-                            hR = true;
-                        }
                         case "F" -> {
                             cF = val;
                             hF = true;
@@ -159,63 +152,57 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
                     }
                 }
 
-                // 4. Ghost Arc Fix (Z-Only Move in Arc Mode)
-                if ((lastGMode == 2 || lastGMode == 3) && hZ && !hX && !hY && !hI && !hJ && !hR) {
-                    gCommand = "G1"; // Force linear
+                // 4. Update State (Modal Coordinates)
+                // This prevents the "0" bug. We only update if the file specified a new value.
+                if (hX)
+                    stateX = cX;
+                if (hY)
+                    stateY = cY;
+
+                // 5. Ghost Arc Fix
+                if ((lastGMode == 2 || lastGMode == 3) && hZ && !hX && !hY && !hI && !hJ) {
+                    gCommand = "G1";
                     lastGMode = 1;
                 }
 
-                // 5. Pass through lines with NO recognized parameters (e.g. "M3", "S12000")
-                if (!hX && !hY && !hZ && !hI && !hJ && !hR && !hF) {
-                    output.append(commandPart);
-                    if (!commentPart.isEmpty())
-                        output.append(" ").append(commentPart);
-                    output.append('\n');
-                    continue;
-                }
+                // 6. Transform Logic
+                // We rotate stateX/stateY (the full position), not just cX/cY (the fragments)
+                double xRot = stateX * cos - stateY * sin;
+                double yRot = stateX * sin + stateY * cos;
 
-                // 6. Transform Coordinates
-                double xRot = cX * cos - cY * sin;
-                double yRot = cX * sin + cY * cos;
+                double xFinal = xRot + dx;
+                double yFinal = yRot + dy;
+
                 double iRot = cI * cos - cJ * sin;
                 double jRot = cI * sin + cJ * cos;
 
-                // 7. RECONSTRUCT LINE (Strict Order)
-
-                // A. Start with G-Command (if it existed) or whatever was left (e.g. M codes
-                // mixed in)
-                // To be safe, let's strip all params from the original line to find any "extra"
-                // commands
-                // (M3, S, etc.)
+                // 7. Reconstruction
                 String extras = commandPart
-                        .replaceAll("(?i)([XYIJZRFG])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "")
+                        .replaceAll("(?i)([XYIJZFG])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "")
                         .trim();
-                // Note: We strip 'G' above so we can re-add the motion G manually.
-                // But if there was a G90 or G54, we might want to keep it.
-                // For a robust "Motion Clean", usually we just output the active motion G.
 
-                if (!gCommand.isEmpty()) {
+                if (!gCommand.isEmpty())
                     output.append(gCommand);
-                } else if (!extras.isEmpty()) {
-                    output.append(extras); // Append things like M3 if no G command exists
+                if (!extras.isEmpty())
+                    output.append(" ").append(extras);
+
+                // IMPORTANT: If we are rotating, changing X implies Y changes, and vice-versa.
+                // So if EITHER input X or Y was present, we must output BOTH transformed X and
+                // Y.
+                if (hX || hY) {
+                    output.append(String.format(" X%.4f Y%.4f", xFinal, yFinal));
                 }
 
-                // B. Append Parameters in Desired Order
-                if (hX || hY)
-                    output.append(String.format(" X%.4f Y%.4f", xRot + dx, yRot + dy));
                 if (hZ)
-                    output.append(String.format(" Z%.4f", cZ)); // EXTRACTED Z
+                    output.append(String.format(" Z%.4f", cZ));
                 if (hI || hJ)
                     output.append(String.format(" I%.4f J%.4f", iRot, jRot));
-                if (hR)
-                    output.append(String.format(" R%.4f", cR));
                 if (hF)
-                    output.append(String.format(" F%.1f", cF)); // Feedrate last
+                    output.append(String.format(" F%.1f", cF));
 
-                // C. Append Comment
-                if (!commentPart.isEmpty()) {
+                if (!commentPart.isEmpty())
                     output.append(" ").append(commentPart);
-                }
+
                 output.append('\n');
             }
         } catch (IOException e) {
