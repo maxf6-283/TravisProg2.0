@@ -146,11 +146,12 @@ public class Part {
                 new ErrorDialog(new NullPointerException(), "Folder: " + parent.getName() + " Not Found");
             }
             for (File file : files) {
-                if (file.getName().lastIndexOf(".") != -1
-                        && file.getName()
-                                .substring(file.getName().lastIndexOf(".") + 1, file.getName().length())
-                                .equals("ngc")) {
-                    ngcFiles.add(file);
+                if (file.getName().lastIndexOf(".") != -1) {
+                    String ext = file.getName()
+                            .substring(file.getName().lastIndexOf(".") + 1, file.getName().length());
+                    if (ext.equals("ngc") || ext.equals("tap")) {
+                        ngcFiles.add(file);
+                    }
                 }
             }
             if (ngcFiles.size() <= 0) {
