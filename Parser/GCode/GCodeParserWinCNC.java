@@ -57,160 +57,8 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         return rawBody != "" ? gCodeTransformClean(part, rawBody, origin) : "";
     }
 
-    private static final Pattern AXIS_PATTERN = Pattern.compile("(?i)([XYIJZRF])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))");
-
     private String gCodeTransformClean(Part part, String gcode, Point2D origin) {
-        double offX = (origin == null) ? 0 : origin.getX();
-        double offY = (origin == null) ? 0 : origin.getY();
-
-        final double dx = part.getX() - offX;
-        final double dy = part.getY() - offY;
-        final double rot = part.getRot();
-        final double cos = Math.cos(rot);
-        final double sin = Math.sin(rot);
-
-        int lastGMode = 0;
-
-        double stateX = 0;
-        double stateY = 0;
-
-        StringBuilder output = new StringBuilder(gcode.length() * 3 / 2);
-
-        try (BufferedReader reader = new BufferedReader(new StringReader(gcode))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String trimmed = line.trim();
-
-                String commandPart = trimmed;
-                String commentPart = "";
-                if (trimmed.contains("[")) {
-                    int idx = trimmed.indexOf("[");
-                    commandPart = trimmed.substring(0, idx).trim();
-                    commentPart = trimmed.substring(idx);
-                }
-
-                if (commandPart.isEmpty()) {
-                    output.append(trimmed).append('\n');
-                    continue;
-                }
-
-                // 1. G4 Dwell Pass-Through (Raw Output)
-                if (commandPart.toUpperCase().contains("G4")) {
-                    output.append(trimmed).append('\n');
-                    continue;
-                }
-
-                // 2. Identify Motion Modes
-                String gCommand = "";
-                if (commandPart.toUpperCase().contains("G0")) {
-                    lastGMode = 0;
-                    gCommand = "G0";
-                } else if (commandPart.toUpperCase().contains("G1")) {
-                    lastGMode = 1;
-                    gCommand = "G1";
-                } else if (commandPart.toUpperCase().contains("G2")) {
-                    lastGMode = 2;
-                    gCommand = "G2";
-                } else if (commandPart.toUpperCase().contains("G3")) {
-                    lastGMode = 3;
-                    gCommand = "G3";
-                }
-
-                // 3. Parse Parameters
-                double cX = 0, cY = 0, cZ = 0, cI = 0, cJ = 0, cF = 0;
-                boolean hX = false, hY = false, hZ = false, hI = false, hJ = false, hF = false;
-
-                Matcher m = AXIS_PATTERN.matcher(commandPart);
-                while (m.find()) {
-                    String axis = m.group(1).toUpperCase();
-                    double val = Double.parseDouble(m.group(2));
-                    switch (axis) {
-                        case "X" -> {
-                            cX = val;
-                            hX = true;
-                        }
-                        case "Y" -> {
-                            cY = val;
-                            hY = true;
-                        }
-                        case "Z" -> {
-                            cZ = val;
-                            hZ = true;
-                        }
-                        case "I" -> {
-                            cI = val;
-                            hI = true;
-                        }
-                        case "J" -> {
-                            cJ = val;
-                            hJ = true;
-                        }
-                        case "F" -> {
-                            cF = val;
-                            hF = true;
-                        }
-                    }
-                }
-
-                if (!hX && !hY && !hZ && !hI && !hJ && !hF) {
-                    output.append(commandPart);
-                    if (!commentPart.isEmpty())
-                        output.append(" ").append(commentPart);
-                    output.append('\n');
-                    continue;
-                }
-
-                // 4. Update State (Modal Coordinates)
-                // This prevents the "0" bug. We only update if the file specified a new value.
-                if (hX)
-                    stateX = cX;
-                if (hY)
-                    stateY = cY;
-
-                // 6. Transform Logic
-                // We rotate stateX/stateY (the full position), not just cX/cY (the fragments)
-                double xRot = stateX * cos - stateY * sin;
-                double yRot = stateX * sin + stateY * cos;
-
-                double xFinal = xRot + dx;
-                double yFinal = yRot + dy;
-
-                double iRot = cI * cos - cJ * sin;
-                double jRot = cI * sin + cJ * cos;
-
-                // 7. Reconstruction
-                String extras = commandPart
-                        .replaceAll("(?i)([XYIJZFG])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "")
-                        .trim();
-
-                if (!gCommand.isEmpty())
-                    output.append(gCommand);
-                if (!extras.isEmpty())
-                    output.append(" ").append(extras);
-
-                // IMPORTANT: If we are rotating, changing X implies Y changes, and vice-versa.
-                // So if EITHER input X or Y was present, we must output BOTH transformed X and
-                // Y.
-                if (hX || hY) {
-                    output.append(String.format(" X%.4f Y%.4f", xFinal, yFinal));
-                }
-
-                if (hZ)
-                    output.append(String.format(" Z%.4f", cZ));
-                if (hI || hJ)
-                    output.append(String.format(" I%.4f J%.4f", iRot, jRot));
-                if (hF)
-                    output.append(String.format(" F%.1f", cF));
-
-                if (!commentPart.isEmpty())
-                    output.append(" ").append(commentPart);
-
-                output.append('\n');
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return output.toString();
+        return processPart(part, gcode, origin).getFullCode();
     }
 
     public String gCodeTransformClean(Part part, Point2D origin) {
@@ -461,5 +309,196 @@ public class GCodeParserWinCNC implements GenericGCodeParser {
         }
 
         doc.setPreviousAttributes(attributes);
+    }
+
+    // 1. ADD THIS INNER CLASS (Container for the data)
+    public static class ProcessedPart {
+        public String header = "";
+        public String body = "";
+        public String startSpeed = null;
+        public String endSpeed = null;
+
+        public String getFullCode() {
+            return header + body;
+        }
+    }
+
+    // ... existing parse() and getToolCode() methods ...
+
+    // 2. RENAME/REPLACE THE MAIN TRANSFORMATION LOGIC
+    // This now returns the object instead of just a String
+    public ProcessedPart processPart(Part part, String gcode, Point2D origin) {
+        ProcessedPart result = new ProcessedPart();
+        StringBuilder headerBuilder = new StringBuilder();
+        StringBuilder bodyBuilder = new StringBuilder();
+
+        // --- Math Setup ---
+        double offX = (origin == null) ? 0 : origin.getX();
+        double offY = (origin == null) ? 0 : origin.getY();
+        final double dx = part.getX() - offX;
+        final double dy = part.getY() - offY;
+        final double rot = part.getRot();
+        final double cos = Math.cos(rot);
+        final double sin = Math.sin(rot);
+
+        int lastGMode = 0;
+        double stateX = 0, stateY = 0;
+        boolean motionStarted = false;
+
+        // Add 'S' to regex to capture Speed
+        Pattern AXIS_PATTERN = Pattern.compile("(?i)([XYIJZRFSM])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))");
+
+        try (BufferedReader reader = new BufferedReader(new StringReader(gcode))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                String commandPart = trimmed;
+                String commentPart = "";
+
+                if (trimmed.contains("[")) {
+                    int idx = trimmed.indexOf("[");
+                    commandPart = trimmed.substring(0, idx).trim();
+                    commentPart = trimmed.substring(idx);
+                }
+
+                // Empty lines or G4 (Dwell) go to Header/Body based on motion status
+                if (commandPart.isEmpty() || commandPart.toUpperCase().contains("G4")) {
+                    (motionStarted ? bodyBuilder : headerBuilder).append(trimmed).append('\n');
+                    continue;
+                }
+
+                // Identify Motion
+                String gCommand = "";
+                if (commandPart.toUpperCase().contains("G0")) {
+                    lastGMode = 0;
+                    gCommand = "G0";
+                } else if (commandPart.toUpperCase().contains("G1")) {
+                    lastGMode = 1;
+                    gCommand = "G1";
+                } else if (commandPart.toUpperCase().contains("G2")) {
+                    lastGMode = 2;
+                    gCommand = "G2";
+                } else if (commandPart.toUpperCase().contains("G3")) {
+                    lastGMode = 3;
+                    gCommand = "G3";
+                }
+
+                // Parse Params
+                double cX = 0, cY = 0, cZ = 0, cI = 0, cJ = 0, cF = 0, cS = 0;
+                boolean hX = false, hY = false, hZ = false, hI = false, hJ = false, hF = false, hS = false;
+
+                Matcher m = AXIS_PATTERN.matcher(commandPart);
+                while (m.find()) {
+                    String axis = m.group(1).toUpperCase();
+                    double val = Double.parseDouble(m.group(2));
+                    switch (axis) {
+                        case "X" -> {
+                            cX = val;
+                            hX = true;
+                        }
+                        case "Y" -> {
+                            cY = val;
+                            hY = true;
+                        }
+                        case "Z" -> {
+                            cZ = val;
+                            hZ = true;
+                        }
+                        case "I" -> {
+                            cI = val;
+                            hI = true;
+                        }
+                        case "J" -> {
+                            cJ = val;
+                            hJ = true;
+                        }
+                        case "F" -> {
+                            cF = val;
+                            hF = true;
+                        }
+                        case "S" -> {
+                            cS = val;
+                            hS = true;
+                        }
+                    }
+                }
+
+                // Track Speed
+                if (hS) {
+                    String sVal = String.valueOf((int) cS);
+                    if (result.startSpeed == null)
+                        result.startSpeed = sVal;
+                    result.endSpeed = sVal;
+                }
+
+                // Detect Motion Start (Coordinates or G-moves, ignoring setup lines like S or
+                // M)
+                if (!motionStarted && (!gCommand.isEmpty() || hX || hY || hZ)) {
+                    motionStarted = true;
+                }
+
+                // Pass-through non-motion lines
+                if (!hX && !hY && !hZ && !hI && !hJ && !hF) {
+                    (motionStarted ? bodyBuilder : headerBuilder).append(trimmed).append('\n');
+                    continue;
+                }
+
+                // Transform
+                if (hX)
+                    stateX = cX;
+                if (hY)
+                    stateY = cY;
+
+                double xRot = stateX * cos - stateY * sin;
+                double yRot = stateX * sin + stateY * cos;
+                double xFinal = xRot + dx;
+                double yFinal = yRot + dy;
+                double iRot = cI * cos - cJ * sin;
+                double jRot = cI * sin + cJ * cos;
+
+                // Reconstruct
+                StringBuilder sb = new StringBuilder();
+                String extras = commandPart
+                        .replaceAll("(?i)([XYIJZRFSMG])\\s*(-?(?:\\d+(?:\\.\\d*)?|\\.\\d+))", "")
+                        .trim();
+
+                if (!gCommand.isEmpty())
+                    sb.append(gCommand);
+                if (!extras.isEmpty())
+                    sb.append(" ").append(extras);
+
+                if (hX || hY)
+                    sb.append(String.format(" X%.4f Y%.4f", xFinal, yFinal));
+                if (hZ)
+                    sb.append(String.format(" Z%.4f", cZ));
+                if (hI || hJ)
+                    sb.append(String.format(" I%.4f J%.4f", iRot, jRot));
+                if (hF)
+                    sb.append(String.format(" F%.1f", cF));
+                if (hS)
+                    sb.append(String.format(" S%d", (int) cS));
+
+                if (!commentPart.isEmpty())
+                    sb.append(" ").append(commentPart);
+                sb.append('\n');
+
+                (motionStarted ? bodyBuilder : headerBuilder).append(sb.toString());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        result.header = headerBuilder.toString().trim();
+        if (!result.header.isEmpty()) {
+            result.header += "\n";
+        }
+        result.body = bodyBuilder.toString().trim();
+        if (!result.body.isEmpty()) {
+            result.body += "\n";
+        }
+        if (result.endSpeed == null && result.startSpeed != null)
+            result.endSpeed = result.startSpeed;
+
+        return result;
     }
 }

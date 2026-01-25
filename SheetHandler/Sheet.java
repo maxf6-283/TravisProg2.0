@@ -379,45 +379,62 @@ public class Sheet {
                 }
 
                 // --- STEP 2: Optimize the order for THIS tool ---
-                List<Part> sortedParts = partsForTool; // getOptimizedPartOrder(partsForTool);
+                List<Part> sortedParts = getOptimizedPartOrder(partsForTool);
+
+                String currentMachineSpeed = "";
 
                 boolean toolChangeWritten = false;
 
-                // --- STEP 3: Write the sorted parts ---
                 for (Part part : sortedParts) {
 
-                    // Re-fetch header/footer (state updates)
-                    String newFooter = predominantStrain.gCodeParser.removeGCodeSpecialness(
-                            part.getNgcDocument().getGCodeFooter());
-                    if (!newFooter.equals(footer)) {
-                        writer.write(footer);
-                        footer = newFooter;
-                    }
-                    String newHeader = predominantStrain.gCodeParser.removeGCodeSpecialness(
-                            part.getNgcDocument().getGCodeHeader());
-                    if (!newHeader.equals(header)) {
-                        writer.write(newHeader);
-                        header = newHeader;
-                    }
+                    String partHeader = "";
+                    String partBody = "";
 
-                    // Get final code
-                    String cleanCode;
-                    if (predominantStrain == NgcStrain.router_971)
-                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part, origin);
-                    else
-                        cleanCode = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum, origin);
+                    if (predominantStrain.gCodeParser instanceof Parser.GCode.GCodeParserWinCNC wincncParser) {
+                        String rawCode = part.getNgcDocument().getGCodeForTool(toolNum);
 
-                    if (!cleanCode.trim().isEmpty()) {
-                        // Write Tool Change (Once per group)
-                        if (!toolChangeWritten) {
-                            writer.write(predominantStrain.gCodeParser.getToolCode(toolNum) + "\n");
-                            toolChangeWritten = true;
+                        // Call the new method directly via cast
+                        Parser.GCode.GCodeParserWinCNC.ProcessedPart pp = wincncParser.processPart(part, rawCode,
+                                origin);
+
+                        // Check redundancy
+                        if (toolChangeWritten
+                                && pp.startSpeed != null
+                                && pp.startSpeed.equals(currentMachineSpeed)) {
+                            // Skip header (Spindle Start/Dwell)
+                            partHeader = "";
+                        } else {
+                            partHeader = pp.header;
                         }
+                        partBody = pp.body;
 
-                        // Write Part
-                        writer.write(openBracket + "Part: " + part.partFile().getName() + closeBracket);
-                        writer.write(cleanCode);
+                        // Update State
+                        if (pp.endSpeed != null)
+                            currentMachineSpeed = pp.endSpeed;
+                        else if (pp.startSpeed != null)
+                            currentMachineSpeed = pp.startSpeed;
+
+                    } else {
+                        if (predominantStrain == NgcStrain.router_971)
+                            partBody = predominantStrain.gCodeParser.gCodeTransformClean(part, origin);
+                        else
+                            partBody = predominantStrain.gCodeParser.gCodeTransformClean(part, toolNum, origin);
+
+                        partHeader = "";
                     }
+
+                    if ((partHeader + partBody).trim().isEmpty())
+                        continue;
+
+                    // 2. WRITE TO FILE
+                    if (!toolChangeWritten) {
+                        writer.write(predominantStrain.gCodeParser.getToolCode(toolNum) + "\n");
+                        toolChangeWritten = true;
+                    }
+
+                    writer.write(openBracket + "Part: " + part.partFile().getName() + closeBracket + "\n");
+                    writer.write(partHeader);
+                    writer.write(partBody);
                 }
             }
 
